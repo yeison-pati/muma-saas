@@ -48,6 +48,13 @@ echo "identitydb listo."
 
 echo "Insertando admin en identity_db..."
 docker exec -i identitydb psql -U "$IDENTITY_DB_USER" -d "$IDENTITY_DB_NAME" -v ON_ERROR_STOP=1 <<EOSQL
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+DO \$\$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_email_key') THEN
+    ALTER TABLE users ADD CONSTRAINT users_email_key UNIQUE (email);
+  END IF;
+END \$\$;
 INSERT INTO users (id, name, email, phone, password, role, region, job_title, created_by)
 VALUES (
   uuid_generate_v4(),
