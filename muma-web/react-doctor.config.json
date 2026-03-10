@@ -1,0 +1,9 @@
+{
+  "ignore": {
+    "rules": [
+      "react-doctor/client-passive-event-listeners",
+      "react-doctor/prefer-useReducer",
+      "react-doctor/no-giant-component"
+    ]
+  }
+}

@@ -1,0 +1,142 @@
+.disenador-proyectos-page {
+  padding: 24px;
+  width: 100%;
+}
+
+.disenador-proyectos-page h1 {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+}
+
+.disenador-proyectos-desc {
+  margin: 0 0 24px;
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
+.disenador-proyectos-search {
+  margin-bottom: 24px;
+}
+
+.disenador-proyectos-search input {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border, #dee2e6);
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.disenador-proyectos-search input:focus {
+  outline: none;
+  border-color: var(--color-primary, #17a2b8);
+}
+
+.disenador-proyectos-loading,
+.disenador-proyectos-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: #6c757d;
+  margin: 0;
+}
+
+.disenador-proyectos-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.disenador-proyectos-item {
+  margin-bottom: 8px;
+  border: 1px solid var(--color-border, #e9ecef);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.disenador-proyectos-item-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.disenador-proyectos-item-btn:hover {
+  background: #f8f9fa;
+}
+
+.disenador-consecutivo {
+  font-weight: 600;
+  color: #17a2b8;
+}
+
+.disenador-expand {
+  margin-left: auto;
+  color: #17a2b8;
+  font-weight: bold;
+}
+
+.disenador-proyectos-detail {
+  padding: 16px;
+  background: #f8f9fa;
+  font-size: 0.9rem;
+}
+
+.disenador-meta {
+  margin-bottom: 12px;
+}
+
+.disenador-meta p {
+  margin: 4px 0;
+}
+
+.disenador-badges {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.disenador-badges .badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.disenador-badges .badge-products {
+  background: #e9ecef;
+  color: #333;
+}
+
+.disenador-badges .badge-version {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.disenador-badges .badge-estado {
+  background: #d4edda;
+  color: #155724;
+}
+
+.disenador-proyectos-variant {
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.disenador-proyectos-pdf-btn {
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: var(--color-primary, #17a2b8);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.disenador-proyectos-pdf-btn:hover {
+  background: #138496;
+}

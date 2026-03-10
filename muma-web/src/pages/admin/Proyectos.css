@@ -1,0 +1,127 @@
+.admin-proyectos-page {
+  padding: 24px;
+}
+
+.admin-proyectos-page h1 {
+  margin: 0 0 20px;
+  font-size: 1.5rem;
+}
+
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.admin-filters input,
+.admin-filters select {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.admin-loading {
+  padding: 24px 0;
+  color: #6c757d;
+}
+
+.admin-projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-project-card {
+  border: 1px solid var(--color-border, #e9ecef);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.admin-project-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.admin-project-header:hover {
+  background: #f8f9fa;
+}
+
+.admin-consecutivo {
+  font-weight: 600;
+  color: #17a2b8;
+  min-width: 120px;
+}
+
+.admin-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.admin-badge-quoted {
+  background: #d4edda;
+  color: #155724;
+}
+
+.admin-badge-effective {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.admin-expand {
+  margin-left: auto;
+  color: #17a2b8;
+  font-weight: bold;
+}
+
+.admin-project-detail {
+  padding: 16px;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+}
+
+.admin-meta {
+  margin-bottom: 12px;
+}
+
+.admin-meta p {
+  margin: 4px 0;
+}
+
+.admin-badges-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.admin-badges-row .badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.admin-badges-row .badge-products {
+  background: #e9ecef;
+  color: #333;
+}
+
+.admin-badges-row .badge-version {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.admin-badges-row .badge-estado {
+  background: #d4edda;
+  color: #155724;
+}

@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: document
+  security:
+    oauth2:
+      resourceserver:
+        jwt: {}  # ReactiveJwtDecoder bean en JwtConfig usa JWT_SECRET
+
+storage:
+  s3:
+    endpoint: ${MINIO_ENDPOINT}
+    public-endpoint: ${MINIO_PUBLIC_ENDPOINT}
+    user: ${MINIO_USER}
+    pass: ${MINIO_PASS}
+    buckets:
+      images: ${MINIO_BUCKET_IMAGES}
+      models: ${MINIO_BUCKET_MODELS}
+  # URLs de imágenes: el front usa localhost:8000 (Caddy); el MS document reescribe a la base
+  # interna (caddy:8000) para poder alcanzar las imágenes desde dentro de su contenedor.
+  images:
+    public-base-url: ${IMAGES_PUBLIC_BASE_URL:http://localhost:8000/images}
+    internal-base-url: ${IMAGES_INTERNAL_BASE_URL:http://caddy:8000/images}

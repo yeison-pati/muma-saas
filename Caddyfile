@@ -1,0 +1,41 @@
+{
+        auto_https off
+}
+
+:8000 {
+        # ---------- IDENTITY API ----------
+        handle_path /api/identity/* {
+                reverse_proxy identity:8080
+        }
+
+        # ---------- CATALOG API ----------
+        handle_path /api/catalog/* {
+                reverse_proxy catalog:8080
+        }
+
+        # ---------- DOCUMENT API ----------
+        handle_path /api/document/* {
+                reverse_proxy document:8080
+        }
+
+        # ---------- MINIO IMAGES (SIGNED SAFE) ----------
+        handle /images/* {
+                reverse_proxy minio:9000 {
+                        header_up Range {http.request.header.Range}
+                        header_up If-Range {http.request.header.If-Range}
+                }
+        }
+
+        # ---------- MINIO MODELS (SIGNED SAFE) ----------
+        handle /models/* {
+                reverse_proxy minio:9000 {
+                        header_up Range {http.request.header.Range}
+                        header_up If-Range {http.request.header.If-Range}
+                }
+        }
+
+        # ---------- FRONTEND (Expo Dev Server) ----------
+        handle /* {
+                reverse_proxy muma:8081
+        }
+}

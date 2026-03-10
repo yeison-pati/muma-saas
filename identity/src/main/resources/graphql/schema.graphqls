@@ -1,0 +1,90 @@
+type Query {
+  "Info del admin autenticado (sustituto de GET /admin)"
+  admin: UserResponse
+  "Health check (sustituto de GET /public/health)"
+  health: String
+  "Lista de cotizadores (sustituto de GET /public/quoters)"
+  quoters: [QuoterResponse!]!
+  "Lista de vendedores (sustituto de GET /public/sales)"
+  sales: [SalesResponse!]!
+  "Lista de diseñadores (sustituto de GET /public/designers)"
+  designers: [DesignerResponse!]!
+}
+
+type Mutation {
+  "Login (sustituto de POST /auth/signIn)"
+  signIn(input: LoginInput!): TokenResponse
+  "Actualizar info del admin (sustituto de PATCH /admin)"
+  updateAdmin(input: UserUpdateInput!): UserResponse
+  "Crear usuario (sustituto de POST /admin/users)"
+  createUser(input: RegisterInput!): Boolean
+  "Eliminar usuario (sustituto de DELETE /admin/users/:id)"
+  deleteUser(userId: ID!): Boolean
+  "Editar usuario (sustituto de PATCH /admin/users/:id)"
+  editUser(userId: ID!, input: UserUpdateInput!): Boolean
+}
+
+type TokenResponse {
+  user: UserResponse!
+  token: String!
+}
+
+type UserResponse {
+  id: ID!
+  name: String!
+  email: String!
+  phone: String
+  role: String!
+  region: String
+  jobTitle: String
+  createdAt: String
+  updatedAt: String
+  createdBy: String
+  updatedBy: String
+}
+
+type QuoterResponse {
+  user: UserResponse!
+  quoted: Int!
+  projects: Int!
+  products: Int!
+}
+
+type SalesResponse {
+  user: UserResponse!
+  requested: Int!
+  effective: Int!
+}
+
+type DesignerResponse {
+  user: UserResponse!
+  created: Int!
+  edited: Int!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+input RegisterInput {
+  name: String!
+  email: String!
+  phone: String
+  password: String!
+  role: String!
+  region: String
+  jobTitle: String
+  creator: String
+}
+
+input UserUpdateInput {
+  id: ID
+  name: String
+  email: String
+  phone: String
+  password: String
+  role: String
+  region: String
+  jobTitle: String
+}

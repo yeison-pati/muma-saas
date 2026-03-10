@@ -1,0 +1,253 @@
+.solicitudes-page {
+  padding: 24px;
+  width: 100%;
+}
+
+.solicitudes-page h1 {
+  margin: 0 0 24px;
+  font-size: 1.5rem;
+}
+
+.solicitudes-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.solicitudes-filters input {
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border, #dee2e6);
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.solicitudes-filters input:focus {
+  outline: none;
+  border-color: var(--color-primary, #17a2b8);
+}
+
+.solicitudes-region-select {
+  padding: 10px 14px;
+  border: 1px solid var(--color-border, #dee2e6);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  min-width: 160px;
+}
+
+.solicitudes-clear-btn {
+  padding: 10px 16px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.solicitudes-clear-btn:hover {
+  background: #c82333;
+}
+
+.solicitudes-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e9ecef;
+  margin-bottom: 24px;
+}
+
+.solicitudes-tabs button {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.solicitudes-tabs button:hover {
+  color: var(--color-primary, #17a2b8);
+}
+
+.solicitudes-tabs button.active {
+  color: var(--color-primary, #17a2b8);
+  border-bottom-color: var(--color-primary, #17a2b8);
+}
+
+.solicitudes-loading {
+  padding: 48px 0;
+  color: #6c757d;
+}
+
+.solicitudes-content {
+  min-height: 120px;
+}
+
+.solicitudes-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: #6c757d;
+  margin: 0;
+}
+
+.solicitudes-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.solicitudes-item {
+  margin-bottom: 8px;
+  border: 1px solid var(--color-border, #e9ecef);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.solicitudes-item-btn {
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.solicitudes-item-btn:hover {
+  background: #f8f9fa;
+}
+
+.solicitudes-item-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.solicitudes-item-header .solicitudes-item-btn {
+  flex: 1;
+}
+
+.solicitudes-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.solicitudes-reopen-btn,
+.solicitudes-effective-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--color-border, #dee2e6);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  background: #fff;
+}
+
+.solicitudes-reopen-btn:hover:not(:disabled),
+.solicitudes-effective-btn:hover {
+  background: #f8f9fa;
+}
+
+.solicitudes-reopen-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.solicitudes-effective-btn {
+  border-color: var(--color-primary, #17a2b8);
+  color: var(--color-primary, #17a2b8);
+}
+
+.solicitudes-pdf-btn {
+  padding: 8px 16px;
+  background: var(--color-primary, #17a2b8);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.solicitudes-pdf-btn:hover {
+  background: #138496;
+}
+
+.solicitudes-delete-btn {
+  padding: 8px 14px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.solicitudes-delete-btn:hover {
+  background: #c82333;
+}
+
+.solicitudes-consecutivo {
+  font-weight: 600;
+  color: #17a2b8;
+}
+
+.solicitudes-client {
+  color: #333;
+}
+
+.solicitudes-effective-tag {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.solicitudes-detail {
+  padding: 12px 16px;
+  background: #f8f9fa;
+  font-size: 0.9rem;
+}
+
+.solicitudes-meta {
+  margin-bottom: 12px;
+}
+
+.solicitudes-meta p {
+  margin: 4px 0;
+}
+
+.solicitudes-badges {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.solicitudes-badges .badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-products {
+  background: #e9ecef;
+  color: #333;
+}
+
+.badge-version {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.badge-estado {
+  background: #d4edda;
+  color: #155724;
+}

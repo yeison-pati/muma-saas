@@ -1,0 +1,57 @@
+[ CLIENTE ] 
+    |
+    | POST /auth/signin (email/password)
+    v
+[ AuthController ]
+    |
+    | login()
+    v
+[ AuthService ]
+    |
+    | valida credenciales
+    v
+[ JwtTokenService ]
+    |
+    | //genera JWT con JwtEncoder (JwtConfig)
+
+    KeyPair (RSAPrivateKey + RSAPublicKey)
+       |
+       v
+     JWK (JSON Web Key)
+       |
+       v
+   JWKSet (conjunto de llaves)
+       |
+       v
+ImmutableJWKSet (adaptador que implementa JWKSource)
+       |
+       v
+NimbusJwtEncoder (implementación de JwtEncoder)
+       |
+       v
+encode(JwtEncoderParameters.from(JwtClaimsSet))
+       |
+       v
+Jwt object (claims + headers + tokenValue firmado)
+    |
+    v
+[ AuthController ] 
+    |
+    | devuelve JWT al cliente
+    v
+[ CLIENTE guarda JWT ]
+    |
+    | GET /users/me + Authorization: Bearer <JWT>
+    v
+[ SecurityFilterChain ]
+    |
+    | valida firma, exp, roles
+    | convierte JWT a Authentication
+    v
+[ Controller (UsersController) ]
+    |
+    | recibe Jwt seguro
+    v
+[ UserService ]
+    |
+    | obtiene datos del usuario

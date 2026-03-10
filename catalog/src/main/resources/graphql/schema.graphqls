@@ -1,0 +1,276 @@
+type Query {
+  "Proyectos con variantes y cotizaciones"
+  projects: [Project!]!
+  "Bases con variantes listables (excluye P1/P2/P3 de cotización)"
+  products: [Product!]!
+  "Proyectos del vendedor"
+  projectsBySales(salesId: ID!): [Project!]!
+  "Proyectos del cotizador"
+  projectsByQuoter(quoterId: ID!): [Project!]!
+  "Proyectos marcados efectivos"
+  projectsEffective: [Project!]!
+}
+
+type Mutation {
+  "Crear proyecto (sustituto de POST /projects)"
+  createProject(input: CreateProjectInput!): Project
+  "Actualizar proyecto (sustituto de PATCH /projects)"
+  updateProject(input: UpdateProjectInput!): Project
+  "Reabrir proyecto para edición"
+  reOpenProject(projectId: ID!): Boolean
+  "Actualizar variante (componentes, cantidad, comentarios) y reabrir proyecto"
+  updateVariantAndReopen(input: UpdateVariantAndReopenInput!): Boolean
+  "Marcar proyecto como efectivo"
+  makeProjectEffective(projectId: ID!): Boolean
+  "Eliminar proyecto (sustituto de DELETE /projects)"
+  deleteProject(projectId: ID!): Boolean
+  "Cotizar variante (sustituto de PATCH /products/quote)"
+  quoteVariant(input: QuoteVariantInput!): Boolean
+  "Actualizar cantidad de variante en proyecto (sin reabrir)"
+  updateVariantQuoteQuantity(input: UpdateVariantQuoteQuantityInput!): Boolean
+  "Quitar variante de proyecto (sin reabrir)"
+  removeVariantFromProject(projectId: ID!, variantId: ID!): Boolean
+  "Crear base de producto (sustituto de POST /products/base)"
+  createBase(input: CreateBaseInput!): Base
+  "Actualizar base de producto"
+  updateBase(input: UpdateBaseInput!): Base
+  "Eliminar base y sus variantes"
+  deleteBase(baseId: ID!): Boolean
+  "Agregar variante a una base existente"
+  addVariantToBase(input: AddVariantToBaseInput!): VariantResponse
+  "Actualizar variante"
+  updateVariant(input: UpdateVariantInput!): VariantResponse
+  "Eliminar variante"
+  deleteVariant(variantId: ID!): Boolean
+}
+
+type Project {
+  id: ID!
+  consecutive: String!
+  name: String!
+  version: Int!
+  client: String
+  region: String
+  salesId: ID
+  quoterId: ID
+  state: Int!
+  quoted: Boolean!
+  reopen: Boolean!
+  effective: Boolean!
+  totalCost: Int
+  estimatedTime: Int
+  createdAt: String!
+  variants: [ProjectVariant!]!
+}
+
+type ProjectVariant {
+  id: ID!
+  sapRef: String
+  sapCode: String
+  type: String
+  criticalMaterial: String
+  comments: String
+  elaborationTime: Int
+  quantity: Int
+  price: Int
+  components: [ComponentResponse!]!
+  baseCode: String
+  baseName: String
+  baseImage: String
+  category: String
+  subcategory: String
+  line: String
+  space: String
+}
+
+"Componente con códigos SAP. sapRef=referencia persistente (se conserva al editar). sapCode=SAP variante (se pierde al editar). P3: ambos null."
+type ComponentResponse {
+  id: ID!
+  "Referencia persistente. Diseñador/variante: asignado. Editar proyecto: se conserva."
+  sapRef: String
+  "SAP de la variante. Diseñador: asignado automáticamente. Editar proyecto: se pierde. P3: null."
+  sapCode: String
+  name: String!
+  value: String
+}
+
+type VariantQuote {
+  id: ID!
+  price: Int
+  elaborationTime: Int
+}
+
+type Product {
+  id: ID!
+  code: String!
+  name: String!
+  image: String
+  model: String
+  category: String
+  subcategory: String
+  space: String
+  line: String
+  baseMaterial: String
+  variants: [VariantResponse!]!
+}
+
+type VariantResponse {
+  id: ID!
+  sapRef: String
+  sapCode: String
+  components: [ComponentResponse!]!
+}
+
+type Base {
+  id: ID!
+  code: String!
+  name: String!
+  image: String
+  model: String
+  category: String
+  subcategory: String
+  space: String
+  line: String
+  baseMaterial: String
+}
+
+input CreateProjectInput {
+  name: String!
+  client: String
+  region: String
+  salesId: ID
+  salesName: String
+  salesEmail: String
+  salesPhone: String
+  salesSignature: String
+  salesJobTitle: String
+  quoterId: ID
+  quoterName: String
+  quoterEmail: String
+  variants: [CreateVariantInput!]
+  p3s: [CreateP3Input!]
+}
+
+input CreateVariantInput {
+  variantId: ID
+  baseCode: String!
+  variantSapRef: String
+  type: String
+  comments: String
+  components: [CreateComponentInput!]!
+}
+
+"componentId obligatorio si existe; componentSapRef solo para P3 nuevo o modified"
+input CreateComponentInput {
+  componentId: ID
+  componentSapRef: String
+  componentValue: String
+  "Si true: crear nueva instancia. No modificar el original."
+  modified: Boolean
+  "Nombre del componente original (para modified)."
+  componentName: String
+}
+
+input CreateP3Input {
+  comment: String
+  image: String
+  components: [CreateComponentInput!]!
+}
+
+input UpdateProjectInput {
+  id: ID!
+  consecutive: String
+  name: String
+  version: Int
+  client: String
+  region: String
+  state: Int
+  quoted: Boolean
+  effective: Boolean
+  totalCost: Int
+  estimatedTime: Int
+}
+
+input QuoteVariantInput {
+  projectId: ID!
+  variantId: ID!
+  quoterId: ID!
+  price: Int
+  elaborationTime: Int
+  criticalMaterial: String
+}
+
+input UpdateVariantQuoteQuantityInput {
+  projectId: ID!
+  variantId: ID!
+  quantity: Int!
+}
+
+input UpdateVariantAndReopenInput {
+  projectId: ID!
+  variantId: ID!
+  quantity: Int
+  comments: String
+  type: String
+  components: [ComponentIdValueInput!]
+}
+
+input ComponentIdValueInput {
+  componentId: ID
+  componentSapRef: String
+  componentName: String
+  value: String
+  modified: Boolean
+}
+
+input CreateBaseInput {
+  code: String!
+  name: String!
+  image: String
+  model: String
+  category: String
+  subcategory: String
+  space: String
+  line: String
+  baseMaterial: String
+  creatorId: ID
+  creatorName: String
+  initialVariants: [CreateBaseInitialVariantInput!]
+}
+
+input CreateBaseInitialVariantInput {
+  sapRef: String
+  components: [CreateBaseInitialComponentInput!]!
+}
+
+"componentId obligatorio si existe; componentSapRef/componentSapCode solo para crear nuevos (no se busca por nombre)"
+input CreateBaseInitialComponentInput {
+  componentId: ID
+  componentSapRef: String
+  componentSapCode: String
+  componentValue: String
+}
+
+input UpdateBaseInput {
+  id: ID!
+  name: String
+  image: String
+  model: String
+  category: String
+  subcategory: String
+  space: String
+  line: String
+  baseMaterial: String
+}
+
+input AddVariantToBaseInput {
+  baseCode: String!
+  sapRef: String
+  components: [CreateBaseInitialComponentInput!]!
+}
+
+input UpdateVariantInput {
+  id: ID!
+  sapRef: String
+  components: [CreateBaseInitialComponentInput!]!
+}

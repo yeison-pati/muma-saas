@@ -1,0 +1,261 @@
+services:
+
+  identitydb:
+    image: postgres:17-alpine
+    container_name: identitydb
+    restart: on-failure
+    ports:
+      - "${IDENTITY_DB_PORT}:5432"
+    environment:
+      POSTGRES_USER: ${IDENTITY_DB_USER}
+      POSTGRES_PASSWORD: ${IDENTITY_DB_PASS}
+      POSTGRES_DB: ${IDENTITY_DB_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - identity_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${IDENTITY_DB_USER} -d ${IDENTITY_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - system
+
+  catalogdb:
+    image: postgres:17-alpine
+    container_name: catalogdb
+    restart: on-failure
+    ports:
+      - "${CATALOG_DB_PORT}:5432"
+    environment:
+      POSTGRES_USER: ${CATALOG_DB_USER}
+      POSTGRES_PASSWORD: ${CATALOG_DB_PASS}
+      POSTGRES_DB: ${CATALOG_DB_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - catalog_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CATALOG_DB_USER} -d ${CATALOG_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - system
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: rabbitmq
+    restart: on-failure
+    ports:
+      - "5672:5672" # AMQP port
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+      RABBITMQ_DEFAULT_VHOST: /
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_logs:/var/log/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - system
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASS}
+    volumes:
+      - minio_data:/data
+    command: server --console-address ":9001" /data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - system
+
+  minio_init:
+    image: quay.io/minio/mc
+    container_name: minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+      sleep 5 &&
+      mc alias set local http://minio:9000 ${MINIO_USER} ${MINIO_PASS} &&
+      mc mb -p local/${MINIO_BUCKET_IMAGES} || true &&
+      mc mb -p local/${MINIO_BUCKET_MODELS} || true &&
+      mc cp --recursive /seed/images/* local/${MINIO_BUCKET_IMAGES}/ || true &&
+      mc cp --recursive /seed/models/* local/${MINIO_BUCKET_MODELS}/ || true
+      "
+    volumes:
+      - ./minio:/seed
+    networks:
+      - system
+  
+  identity:
+    build:
+      context: ./identity
+      dockerfile: Dockerfile
+    container_name: identity
+    restart: on-failure
+    ports:
+      - "${IDENTITY_PORT}:8080"
+    environment:
+      - DB_HOST=${IDENTITY_DB_HOST}
+      - DB_PORT=5432
+      - DB_NAME=${IDENTITY_DB_NAME}
+      - DB_USER=${IDENTITY_DB_USER}
+      - DB_PASS=${IDENTITY_DB_PASS}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASS=${RABBITMQ_PASS}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      identitydb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - system
+
+  catalog:
+    build:
+      context: ./catalog
+      dockerfile: Dockerfile
+    container_name: catalog
+    restart: on-failure
+    ports:
+      - "${CATALOG_PORT}:8080"
+    environment:
+      - DB_HOST=${CATALOG_DB_HOST}
+      - DB_PORT=5432
+      - DB_NAME=${CATALOG_DB_NAME}
+      - DB_USER=${CATALOG_DB_USER}
+      - DB_PASS=${CATALOG_DB_PASS}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASS=${RABBITMQ_PASS}
+      - SERVER_PORT=8080
+      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      catalogdb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      identity:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - system
+
+  document:
+    build:
+      context: ./document
+      dockerfile: Dockerfile
+    container_name: document
+    restart: on-failure
+    ports:
+      - "${DOCUMENT_PORT}:8080"
+    environment:
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_PUBLIC_ENDPOINT=${MINIO_PUBLIC_ENDPOINT}
+      - MINIO_USER=${MINIO_USER}
+      - MINIO_PASS=${MINIO_PASS}
+      - MINIO_BUCKET_IMAGES=${MINIO_BUCKET_IMAGES}
+      - MINIO_BUCKET_MODELS=${MINIO_BUCKET_MODELS}
+      - JWT_SECRET=${JWT_SECRET}
+      - IMAGES_PUBLIC_BASE_URL=${IMAGES_PUBLIC_BASE_URL:-http://localhost:8000/images}
+      # El document no puede usar localhost:8000 (apunta a su propio contenedor). Usa caddy:8000.
+      - IMAGES_INTERNAL_BASE_URL=${IMAGES_INTERNAL_BASE_URL:-http://caddy:8000/images}
+    depends_on:
+      - minio
+      - minio_init
+      - identity
+      - catalog
+
+    networks:
+      - system
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: on-failure
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - system
+
+  muma:
+    build:
+      context: ./muma-web
+      dockerfile: Dockerfile
+    ports:
+      - "${MUMA_PORT}:8081"
+    container_name: muma
+    depends_on:
+      - identity
+      - catalog
+      - document
+    networks:
+      - system
+
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - identity
+      - catalog
+      - document
+      - muma
+    networks:
+      - system
+
+volumes:
+  identity_data:
+  catalog_data:
+  redis_data:
+  rabbitmq_data:
+  rabbitmq_logs:
+  minio_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  system:
+    driver: bridge

@@ -1,0 +1,48 @@
+.colombia-regiones-map {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f8f9fa;
+  overflow: auto;
+  height: 100%;
+  min-height: 280px;
+  max-height: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.colombia-regiones-zoom-hint {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.colombia-regiones-zoom-wrap {
+  display: block;
+  margin: 0 auto;
+}
+
+.colombia-regiones-svg {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.colombia-regiones-path {
+  cursor: pointer;
+  transition: fill 0.2s;
+}
+
+.colombia-regiones-path:hover {
+  filter: brightness(0.95);
+}
+
+.colombia-regiones-selected {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-primary, #17a2b8);
+}

@@ -1,0 +1,41 @@
+.image-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  cursor: pointer;
+}
+
+.image-modal-content {
+  position: relative;
+  max-width: 95vw;
+  max-height: 95vh;
+  cursor: default;
+}
+
+.image-modal-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 4px 12px;
+  line-height: 1;
+}
+
+.image-modal-close:hover {
+  opacity: 0.8;
+}
+
+.image-modal-img {
+  max-width: 95vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+}

@@ -1,0 +1,33 @@
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: var(--color-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 100;
+  box-shadow: 0 2px 8px var(--color-shadow);
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-logo {
+  height: 36px;
+  width: auto;
+}
+
+.navbar-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 600;
+  font-size: 1rem;
+}

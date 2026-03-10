@@ -1,0 +1,25 @@
+.base-list {
+  margin-bottom: 32px;
+  background: var(--color-bg-white);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px var(--color-shadow);
+}
+
+.base-list-title {
+  background: var(--color-primary);
+  color: white;
+  margin: 0;
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.base-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}

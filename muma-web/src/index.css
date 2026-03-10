@@ -1,0 +1,63 @@
+:root {
+  /* Colores principales */
+  --color-primary: #17a2b8;
+  --color-primary-dark: #138496;
+  --color-primary-light: #e9f7fb;
+  --color-primary-border: #b5e7f1;
+  /* Texto */
+  --color-text: #1a1a1a;
+  --color-text-muted: #6c757d;
+  --color-text-secondary: #666;
+  --color-text-tertiary: #999;
+  /* Fondos y bordes */
+  --color-bg: #f8f9fa;
+  --color-bg-white: #ffffff;
+  --color-border: #dee2e6;
+  --color-border-light: #e8ebf0;
+  --color-shadow: rgba(0, 0, 0, 0.1);
+  /* Acentos */
+  --color-chip-bg: #f0f5ff;
+  --color-chip-border: #d8e4f0;
+  --color-danger: #e74c3c;
+  --color-danger-dark: #c0392b;
+  /* Tipografía */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-size-xs: 0.7rem;
+  --font-size-sm: 0.8rem;
+  --font-size-base: 0.9rem;
+  --font-size-lg: 1rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
