@@ -186,7 +186,8 @@ export default function ProjectProductsTable({
 
   /** Códigos de variante: 2 si no modificada, 1 (REF) si componentes difieren. P3 nuevo: ninguno. */
   const getVariantCodes = (v, useMods = false) => {
-    const typeVal = useMods && getVariantMods(v).type != null ? getVariantMods(v).type : v.type;
+    const mods = getVariantMods(v);
+    const typeVal = useMods && 'type' in mods ? mods.type : v.type;
     const currentComps = useMods ? getEffectiveComponents(v) : (v.components || []).reduce((o, c) => ({ ...o, [c.id]: c.value }), {});
     const originalComps = (v.components || []).reduce((o, c) => ({ ...o, [c.id]: c.originalValue ?? c.value }), {});
     return getVariantDisplayCodes({
@@ -199,7 +200,8 @@ export default function ProjectProductsTable({
   };
 
   const buildDescripcionProps = (v, useMods = false) => {
-    const typeVal = useMods && getVariantMods(v).type != null ? getVariantMods(v).type : v.type;
+    const mods = getVariantMods(v);
+    const typeVal = useMods && 'type' in mods ? mods.type : v.type;
     const comps = useMods ? getEffectiveComponents(v) : (v.components || []).reduce((o, c) => ({ ...o, [c.id]: c.value }), {});
     const compsArr = comps ? Object.entries(comps)
       .filter(([, val]) => val)
@@ -219,7 +221,7 @@ export default function ProjectProductsTable({
     const commentsVal = useMods ? getEffectiveComments(v) : v.comments;
     return {
       variant: v,
-      typeVal,
+      typeVal: typeVal ?? v.type,
       compsArr,
       commentsVal,
       caractExpanded: expandedCaract[v.id],
@@ -318,7 +320,8 @@ export default function ProjectProductsTable({
                                       return [comp?.name || id, val ?? ''];
                                     })
                                   );
-                                  const newType = v.type === 'p3' ? 'p3' : (calculateTipologia(originalByKey, updatedByKey) || v.type);
+                                  const calcType = calculateTipologia(originalByKey, updatedByKey);
+                                  const newType = v.type === 'p3' ? 'p3' : (calcType !== '' ? calcType : null);
                                   notifyProductUpdate(v.id, { components: updated, type: newType });
                                 }}
                                 placeholder={label}
