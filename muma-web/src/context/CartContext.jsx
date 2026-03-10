@@ -67,12 +67,15 @@ export const CartProvider = ({ children }) => {
       _componentOriginals = {};
       for (const compId of Object.keys(caracteristicas)) {
         const c = variantsList.flatMap((v) => v.components || []).find((x) => String(x?.id) === String(compId));
-        if (c) _componentOriginals[compId] = { id: c.id, name: c.name, sapRef: c.sapRef, sapCode: c.sapCode, value: caracteristicas[compId] };
+        if (c) {
+          const origVal = c.originalValue ?? c.value ?? '';
+          _componentOriginals[compId] = { id: c.id, name: c.name, sapRef: c.sapRef, sapCode: c.sapCode, value: origVal };
+        }
       }
     }
     if (!_originalCaracteristicas || Object.keys(_originalCaracteristicas).length === 0) {
       _originalCaracteristicas = (selectedVariant?.components || []).reduce((acc, c) => {
-        if (c?.name) acc[c.name] = c.value ?? '';
+        if (c?.name) acc[c.name] = (c.originalValue ?? c.value ?? '').trim();
         return acc;
       }, {});
     }

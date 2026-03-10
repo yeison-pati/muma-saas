@@ -16,15 +16,15 @@ public interface VariantRepo extends JpaRepository<Variant, UUID> {
     @Query("SELECT v FROM Variant v WHERE v.baseCode = :baseCode")
     List<Variant> findByBaseCode(@org.springframework.data.repository.query.Param("baseCode") String baseCode);
 
-    @EntityGraph(attributePaths = { "componentValues", "componentValues.component" })
+    @EntityGraph(attributePaths = { "components" })
     @Query("SELECT v FROM Variant v WHERE v.baseCode = :baseCode")
     List<Variant> findByBaseCodeWithComponents(@org.springframework.data.repository.query.Param("baseCode") String baseCode);
 
-    @EntityGraph(attributePaths = { "componentValues", "componentValues.component" })
+    @EntityGraph(attributePaths = { "components" })
     @Query("SELECT v FROM Variant v")
     List<Variant> findAllWithComponents();
 
-    @EntityGraph(attributePaths = { "componentValues", "componentValues.component" })
+    @EntityGraph(attributePaths = { "components" })
     @Query("SELECT v FROM Variant v WHERE v.id = :id")
     java.util.Optional<Variant> findByIdWithComponents(@org.springframework.data.repository.query.Param("id") UUID id);
 }

@@ -75,7 +75,7 @@ export const ProjectProvider = ({ children }) => {
             }
             return {
               componentId,
-              componentSapRef: null,
+              componentSapRef: orig?.sapRef || orig?.sapCode || null,
               componentValue: newVal,
             };
           })
@@ -86,7 +86,7 @@ export const ProjectProvider = ({ children }) => {
         }));
 
     return {
-      variantId: product._selectedVariantId || undefined,
+      variantId: product._selectedVariantId || selectedVariant?.id || undefined,
       baseCode: product.code,
       variantSapRef: selectedVariant?.sapRef,
       type: tipologia || undefined,
@@ -99,12 +99,12 @@ export const ProjectProvider = ({ children }) => {
     const comps = custom.caracteristicas || custom.specifications || {};
     const components = Object.entries(comps)
       .filter(([, v]) => v != null && v !== '')
-      .map(([k, v]) => ({ componentId: null, componentSapRef: k, componentValue: String(v) }));
+      .map(([k, v]) => ({ componentId: null, componentName: k, componentValue: String(v) }));
 
     return {
       comment: custom.comentarios || custom.comment || '',
       image: custom.image || undefined,
-      components: components.length ? components : [{ componentId: null, componentSapRef: 'P3', componentValue: 'custom' }],
+      components: components.length ? components : [{ componentId: null, componentName: 'P3', componentValue: 'custom' }],
     };
   };
 

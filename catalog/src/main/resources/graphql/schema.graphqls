@@ -83,15 +83,16 @@ type ProjectVariant {
   space: String
 }
 
-"Componente con códigos SAP. sapRef=referencia persistente (se conserva al editar). sapCode=SAP variante (se pierde al editar). P3: ambos null."
+"Componente con códigos SAP. sapRef=referencia persistente. sapCode visible solo si value=originalValue."
 type ComponentResponse {
   id: ID!
-  "Referencia persistente. Diseñador/variante: asignado. Editar proyecto: se conserva."
   sapRef: String
-  "SAP de la variante. Diseñador: asignado automáticamente. Editar proyecto: se pierde. P3: null."
+  "SAP variante. Null si value != originalValue (edición en proyecto)."
   sapCode: String
   name: String!
   value: String
+  "Valor original; si value != originalValue, no mostrar sapCode."
+  originalValue: String
 }
 
 type VariantQuote {
@@ -243,9 +244,10 @@ input CreateBaseInitialVariantInput {
   components: [CreateBaseInitialComponentInput!]!
 }
 
-"componentId obligatorio si existe; componentSapRef/componentSapCode solo para crear nuevos (no se busca por nombre)"
+"componentId = existente; componentName = nombre (indep. de SAP); componentSapRef/componentSapCode = códigos SAP."
 input CreateBaseInitialComponentInput {
   componentId: ID
+  componentName: String
   componentSapRef: String
   componentSapCode: String
   componentValue: String

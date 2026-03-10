@@ -235,7 +235,7 @@ export default function ComercialSolicitudes() {
           }, {});
           input.components = Object.entries(modInfo.components).map(([componentId, value]) => {
             const comp = compsById[componentId];
-            const origVal = String(comp?.value ?? '').trim();
+            const origVal = String(comp?.originalValue ?? comp?.value ?? '').trim();
             const newVal = String(value ?? '').trim();
             const modified = origVal !== newVal;
             if (modified && comp) {
@@ -321,8 +321,9 @@ export default function ComercialSolicitudes() {
         ? (v.components || []).map((c) => {
             const newVal = mod.components[c.id];
             const val = newVal !== undefined ? newVal : c.value;
-            const modified = newVal !== undefined && String(newVal ?? '') !== String(c.value ?? '');
-            return { ...c, value: val, sapCode: modified ? null : c.sapCode };
+            const origVal = c.originalValue ?? c.value;
+            const modified = newVal !== undefined && String(newVal ?? '').trim() !== String(origVal ?? '').trim();
+            return { ...c, value: val, originalValue: origVal, sapCode: modified ? null : c.sapCode };
           })
         : v.components;
       return {

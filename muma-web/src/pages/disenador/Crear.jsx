@@ -25,7 +25,7 @@ export default function DisenadorCrear() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [initialVariants, setInitialVariants] = useState([
-    { sapRef: '', components: [{ componentId: null, componentSapRef: '', componentSapCode: '', componentValue: '' }] },
+    { sapRef: '', components: [{ componentId: null, componentName: '', componentSapRef: '', componentSapCode: '', componentValue: '' }] },
   ]);
 
   const { componentOptions, componentValuesByRef, allComponentValues } = (() => {
@@ -112,26 +112,50 @@ export default function DisenadorCrear() {
 
   const handleComponentSelect = (variantIdx, compIdx, val) => {
     const found = componentOptions.find((o) => o.label === val);
-    const sap = found ? (found.sapCode ?? found.sapRef ?? '') : (val || '');
-    setInitialVariants((prev) =>
-      prev.map((v, i) =>
-        i === variantIdx
-          ? {
-              ...v,
-              components: v.components.map((c, j) =>
-                j === compIdx ? { ...c, componentId: found ? found.id : null, componentSapRef: sap, componentSapCode: sap } : c
-              ),
-            }
-          : v
-      )
-    );
+    if (found) {
+      setInitialVariants((prev) =>
+        prev.map((v, i) =>
+          i === variantIdx
+            ? {
+                ...v,
+                components: v.components.map((c, j) =>
+                  j === compIdx
+                    ? {
+                        ...c,
+                        componentId: found.id,
+                        componentName: '',
+                        componentSapRef: found.sapRef ?? '',
+                        componentSapCode: found.sapCode ?? found.sapRef ?? '',
+                      }
+                    : c
+                ),
+              }
+            : v
+        )
+      );
+    } else {
+      setInitialVariants((prev) =>
+        prev.map((v, i) =>
+          i === variantIdx
+            ? {
+                ...v,
+                components: v.components.map((c, j) =>
+                  j === compIdx
+                    ? { ...c, componentId: null, componentName: (val || '').trim(), componentSapRef: '', componentSapCode: '' }
+                    : c
+                ),
+              }
+            : v
+        )
+      );
+    }
   };
 
   const addComponent = (variantIdx) => {
     setInitialVariants((prev) =>
       prev.map((v, i) =>
         i === variantIdx
-          ? { ...v, components: [...v.components, { componentId: null, componentSapRef: '', componentSapCode: '', componentValue: '' }] }
+          ? { ...v, components: [...v.components, { componentId: null, componentName: '', componentSapRef: '', componentSapCode: '', componentValue: '' }] }
           : v
       )
     );
@@ -150,7 +174,7 @@ export default function DisenadorCrear() {
   const addVariant = () => {
     setInitialVariants((prev) => [
       ...prev,
-      { sapRef: '', components: [{ componentId: null, componentSapRef: '', componentSapCode: '', componentValue: '' }] },
+      { sapRef: '', components: [{ componentId: null, componentName: '', componentSapRef: '', componentSapCode: '', componentValue: '' }] },
     ]);
   };
 
@@ -175,14 +199,28 @@ export default function DisenadorCrear() {
         modelKey = res.key;
       }
 
+      const withNameNoSap = initialVariants.some((v) =>
+        v.components.some(
+          (c) => !c.componentId && (c.componentName?.trim()) && !(c.componentSapRef?.trim() || c.componentSapCode?.trim())
+        )
+      );
+      if (withNameNoSap) {
+        setMessage('Los componentes nuevos requieren Código SAP (nombre e SAP son independientes)');
+        setSaving(false);
+        return;
+      }
+
       const variantsToSend = initialVariants
         .map((v) => {
-          const components = v.components.filter((c) => c.componentId || c.componentSapRef?.trim());
+          const components = v.components.filter(
+            (c) => c.componentId || c.componentSapRef?.trim() || c.componentSapCode?.trim()
+          );
           if (components.length === 0) return null;
           return {
             sapRef: v.sapRef?.trim() || null,
             components: components.map((c) => ({
               componentId: c.componentId || null,
+              componentName: c.componentName?.trim() || null,
               componentSapRef: c.componentSapRef?.trim() || null,
               componentSapCode: c.componentSapCode?.trim() || null,
               componentValue: c.componentValue?.trim() || null,
@@ -207,7 +245,7 @@ export default function DisenadorCrear() {
       });
       setMessage('Base creada correctamente');
       setForm({ code: '', name: '', category: '', subcategory: '', space: '', line: '', baseMaterial: '' });
-      setInitialVariants([{ sapRef: '', components: [{ componentId: null, componentSapRef: '', componentSapCode: '', componentValue: '' }] }]);
+      setInitialVariants([{ sapRef: '', components: [{ componentId: null, componentName: '', componentSapRef: '', componentSapCode: '', componentValue: '' }] }]);
       setImageFile(null);
       setModelFile(null);
       reload();

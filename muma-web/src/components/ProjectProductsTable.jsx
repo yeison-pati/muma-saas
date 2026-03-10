@@ -188,7 +188,7 @@ export default function ProjectProductsTable({
   const getVariantCodes = (v, useMods = false) => {
     const typeVal = useMods && getVariantMods(v).type != null ? getVariantMods(v).type : v.type;
     const currentComps = useMods ? getEffectiveComponents(v) : (v.components || []).reduce((o, c) => ({ ...o, [c.id]: c.value }), {});
-    const originalComps = (v.components || []).reduce((o, c) => ({ ...o, [c.id]: c.value }), {});
+    const originalComps = (v.components || []).reduce((o, c) => ({ ...o, [c.id]: c.originalValue ?? c.value }), {});
     return getVariantDisplayCodes({
       sapRef: v.sapRef,
       sapCode: v.sapCode,
@@ -206,7 +206,7 @@ export default function ProjectProductsTable({
       .map(([cid, val]) => {
         const comp = (v.components || []).find((c) => c && (c.id === cid || String(c.id) === String(cid)));
         const name = comp?.name ?? cid;
-        const origVal = comp?.value ?? '';
+        const origVal = comp?.originalValue ?? comp?.value ?? '';
         const compCodes = getComponentDisplayCodes({
           sapRef: comp?.sapRef,
           sapCode: comp?.sapCode,
@@ -309,17 +309,16 @@ export default function ProjectProductsTable({
                                 value={getEffectiveComponents(v)[c.id] ?? ''}
                                 onChange={(e) => {
                                   const updated = { ...getEffectiveComponents(v), [c.id]: e.target.value };
-                                  const origByName = (v.components || []).reduce((o, x) => {
-                                    if (x.name) o[x.name] = x.value;
-                                    return o;
-                                  }, {});
-                                  const updatedByName = Object.fromEntries(
+                                  const originalByKey = Object.fromEntries(
+                                    (v.components || []).map((x) => [x?.name || x.id, x?.originalValue ?? x?.value ?? ''])
+                                  );
+                                  const updatedByKey = Object.fromEntries(
                                     Object.entries(updated).map(([id, val]) => {
                                       const comp = (v.components || []).find((x) => String(x.id) === String(id));
-                                      return [comp?.name ?? id, val];
-                                    }).filter(([k]) => k)
+                                      return [comp?.name || id, val ?? ''];
+                                    })
                                   );
-                                  const newType = v.type === 'p3' ? 'p3' : (calculateTipologia(origByName, updatedByName) || v.type);
+                                  const newType = v.type === 'p3' ? 'p3' : (calculateTipologia(originalByKey, updatedByKey) || v.type);
                                   notifyProductUpdate(v.id, { components: updated, type: newType });
                                 }}
                                 placeholder={label}

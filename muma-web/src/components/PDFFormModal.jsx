@@ -25,7 +25,7 @@ const DEFAULT_GARANTIA = `3 años en estructura por defectos de fabricación
 
 function buildDescripcion(p) {
   const parts = [];
-  const origByKey = (p.components || []).reduce((o, c) => ({ ...o, [c.id]: c.value }), {});
+  const origByKey = (p.components || []).reduce((o, c) => ({ ...o, [c.id]: c.originalValue ?? c.value }), {});
   const variantCodes = getVariantDisplayCodes({
     sapRef: p.sapRef,
     sapCode: p.sapCode,
@@ -49,7 +49,7 @@ function buildDescripcion(p) {
           sapRef: c.sapRef,
           sapCode: c.sapCode,
           currentValue: c.value,
-          originalValue: c.value,
+          originalValue: c.originalValue ?? c.value,
         });
         const codesStr = compCodes ? formatCodes(compCodes.primary, compCodes.secondary) : '';
         return codesStr ? `${c.name || c.id}: ${c.value} (${codesStr})` : `${c.name || c.id}: ${c.value}`;

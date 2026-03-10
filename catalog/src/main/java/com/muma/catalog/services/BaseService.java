@@ -14,7 +14,6 @@ import com.muma.catalog.dtos.products.CreateBaseInitialComponent;
 import com.muma.catalog.dtos.products.CreateBaseInitialVariant;
 import com.muma.catalog.models.Base;
 import com.muma.catalog.models.Component;
-import com.muma.catalog.models.ComponentValue;
 import com.muma.catalog.models.Variant;
 import com.muma.catalog.repositories.BaseRepo;
 
@@ -63,14 +62,26 @@ public class BaseService {
         Variant variant = variantService.create(baseCode, sapRef);
         List<CreateBaseInitialComponent> components = iv.components();
         if (components != null && !components.isEmpty()) {
-            List<ComponentValue> values = new ArrayList<>();
+            List<Component> comps = new ArrayList<>();
             for (CreateBaseInitialComponent c : components) {
-                if (c.componentId() != null || hasSapRefOrCode(c.componentSapRef(), c.componentSapCode())) {
-                    Component comp = componentService.findOrCreateForDesigner(c.componentId(), c.componentSapRef(), c.componentSapCode(), sapRef);
-                    values.add(new ComponentValue(comp, c.componentValue() != null ? c.componentValue() : ""));
+                if (c.componentId() == null && !hasSapRefOrCode(c.componentSapRef(), c.componentSapCode())) continue;
+                String sapRefC, sapCode, name;
+                if (c.componentId() != null) {
+                    var orig = componentService.findById(c.componentId()).orElse(null);
+                    sapRefC = orig != null ? orig.getSapRef() : (c.componentSapRef() != null ? c.componentSapRef() : sapRef + "-c");
+                    sapCode = orig != null ? orig.getSapCode() : (c.componentSapCode() != null ? c.componentSapCode() : sapRefC);
+                    name = orig != null ? orig.getName() : (c.componentName() != null && !c.componentName().isBlank() ? c.componentName().trim() : sapRefC);
+                } else {
+                    sapCode = c.componentSapCode() != null && !c.componentSapCode().isBlank()
+                            ? c.componentSapCode().trim()
+                            : (c.componentSapRef() != null ? c.componentSapRef().trim() : sapRef + "-c");
+                    sapRefC = c.componentSapRef() != null ? c.componentSapRef().trim() : sapCode;
+                    name = (c.componentName() != null && !c.componentName().isBlank()) ? c.componentName().trim() : sapRefC;
                 }
+                String val = c.componentValue() != null ? c.componentValue() : "";
+                comps.add(componentService.createForVariant(variant, sapRefC, sapCode, name, val, val));
             }
-            variantService.updateComponentValues(variant.getId(), values);
+            variantService.setComponents(variant.getId(), comps);
         }
     }
 

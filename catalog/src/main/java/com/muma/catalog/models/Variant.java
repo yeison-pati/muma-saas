@@ -4,14 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
+
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -20,6 +19,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Variante del catálogo. Solo creada por diseñador.
+ * components = originales (value = originalValue).
+ * Proyectos referencian esta variante; overrides van en VariantQuote.
+ */
 @Entity
 @Table(name = "variants")
 @Data
@@ -42,10 +46,10 @@ public class Variant {
 
     private String status;
 
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "variant_components", joinColumns = @JoinColumn(name = "variant_id"))
+    @OneToMany(mappedBy = "variant", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @BatchSize(size = 32)
     @Builder.Default
-    private List<ComponentValue> componentValues = new ArrayList<>();
+    private List<Component> components = new ArrayList<>();
 
     @OneToMany(mappedBy = "variant", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default

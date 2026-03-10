@@ -28,7 +28,6 @@ import com.muma.catalog.events.services.ProductEventPublisher;
 import com.muma.catalog.events.services.ProjectEventPublisher;
 import com.muma.catalog.models.Base;
 import com.muma.catalog.models.Component;
-import com.muma.catalog.models.ComponentValue;
 import com.muma.catalog.models.Project;
 import com.muma.catalog.models.Variant;
 import com.muma.catalog.models.VariantQuote;
@@ -87,8 +86,8 @@ public class CatalogService {
     }
 
     /**
-     * Si variantId != null y NO hay modificaciones (type no es p1/p2): reutiliza la variante existente.
-     * Si hay modificaciones (p1/p2): crea variante nueva (clon) para no tocar la original.
+     * Tal cual: reutiliza variante existente, crea VariantQuote sin overrides.
+     * P1/P2: clona variante, crea componentes para el clon.
      */
     private void processStandardVariant(CreateVariant variantDto, UUID projectId, UUID quoterId) {
         String type = variantDto.type() != null ? variantDto.type().trim().toLowerCase() : "";
@@ -104,25 +103,30 @@ public class CatalogService {
                         ? variantService.cloneVariant(sourceVariant)
                         : variantService.create(variantDto.baseCode(), variantDto.variantSapRef()));
 
-        List<ComponentValue> values = new ArrayList<>();
-        String variantSapRef = savedVariant.getSapRef();
-        var currentByCompId = sourceVariant != null
-                ? sourceVariant.getComponentValues().stream()
-                        .collect(java.util.stream.Collectors.toMap(cv -> cv.getComponent().getId(), cv -> cv.getValue() != null ? cv.getValue() : ""))
-                : java.util.Map.<java.util.UUID, String>of();
-        if (!isReusingVariant) {
-            for (var componentDto : variantDto.components()) {
-                if (componentDto.componentId() == null && (componentDto.componentSapRef() == null || componentDto.componentSapRef().isBlank())) continue;
-                Component comp;
-                if (Boolean.TRUE.equals(componentDto.modified()) && componentDto.componentSapRef() != null && !componentDto.componentSapRef().isBlank()) {
-                    comp = componentService.createForModifiedVariant(componentDto.componentSapRef(), componentDto.componentName());
-                } else {
-                    comp = componentService.findOrCreateForVariant(componentDto.componentId(), componentDto.componentSapRef(), variantSapRef);
+        if (!isReusingVariant && (variantDto.components() != null && !variantDto.components().isEmpty())) {
+            List<Component> comps = new ArrayList<>();
+            var originals = sourceVariant != null ? sourceVariant.getComponents() : List.<Component>of();
+            for (var dto : variantDto.components()) {
+                if (dto.componentId() == null && (dto.componentSapRef() == null || dto.componentSapRef().isBlank())) continue;
+                var origOpt = dto.componentId() != null
+                        ? ComponentService.findOriginalById(originals, dto.componentId())
+                        : Optional.<Component>empty();
+                if (origOpt.isEmpty() && dto.componentSapRef() != null && !dto.componentSapRef().isBlank()) {
+                    origOpt = ComponentService.findOriginalBySapRef(originals, dto.componentSapRef().trim());
                 }
-                String newVal = componentDto.componentValue() != null ? componentDto.componentValue() : "";
-                values.add(new ComponentValue(comp, newVal));
+                Component orig = origOpt.orElse(null);
+                String sapRef = orig != null ? orig.getSapRef() : (dto.componentSapRef() != null ? dto.componentSapRef().trim() : null);
+                String sapCode = orig != null ? orig.getSapCode() : sapRef;
+                String name = orig != null ? orig.getName() : (dto.componentName() != null ? dto.componentName() : sapRef);
+                String newVal = dto.componentValue() != null ? dto.componentValue() : "";
+                String origVal = orig != null ? (orig.getValue() != null ? orig.getValue() : orig.getOriginalValue()) : newVal;
+                if (Boolean.TRUE.equals(dto.modified()) && orig != null) {
+                    origVal = orig.getValue() != null ? orig.getValue() : orig.getOriginalValue();
+                }
+                Component comp = componentService.createForVariant(savedVariant, sapRef, sapCode, name, newVal, origVal);
+                comps.add(comp);
             }
-            savedVariant = variantService.updateComponentValues(savedVariant.getId(), values);
+            variantService.setComponents(savedVariant.getId(), comps);
         }
 
         Project project = projectService.getById(projectId);
@@ -134,19 +138,20 @@ public class CatalogService {
 
     private void processP3(CreateP3Request request, UUID projectId, UUID quoterId) {
         Variant variantSaved = variantService.create(null, null);
-
-        List<ComponentValue> values = new ArrayList<>();
-        for (var componentDto : request.components()) {
-            if (componentDto.componentId() == null && (componentDto.componentSapRef() == null || componentDto.componentSapRef().isBlank())) continue;
-            Component comp = componentService.findOrCreateForP3(componentDto.componentId(), componentDto.componentSapRef());
-            values.add(new ComponentValue(comp, componentDto.componentValue()));
+        if (request.components() != null && !request.components().isEmpty()) {
+            List<Component> comps = new ArrayList<>();
+            for (var dto : request.components()) {
+                String name = (dto.componentName() != null && !dto.componentName().isBlank())
+                        ? dto.componentName().trim()
+                        : "component";
+                String value = dto.componentValue() != null ? dto.componentValue() : "";
+                comps.add(componentService.createForP3Variant(variantSaved, name, value));
+            }
+            variantService.setComponents(variantSaved.getId(), comps);
         }
-        variantSaved = variantService.updateComponentValues(variantSaved.getId(), values);
-
         Project project = projectService.getById(projectId);
         project.getVariants().add(variantSaved);
         projectRepository.save(project);
-
         variantQuoteService.create(variantSaved.getId(), projectId, quoterId, "p3", request.comment(), request.image());
     }
 
@@ -184,16 +189,9 @@ public class CatalogService {
                             .filter(vq -> vq.getVariant().getId().equals(variant.getId()))
                             .findFirst()
                             .orElse(null);
-                    List<ComponentResponse> components = variant.getComponentValues().stream()
-                            .map(cv -> {
-                                var c = cv.getComponent();
-                                return new ComponentResponse(
-                                        c.getId(),
-                                        c.getSapRef(),
-                                        c.getSapCode(),
-                                        c.getName(),
-                                        cv.getValue());
-                            })
+                    List<Component> effective = getEffectiveComponents(variant, quote);
+                    List<ComponentResponse> components = effective.stream()
+                            .map(c -> toComponentResponse(c))
                             .collect(Collectors.toList());
                     String baseCode = variant.getBaseCode();
                     var baseOpt = (baseCode != null && !baseCode.isBlank())
@@ -241,13 +239,9 @@ public class CatalogService {
                             .filter(v -> !quoteVariantIds.contains(v.getId()))
                             .filter(v -> hasSapAndRef(v.getSapRef(), v.getSapCode()))
                             .map(v -> {
-                                List<ComponentResponse> comps = v.getComponentValues().stream()
-                                        .filter(cv -> hasSapAndRef(cv.getComponent().getSapRef(), cv.getComponent().getSapCode()))
-                                        .map(cv -> {
-                                            var c = cv.getComponent();
-                                            return new ComponentResponse(
-                                                    c.getId(), c.getSapRef(), c.getSapCode(), c.getName(), cv.getValue());
-                                        })
+                                List<ComponentResponse> comps = v.getComponents().stream()
+                                        .filter(c -> hasSapAndRef(c.getSapRef(), c.getSapCode()))
+                                        .map(this::toComponentResponse)
                                         .collect(Collectors.toList());
                                 return new VariantResponse(v.getId(), v.getSapRef(), v.getSapCode(), comps);
                             })
@@ -267,6 +261,29 @@ public class CatalogService {
                 })
                 .filter(b -> b.getVariants() != null && !b.getVariants().isEmpty())
                 .collect(Collectors.toList());
+    }
+
+    /** Componentes efectivos: variant.components con overrides por sapRef desde variantQuote.componentOverrides. */
+    private List<Component> getEffectiveComponents(Variant variant, VariantQuote quote) {
+        var byRef = variant.getComponents().stream()
+                .collect(Collectors.toMap(Component::getSapRef, c -> c, (a, b) -> a));
+        if (quote != null && quote.getComponentOverrides() != null) {
+            for (Component override : quote.getComponentOverrides()) {
+                if (override.getSapRef() != null) byRef.put(override.getSapRef(), override);
+            }
+        }
+        return new ArrayList<>(byRef.values());
+    }
+
+    /** Backend devuelve todo; el front oculta sapCode cuando value != originalValue. */
+    private ComponentResponse toComponentResponse(Component c) {
+        return new ComponentResponse(
+                c.getId(),
+                c.getSapRef(),
+                c.getSapCode(),
+                c.getName(),
+                c.getValue(),
+                c.getOriginalValue());
     }
 
     private static boolean hasSapAndRef(String sapRef, String sapCode) {
@@ -294,24 +311,27 @@ public class CatalogService {
         if (!project.getVariants().stream().anyMatch(v -> v.getId().equals(variantId))) {
             throw new IllegalStateException("Variant not in project");
         }
+        VariantQuote quote = variantQuoteService.findByVariantIdAndProjectId(variantId, projectId)
+                .orElseThrow(() -> new IllegalStateException("VariantQuote not found"));
         if (components != null && !components.isEmpty()) {
-            List<ComponentValue> values = new ArrayList<>();
-            var currentByCompId = variant.getComponentValues().stream()
-                    .collect(java.util.stream.Collectors.toMap(cv -> cv.getComponent().getId(), cv -> cv.getValue() != null ? cv.getValue() : ""));
+            quote.getComponentOverrides().clear();
+            var originals = variant.getComponents();
             for (ComponentIdValue c : components) {
-                Component comp;
-                if (Boolean.TRUE.equals(c.modified()) && c.componentSapRef() != null && !c.componentSapRef().isBlank()) {
-                    comp = componentService.createForModifiedVariant(c.componentSapRef(), c.componentName());
-                } else if (c.componentId() != null) {
-                    comp = componentService.findById(c.componentId())
-                            .orElseThrow(() -> new IllegalStateException("Component not found: " + c.componentId()));
-                } else {
-                    throw new IllegalArgumentException("Se requiere componentId o (modified + componentSapRef)");
+                String sapRef = c.componentSapRef() != null && !c.componentSapRef().isBlank() ? c.componentSapRef().trim() : null;
+                if (sapRef == null && c.componentId() != null) {
+                    var orig = ComponentService.findOriginalById(originals, c.componentId());
+                    sapRef = orig.map(Component::getSapRef).orElse(null);
                 }
+                if (sapRef == null) continue;
+                String name = c.componentName() != null ? c.componentName() : sapRef;
                 String newVal = c.value() != null ? c.value() : "";
-                values.add(new ComponentValue(comp, newVal));
+                String origVal = ComponentService.findOriginalBySapRef(originals, sapRef)
+                        .map(o -> o.getValue() != null ? o.getValue() : o.getOriginalValue())
+                        .orElse(newVal);
+                quote.getComponentOverrides().add(
+                        componentService.createOverride(quote, sapRef, name, newVal, origVal));
             }
-            variantService.updateComponentValues(variantId, values);
+            variantQuoteRepo.save(quote);
         }
         if (quantity != null) variantQuoteService.updateQuantity(projectId, variantId, quantity);
         variantQuoteService.updateCommentsAndType(projectId, variantId, comments, type);
@@ -382,7 +402,26 @@ public class CatalogService {
     @CacheEvict(value = {"projects", "products"}, allEntries = true)
     public void modifyVariants(List<ModifyComponent> modifiesVariants) {
         for (ModifyComponent mod : modifiesVariants) {
-            variantService.modifyComponentValue(mod.variantId(), mod.componentId(), mod.value());
+            Variant variant = variantService.findByIdWithComponents(mod.variantId())
+                    .orElseThrow(() -> new IllegalStateException("Variant not found"));
+            VariantQuote quote = variantQuoteService.findByVariantIdAndProjectId(mod.variantId(), mod.projectId())
+                    .orElse(null);
+            if (quote != null && mod.componentId() != null && mod.value() != null) {
+                var orig = ComponentService.findOriginalById(variant.getComponents(), mod.componentId());
+                orig.ifPresent(o -> {
+                    var existing = quote.getComponentOverrides().stream()
+                            .filter(c -> o.getSapRef() != null && o.getSapRef().equals(c.getSapRef()))
+                            .findFirst();
+                    String origVal = o.getValue() != null ? o.getValue() : o.getOriginalValue();
+                    if (existing.isPresent()) {
+                        existing.get().setValue(mod.value());
+                    } else {
+                        quote.getComponentOverrides().add(componentService.createOverride(
+                                quote, o.getSapRef(), o.getName(), mod.value(), origVal));
+                    }
+                    variantQuoteRepo.save(quote);
+                });
+            }
             variantQuoteService.resetQuote(mod.variantId());
             projectService.reOpen(mod.projectId());
             List<VariantQuote> products = variantQuoteService.findByProjectId(mod.projectId());
@@ -408,13 +447,13 @@ public class CatalogService {
     public List<VariantComponentDTO> getVariantsComponents() {
         List<VariantComponentDTO> result = new ArrayList<>();
         for (Variant v : variantService.findAllWithComponents()) {
-            for (ComponentValue cv : v.getComponentValues()) {
+            for (Component c : v.getComponents()) {
                 result.add(new VariantComponentDTO(
                         v.getId(),
-                        cv.getComponent().getId(),
-                        cv.getComponent().getSapRef(),
-                        cv.getComponent().getName(),
-                        cv.getValue()));
+                        c.getId(),
+                        c.getSapRef(),
+                        c.getName(),
+                        c.getValue()));
             }
         }
         return result;
@@ -428,41 +467,72 @@ public class CatalogService {
                 : baseCode + "-V" + (variantService.findByBaseCode(baseCode).size() + 1);
         Variant variant = variantService.create(baseCode, ref);
         if (components != null && !components.isEmpty()) {
-            List<ComponentValue> values = new ArrayList<>();
+            List<Component> comps = new ArrayList<>();
             for (CreateBaseInitialComponent c : components) {
-                if (c.componentId() != null || (c.componentSapRef() != null && !c.componentSapRef().isBlank())
-                        || (c.componentSapCode() != null && !c.componentSapCode().isBlank())) {
-                    Component comp = componentService.findOrCreateForDesigner(c.componentId(), c.componentSapRef(), c.componentSapCode(), ref);
-                    values.add(new ComponentValue(comp, c.componentValue() != null ? c.componentValue() : ""));
+                if (c.componentId() == null && (c.componentSapRef() == null || c.componentSapRef().isBlank())
+                        && (c.componentSapCode() == null || c.componentSapCode().isBlank())) continue;
+                String sapRefC, sapCode, name;
+                if (c.componentId() != null) {
+                    var orig = componentService.findById(c.componentId()).orElse(null);
+                    sapRefC = orig != null ? orig.getSapRef() : (c.componentSapRef() != null ? c.componentSapRef() : ref + "-c");
+                    sapCode = orig != null ? orig.getSapCode() : (c.componentSapCode() != null ? c.componentSapCode() : sapRefC);
+                    name = orig != null ? orig.getName() : (c.componentName() != null && !c.componentName().isBlank() ? c.componentName().trim() : sapRefC);
+                } else {
+                    sapCode = c.componentSapCode() != null && !c.componentSapCode().isBlank()
+                            ? c.componentSapCode().trim()
+                            : (c.componentSapRef() != null ? c.componentSapRef().trim() : ref + "-c");
+                    sapRefC = c.componentSapRef() != null ? c.componentSapRef().trim() : sapCode;
+                    name = (c.componentName() != null && !c.componentName().isBlank()) ? c.componentName().trim() : sapRefC;
                 }
+                String val = c.componentValue() != null ? c.componentValue() : "";
+                comps.add(componentService.createForVariant(variant, sapRefC, sapCode, name, val, val));
             }
-            variant = variantService.updateComponentValues(variant.getId(), values);
+            variantService.setComponents(variant.getId(), comps);
         }
-        return toVariantResponse(variant);
+        return toVariantResponse(variantService.findByIdWithComponents(variant.getId()).orElse(variant));
     }
 
     @Transactional
     @CacheEvict(value = "products", allEntries = true)
     public VariantResponse updateVariant(UUID variantId, String sapRef,
             List<CreateBaseInitialComponent> components) {
-        Variant variant = variantService.findById(variantId)
+        Variant variant = variantService.findByIdWithComponents(variantId)
                 .orElseThrow(() -> new IllegalStateException("Variant not found"));
         if (sapRef != null) {
             variant = variantService.updateSapRef(variantId, sapRef);
         }
         if (components != null && !components.isEmpty()) {
             String variantSapRef = variant.getSapRef();
-            List<ComponentValue> values = new ArrayList<>();
+            List<Component> comps = new ArrayList<>();
             for (CreateBaseInitialComponent c : components) {
-                if (c.componentId() != null || (c.componentSapRef() != null && !c.componentSapRef().isBlank())
-                        || (c.componentSapCode() != null && !c.componentSapCode().isBlank())) {
-                    Component comp = componentService.findOrCreateForDesigner(c.componentId(), c.componentSapRef(), c.componentSapCode(), variantSapRef);
-                    values.add(new ComponentValue(comp, c.componentValue() != null ? c.componentValue() : ""));
+                if (c.componentId() == null && (c.componentSapRef() == null || c.componentSapRef().isBlank())
+                        && (c.componentSapCode() == null || c.componentSapCode().isBlank())) continue;
+                String sapRefC, sapCode, name;
+                if (c.componentId() != null) {
+                    var orig = componentService.findById(c.componentId()).orElse(null);
+                    // Prefer input values (edits) over original; fallback to original for compatibility
+                    boolean hasSapRef = c.componentSapRef() != null && !c.componentSapRef().isBlank();
+                    boolean hasSapCode = c.componentSapCode() != null && !c.componentSapCode().isBlank();
+                    boolean hasName = c.componentName() != null && !c.componentName().isBlank();
+                    sapRefC = hasSapRef ? c.componentSapRef().trim()
+                            : (orig != null ? orig.getSapRef() : variantSapRef + "-c");
+                    sapCode = hasSapCode ? c.componentSapCode().trim()
+                            : (orig != null ? orig.getSapCode() : sapRefC);
+                    name = hasName ? c.componentName().trim()
+                            : (orig != null ? orig.getName() : sapRefC);
+                } else {
+                    sapCode = c.componentSapCode() != null && !c.componentSapCode().isBlank()
+                            ? c.componentSapCode().trim()
+                            : (c.componentSapRef() != null ? c.componentSapRef().trim() : variantSapRef + "-c");
+                    sapRefC = c.componentSapRef() != null ? c.componentSapRef().trim() : sapCode;
+                    name = (c.componentName() != null && !c.componentName().isBlank()) ? c.componentName().trim() : sapRefC;
                 }
+                String val = c.componentValue() != null ? c.componentValue() : "";
+                comps.add(componentService.createForVariant(variant, sapRefC, sapCode, name, val, val));
             }
-            variant = variantService.updateComponentValues(variantId, values);
+            variantService.setComponents(variantId, comps);
         }
-        return toVariantResponse(variantService.findById(variantId).orElse(variant));
+        return toVariantResponse(variantService.findByIdWithComponents(variantId).orElse(variant));
     }
 
     @Transactional
@@ -479,12 +549,8 @@ public class CatalogService {
     }
 
     private VariantResponse toVariantResponse(Variant v) {
-        List<ComponentResponse> comps = v.getComponentValues().stream()
-                .map(cv -> {
-                    var c = cv.getComponent();
-                    return new ComponentResponse(
-                            c.getId(), c.getSapRef(), c.getSapCode(), c.getName(), cv.getValue());
-                })
+        List<ComponentResponse> comps = v.getComponents().stream()
+                .map(this::toComponentResponse)
                 .collect(Collectors.toList());
         return new VariantResponse(v.getId(), v.getSapRef(), v.getSapCode(), comps);
     }

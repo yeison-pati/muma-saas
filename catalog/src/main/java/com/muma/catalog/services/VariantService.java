@@ -4,12 +4,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.muma.catalog.models.ComponentValue;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.muma.catalog.models.ComponentValue;
+import com.muma.catalog.models.Component;
 import com.muma.catalog.models.Variant;
 import com.muma.catalog.repositories.VariantRepo;
 
@@ -21,10 +19,6 @@ public class VariantService {
 
     private final VariantRepo variantRepository;
 
-    /**
-     * Crea una variante. baseCode: código de la base (imágenes, etc.), null solo para P3.
-     * sapRef/sapCode: SAP que asigna el diseñador; si sapRef viene, sapCode = sapRef inicialmente.
-     */
     @Transactional
     public Variant create(String baseCode, String sapRef) {
         return variantRepository.save(
@@ -62,30 +56,27 @@ public class VariantService {
         variantRepository.deleteById(id);
     }
 
+    /**
+     * Reemplaza los componentes de la variante.
+     * Los componentes deben tener variant ya asignada (p. ej. desde ComponentService.createForVariant).
+     */
     @Transactional
-    public void modifyComponentValue(UUID variantId, UUID componentId, String value) {
+    public Variant setComponents(UUID variantId, List<Component> components) {
         Variant variant = variantRepository.findById(variantId)
                 .orElseThrow(() -> new IllegalStateException("Variant not found"));
-        variant.getComponentValues().stream()
-                .filter(cv -> cv.getComponent().getId().equals(componentId))
-                .findFirst()
-                .ifPresent(cv -> cv.setValue(value));
-        variantRepository.save(variant);
-    }
-
-    @Transactional
-    public Variant updateComponentValues(UUID variantId, List<ComponentValue> values) {
-        Variant variant = variantRepository.findById(variantId)
-                .orElseThrow(() -> new IllegalStateException("Variant not found"));
-        variant.getComponentValues().clear();
-        variant.getComponentValues().addAll(values);
+        variant.getComponents().clear();
+        if (components != null) {
+            for (Component c : components) {
+                c.setVariant(variant);
+                variant.getComponents().add(c);
+            }
+        }
         return variantRepository.save(variant);
     }
 
     /**
-     * Clona una variante: crea nueva entidad con mismo baseCode, sapRef, sapCode.
-     * Los component values se asignan después en processStandardVariant.
-     * Usado al añadir variante a proyecto para que cada proyecto tenga su propia copia.
+     * Clona una variante (solo metadatos; componentes se asignan aparte).
+     * Usado para P1/P2/P3 cuando se necesita copia por proyecto.
      */
     @Transactional
     public Variant cloneVariant(Variant source) {
@@ -99,9 +90,6 @@ public class VariantService {
                         .build());
     }
 
-    /**
-     * Actualiza sapRef y sapCode de la variante. Al editar el SAP, ambos se sincronizan.
-     */
     @Transactional
     public Variant updateSapRef(UUID variantId, String sapRef) {
         Variant variant = variantRepository.findById(variantId)

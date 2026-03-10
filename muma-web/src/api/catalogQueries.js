@@ -21,6 +21,7 @@ export const QUERY_PRODUCTS = `
           sapCode
           name
           value
+          originalValue
         }
       }
     }
@@ -67,6 +68,7 @@ export const QUERY_PROJECTS = `
           sapCode
           name
           value
+          originalValue
         }
       }
     }
@@ -112,6 +114,7 @@ export const QUERY_PROJECTS_BY_SALES = `
           sapCode
           name
           value
+          originalValue
         }
       }
     }
@@ -157,6 +160,7 @@ export const QUERY_PROJECTS_BY_QUOTER = `
           sapCode
           name
           value
+          originalValue
         }
       }
     }
@@ -202,6 +206,7 @@ export const QUERY_PROJECTS_EFFECTIVE = `
           sapCode
           name
           value
+          originalValue
         }
       }
     }
@@ -307,6 +312,7 @@ export const MUTATION_ADD_VARIANT_TO_BASE = `
         sapCode
         name
         value
+        originalValue
       }
     }
   }
@@ -324,6 +330,7 @@ export const MUTATION_UPDATE_VARIANT = `
         sapCode
         name
         value
+        originalValue
       }
     }
   }

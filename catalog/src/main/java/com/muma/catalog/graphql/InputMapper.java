@@ -70,9 +70,12 @@ final class InputMapper {
 
     private static com.muma.catalog.dtos.p3.CreateComponent toP3Component(CreateComponentInput in) {
         if (in == null) return null;
+        String name = (in.componentName() != null && !in.componentName().isBlank())
+                ? in.componentName().trim()
+                : (in.componentSapRef() != null ? in.componentSapRef().trim() : "component");
         return new com.muma.catalog.dtos.p3.CreateComponent(
                 in.componentId() != null ? UUID.fromString(in.componentId()) : null,
-                in.componentSapRef(),
+                name,
                 in.componentValue());
     }
 
@@ -122,6 +125,7 @@ final class InputMapper {
         if (in == null) return null;
         return new CreateBaseInitialComponent(
                 in.componentId() != null ? UUID.fromString(in.componentId()) : null,
+                in.componentName(),
                 in.componentSapRef(),
                 in.componentSapCode(),
                 in.componentValue());

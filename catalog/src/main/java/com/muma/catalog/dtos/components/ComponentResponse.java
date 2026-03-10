@@ -13,4 +13,6 @@ public class ComponentResponse {
     private String sapCode;
     private String name;
     private String value;
+    /** Valor original; si value != originalValue, no mostrar sapCode (solo sapRef) */
+    private String originalValue;
 }

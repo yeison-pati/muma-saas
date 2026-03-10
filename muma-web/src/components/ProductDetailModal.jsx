@@ -122,20 +122,21 @@ export default function ProductDetailModal({
       caracteristicas[sel.componentId] = val;
       const comp = variantsList.flatMap((v) => v.components || []).find((c) => String(c.id) === String(sel.componentId));
       if (comp) {
-        _componentOriginals[sel.componentId] = { id: comp.id, name: comp.name, sapRef: comp.sapRef, sapCode: comp.sapCode, value: val };
+        const origVal = comp.originalValue ?? comp.value ?? '';
+        _componentOriginals[sel.componentId] = { id: comp.id, name: comp.name, sapRef: comp.sapRef, sapCode: comp.sapCode, value: origVal };
       }
     }
     const _originalCaracteristicas = {};
     const selVariant = matchingVariant || variantsList[0];
     for (const c of selVariant?.components || []) {
-      if (c?.name) _originalCaracteristicas[c.name] = c.value ?? '';
+      if (c?.name) _originalCaracteristicas[c.name] = (c.originalValue ?? c.value ?? '').trim();
     }
     onAddToCart({
       ...product,
       caracteristicas,
       _componentOriginals,
       _originalCaracteristicas,
-      _selectedVariantId: matchingVariant?.id,
+      _selectedVariantId: matchingVariant?.id ?? variantsList[0]?.id,
     });
   };
 

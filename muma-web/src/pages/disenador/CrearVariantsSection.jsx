@@ -47,9 +47,9 @@ export default function CrearVariantsSection({
               {variant.components.map((comp, cIdx) => {
                 const compLabel = comp.componentId
                   ? (componentOptions.find((o) => o.id === comp.componentId)?.label ?? '')
-                  : (comp.componentSapRef ?? '');
+                  : (comp.componentName ?? comp.componentSapRef ?? '');
                 const handleCompSelect = (val) => handleComponentSelect(vIdx, cIdx, val);
-                const refForValues = comp.componentId || comp.componentSapRef;
+                const refForValues = comp.componentId || comp.componentSapRef || comp.componentName;
                 return (
                   <div key={cIdx} className="crear-component-row">
                     <AutocompleteInput
@@ -57,15 +57,15 @@ export default function CrearVariantsSection({
                       value={compLabel}
                       onChange={(e) => handleCompSelect(e.target.value)}
                       options={componentOptions.map((o) => o.label)}
-                      placeholder="Componente (seleccione o escriba ref)"
+                      placeholder="Nombre (seleccione existente o escriba nuevo)"
                     />
                     <input
                       type="text"
                       className="crear-component-sap"
                       value={comp.componentSapCode ?? comp.componentSapRef ?? ''}
                       onChange={(e) => handleComponentSapChange(vIdx, cIdx, e.target.value)}
-                      placeholder="Código SAP"
-                      title="Código SAP (REF se rellena igual internamente)"
+                      placeholder="Código SAP (independiente)"
+                      title="Código SAP, independiente del nombre"
                     />
                     <AutocompleteInput
                       className="crear-component-autocomplete"

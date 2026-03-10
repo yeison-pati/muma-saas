@@ -56,7 +56,7 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
   const [addingVariant, setAddingVariant] = useState(false);
   const [newVariant, setNewVariant] = useState({
     sapRef: '',
-    components: [{ componentId: null, componentSapRef: '', componentSapCode: '', componentValue: '' }],
+    components: [{ componentId: null, componentName: '', componentSapRef: '', componentSapCode: '', componentValue: '' }],
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -129,7 +129,7 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
 
   const handleAddVariant = () => {
     const comps = newVariant.components.filter(
-      (c) => c.componentId || (c.componentSapRef ?? '').trim() || (c.componentSapCode ?? '').trim()
+      (c) => c.componentId || (c.componentName ?? '').trim() || (c.componentSapRef ?? '').trim() || (c.componentSapCode ?? '').trim()
     );
     if (comps.length === 0) {
       setMessage('La variante debe tener al menos un componente');
@@ -143,6 +143,7 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
         sapRef: newVariant.sapRef?.trim() || null,
         components: comps.map((c) => ({
           componentId: c.componentId || null,
+          componentName: c.componentName?.trim() || null,
           componentSapRef: c.componentSapRef?.trim() || null,
           componentSapCode: c.componentSapCode?.trim() || null,
           componentValue: c.componentValue?.trim() || null,
@@ -158,7 +159,7 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
           },
         ]);
         setAddingVariant(false);
-        setNewVariant({ sapRef: '', components: [{ componentId: null, componentSapRef: '', componentSapCode: '', componentValue: '' }] });
+        setNewVariant({ sapRef: '', components: [{ componentId: null, componentName: '', componentSapRef: '', componentSapCode: '', componentValue: '' }] });
         reload();
       })
       .catch((err) => setMessage(err?.message || 'Error al agregar variante'))
@@ -187,15 +188,13 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
       .updateVariant({
         id: v.id,
         sapRef: v.sapRef || null,
-        components: comps.map((c) => {
-          const sap = (c.sapCode ?? c.sapRef ?? '').trim() || (c.name ?? '').trim() || null;
-          return {
-            componentId: c.id || null,
-            componentSapRef: sap,
-            componentSapCode: sap,
-            componentValue: (c.value ?? '').trim() || null,
-          };
-        }),
+        components: comps.map((c) => ({
+          componentId: c.id || null,
+          componentName: (c.name ?? c.componentName ?? '').trim() || null,
+          componentSapRef: (c.sapRef ?? c.componentSapRef ?? '').trim() || null,
+          componentSapCode: (c.sapCode ?? c.componentSapCode ?? '').trim() || null,
+          componentValue: (c.value ?? c.componentValue ?? '').trim() || null,
+        })),
       })
       .then(() => {
         setEditingVariantIdx(null);
@@ -337,19 +336,37 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
 
   const handleNewVariantComponentSelect = (cIdx, val) => {
     const found = componentOptions.find((o) => o.label === val);
-    const sap = found ? (found.sapCode ?? found.sapRef ?? '') : (val || '');
-    setNewVariant((prev) => ({
-      ...prev,
-      components: prev.components.map((c, i) =>
-        i === cIdx ? { ...c, componentId: found ? found.id : null, componentSapRef: sap, componentSapCode: sap } : c
-      ),
-    }));
+    if (found) {
+      setNewVariant((prev) => ({
+        ...prev,
+        components: prev.components.map((c, i) =>
+          i === cIdx
+            ? {
+                ...c,
+                componentId: found.id,
+                componentName: '',
+                componentSapRef: found.sapRef ?? '',
+                componentSapCode: found.sapCode ?? found.sapRef ?? '',
+              }
+            : c
+        ),
+      }));
+    } else {
+      setNewVariant((prev) => ({
+        ...prev,
+        components: prev.components.map((c, i) =>
+          i === cIdx
+            ? { ...c, componentId: null, componentName: (val || '').trim(), componentSapRef: '', componentSapCode: '' }
+            : c
+        ),
+      }));
+    }
   };
 
   const addNewVariantComponent = () => {
     setNewVariant((prev) => ({
       ...prev,
-      components: [...prev.components, { componentId: null, componentSapRef: '', componentSapCode: '', componentValue: '' }],
+      components: [...prev.components, { componentId: null, componentName: '', componentSapRef: '', componentSapCode: '', componentValue: '' }],
     }));
   };
 
@@ -622,7 +639,7 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
                 {newVariant.components.map((c, cIdx) => {
                   const compLabel = c.componentId
                     ? (componentOptions.find((o) => o.id === c.componentId)?.label ?? '')
-                    : (c.componentSapRef ?? '');
+                    : (c.componentName ?? c.componentSapRef ?? '');
                   return (
                   <div key={cIdx} className="base-edit-component-row">
                     <AutocompleteInput

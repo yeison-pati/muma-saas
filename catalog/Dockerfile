@@ -5,12 +5,19 @@ FROM eclipse-temurin:21-jdk-alpine AS builder
 
 WORKDIR /app
 
-# Copiamos todo el código del backend
-COPY . .
+# Copiar solo POM y wrapper para cachear dependencias en una capa
+COPY pom.xml .
+COPY .mvn .mvn
+COPY mvnw .
 
-# Construimos el JAR (usa Maven o Gradle, ajusta según tu proyecto)
-# Para Maven:
-RUN ./mvnw -q -DskipTests clean package
+# Descargar dependencias (solo re-ejecuta si cambia pom.xml)
+RUN ./mvnw -q dependency:go-offline -B
+
+# Copiar código fuente
+COPY src ./src
+
+# Compilar (reaprovecha dependencias ya descargadas)
+RUN ./mvnw -q -DskipTests package
 
 # Si usas Gradle en vez de Maven, reemplaza por:
 # RUN ./gradlew bootJar --no-daemon
