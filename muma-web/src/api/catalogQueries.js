@@ -22,6 +22,7 @@ export const QUERY_PRODUCTS = `
           name
           value
           originalValue
+          catalogOriginalValue
         }
       }
     }
@@ -54,6 +55,7 @@ export const QUERY_PROJECTS = `
         elaborationTime
         quantity
         type
+        effective
         criticalMaterial
         comments
         baseName
@@ -69,6 +71,7 @@ export const QUERY_PROJECTS = `
           name
           value
           originalValue
+          catalogOriginalValue
         }
       }
     }
@@ -100,6 +103,7 @@ export const QUERY_PROJECTS_BY_SALES = `
         elaborationTime
         quantity
         type
+        effective
         criticalMaterial
         comments
         baseName
@@ -115,6 +119,7 @@ export const QUERY_PROJECTS_BY_SALES = `
           name
           value
           originalValue
+          catalogOriginalValue
         }
       }
     }
@@ -146,6 +151,7 @@ export const QUERY_PROJECTS_BY_QUOTER = `
         elaborationTime
         quantity
         type
+        effective
         criticalMaterial
         comments
         baseName
@@ -161,6 +167,7 @@ export const QUERY_PROJECTS_BY_QUOTER = `
           name
           value
           originalValue
+          catalogOriginalValue
         }
       }
     }
@@ -192,6 +199,7 @@ export const QUERY_PROJECTS_EFFECTIVE = `
         elaborationTime
         quantity
         type
+        effective
         criticalMaterial
         comments
         baseName
@@ -207,6 +215,7 @@ export const QUERY_PROJECTS_EFFECTIVE = `
           name
           value
           originalValue
+          catalogOriginalValue
         }
       }
     }
@@ -247,6 +256,18 @@ export const MUTATION_UPDATE_VARIANT_AND_REOPEN = `
 export const MUTATION_MAKE_PROJECT_EFFECTIVE = `
   mutation MakeProjectEffective($projectId: ID!) {
     makeProjectEffective(projectId: $projectId)
+  }
+`;
+
+export const MUTATION_MAKE_VARIANT_QUOTE_EFFECTIVE = `
+  mutation MakeVariantQuoteEffective($projectId: ID!, $variantId: ID!, $effective: Boolean!) {
+    makeVariantQuoteEffective(projectId: $projectId, variantId: $variantId, effective: $effective)
+  }
+`;
+
+export const MUTATION_TOGGLE_P3_P5 = `
+  mutation ToggleP3P5($projectId: ID!, $variantId: ID!) {
+    toggleP3P5(projectId: $projectId, variantId: $variantId)
   }
 `;
 
@@ -313,6 +334,7 @@ export const MUTATION_ADD_VARIANT_TO_BASE = `
         name
         value
         originalValue
+        catalogOriginalValue
       }
     }
   }
@@ -331,6 +353,7 @@ export const MUTATION_UPDATE_VARIANT = `
         name
         value
         originalValue
+        catalogOriginalValue
       }
     }
   }

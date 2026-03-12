@@ -74,20 +74,27 @@ public class CatalogGraphQLController {
 
     @MutationMapping
     public Boolean reOpenProject(@Argument("projectId") String projectId) {
-        return projectService.reOpen(UUID.fromString(projectId));
+        return catalogService.reOpenProject(UUID.fromString(projectId));
     }
 
     @MutationMapping
     public Boolean updateVariantAndReopen(@Argument("input") UpdateVariantAndReopenInput input) {
         var components = input.components() == null ? null
                 : input.components().stream()
-                        .map(c -> new com.muma.catalog.dtos.components.ComponentIdValue(
-                                c.componentId() != null ? java.util.UUID.fromString(c.componentId()) : null,
-                                c.componentSapRef(),
-                                c.componentName(),
-                                c.value(),
-                                Boolean.TRUE.equals(c.modified())))
+                        .map(c -> {
+                            Boolean mod = c.modified();
+                            boolean modifiedVal = mod != null && mod;
+                            var dto = new com.muma.catalog.dtos.components.ComponentIdValue(
+                                    c.componentId() != null ? java.util.UUID.fromString(c.componentId()) : null,
+                                    c.componentSapRef(),
+                                    c.componentName(),
+                                    c.value(),
+                                    modifiedVal);
+                            System.out.println("[BACK] Controller recibe comp: sapRef=" + c.componentSapRef() + " value=" + c.value() + " modified(raw)=" + mod + " modifiedVal=" + modifiedVal);
+                            return dto;
+                        })
                         .collect(Collectors.toList());
+        System.out.println("[BACK] updateVariantAndReopen projectId=" + input.projectId() + " variantId=" + input.variantId() + " componentsCount=" + (components != null ? components.size() : 0));
         return catalogService.updateVariantAndReopen(
                 UUID.fromString(input.projectId()),
                 UUID.fromString(input.variantId()),
@@ -99,7 +106,7 @@ public class CatalogGraphQLController {
 
     @MutationMapping
     public Boolean makeProjectEffective(@Argument("projectId") String projectId) {
-        return projectService.toggleProjectEffectiveState(UUID.fromString(projectId));
+        return projectService.makeEffectiveOnly(UUID.fromString(projectId));
     }
 
     @MutationMapping
@@ -128,6 +135,24 @@ public class CatalogGraphQLController {
         return catalogService.removeVariantFromProject(
                 UUID.fromString(projectId),
                 UUID.fromString(variantId));
+    }
+
+    @MutationMapping
+    public Boolean makeVariantQuoteEffective(
+            @Argument("projectId") String projectId,
+            @Argument("variantId") String variantId,
+            @Argument("effective") Boolean effective) {
+        return catalogService.makeVariantQuoteEffective(
+                UUID.fromString(projectId),
+                UUID.fromString(variantId),
+                effective != null && effective);
+    }
+
+    @MutationMapping
+    public Boolean toggleP3P5(
+            @Argument("projectId") String projectId,
+            @Argument("variantId") String variantId) {
+        return catalogService.toggleP3P5(UUID.fromString(projectId), UUID.fromString(variantId));
     }
 
     @MutationMapping

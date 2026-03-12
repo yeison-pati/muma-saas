@@ -87,6 +87,11 @@ public class ComponentService {
                         .build());
     }
 
+    @Transactional
+    public Component save(Component component) {
+        return componentRepository.save(component);
+    }
+
     public Optional<Component> findById(UUID id) {
         return componentRepository.findById(id);
     }

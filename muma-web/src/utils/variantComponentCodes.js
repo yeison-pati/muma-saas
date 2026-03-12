@@ -17,7 +17,7 @@
  */
 export function getVariantDisplayCodes({ sapRef, sapCode, type, currentByKey = {}, originalByKey = {} }) {
   const t = String(type || '').toLowerCase();
-  if (t === 'p3' && !sapRef && !sapCode) return null;
+  if ((t === 'p3' || t === 'p5') && !sapRef && !sapCode) return null;
 
   if (!sapRef && !sapCode) return null;
 

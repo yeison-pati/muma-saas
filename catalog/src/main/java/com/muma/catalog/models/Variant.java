@@ -46,6 +46,10 @@ public class Variant {
 
     private String status;
 
+    /** Si no null: es un clon creado para un proyecto (P1/P2/P3). No listar en catálogo. */
+    @Column(name = "source_variant_id")
+    private UUID sourceVariantId;
+
     @OneToMany(mappedBy = "variant", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @BatchSize(size = 32)
     @Builder.Default

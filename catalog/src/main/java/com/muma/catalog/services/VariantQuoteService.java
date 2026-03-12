@@ -41,6 +41,7 @@ public class VariantQuoteService {
                 .elaborationTime(null)
                 .quantity(null)
                 .price(null)
+                .effective(false)
                 .build();
         return variantQuoteRepository.save(quote);
     }
@@ -77,6 +78,12 @@ public class VariantQuoteService {
         variantQuoteRepository.resetQuoteByVariantId(variantId);
     }
 
+    /** Resetea precio de todas las variantes del proyecto para que reabrir funcione al primer intento. */
+    @Transactional
+    public void resetQuoteByProject(UUID projectId) {
+        variantQuoteRepository.resetQuoteByProjectId(projectId);
+    }
+
     @Transactional
     public void deleteByVariantId(UUID variantId) {
         variantQuoteRepository.deleteByVariantId(variantId);
@@ -100,7 +107,35 @@ public class VariantQuoteService {
     }
 
     @Transactional
+    public void clearType(UUID projectId, UUID variantId) {
+        variantQuoteRepository.clearType(projectId, variantId);
+    }
+
+    @Transactional
     public void deleteByVariantIdAndProjectId(UUID variantId, UUID projectId) {
         variantQuoteRepository.deleteByVariantIdAndProjectId(variantId, projectId);
+    }
+
+    @Transactional
+    public VariantQuote setEffective(UUID projectId, UUID variantId, boolean effective) {
+        VariantQuote vq = variantQuoteRepository.findByVariantIdAndProjectId(variantId, projectId)
+                .orElseThrow(() -> new IllegalStateException("VariantQuote not found"));
+        vq.setEffective(effective);
+        return variantQuoteRepository.save(vq);
+    }
+
+    @Transactional
+    public VariantQuote toggleP3P5(UUID projectId, UUID variantId) {
+        VariantQuote vq = variantQuoteRepository.findByVariantIdAndProjectId(variantId, projectId)
+                .orElseThrow(() -> new IllegalStateException("VariantQuote not found"));
+        String t = vq.getType() != null ? vq.getType().trim().toLowerCase() : "";
+        if ("p3".equals(t)) {
+            vq.setType("p5");
+        } else if ("p5".equals(t)) {
+            vq.setType("p3");
+        } else {
+            throw new IllegalArgumentException("Solo variantes P3 o P5 pueden alternar tipología. Actual: " + t);
+        }
+        return variantQuoteRepository.save(vq);
     }
 }

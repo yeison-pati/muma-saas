@@ -41,6 +41,7 @@ function CotizadorList({
   setEditingVariant,
   editingVariant,
   refreshProjects,
+  onToggleP3P5,
 }) {
   if (filtered.length === 0) {
     return (
@@ -94,6 +95,8 @@ function CotizadorList({
                         editingVariant?.id === v.id ? null : { ...v, projectId: p.id }
                       )
                     }
+                    onToggleP3P5={onToggleP3P5}
+                    onRefresh={refreshProjects}
                   />
                 )}
                 {isCotizados && (
@@ -102,6 +105,7 @@ function CotizadorList({
                     projectId={p.id}
                     cotizadas
                     onRefresh={refreshProjects}
+                    onToggleP3P5={onToggleP3P5}
                   />
                 )}
                 {activeTab === 'proceso' && variants.every((v) => v.price != null && v.price > 0) && (
@@ -167,6 +171,15 @@ export default function CotizadorProyectos() {
     }
   };
 
+  const handleToggleP3P5 = async (projectId, variantId) => {
+    try {
+      await catalog.toggleP3P5(projectId, variantId);
+      refreshProjects();
+    } catch (err) {
+      alert(err?.message || 'Error al alternar P3/P5');
+    }
+  };
+
   return (
     <div className="cotizador-page">
 
@@ -209,6 +222,7 @@ export default function CotizadorProyectos() {
             setEditingVariant={(v) => dispatch({ type: 'SET_EDITING_VARIANT', payload: v })}
             editingVariant={editingVariant}
             refreshProjects={refreshProjects}
+            onToggleP3P5={handleToggleP3P5}
           />
         </div>
       )}

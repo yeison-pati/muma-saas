@@ -50,7 +50,7 @@ export const ProjectProvider = ({ children }) => {
     const hasMatchingVariant = !!product._selectedVariantId;
     const tipologiaFromChange = calculateTipologia(originalByName, updatedByName);
     const tipologia = tipologiaFromChange
-      || (!hasMatchingVariant && Object.keys(updated).length > 0 ? 'p3' : undefined);
+      || (!hasMatchingVariant && Object.keys(updated).length > 0 ? 'p3' : hasMatchingVariant ? 'p4' : undefined);
 
     const selectedVariant = product._selectedVariantId && product.variants?.length
       ? product.variants.find((v) => String(v.id) === String(product._selectedVariantId))

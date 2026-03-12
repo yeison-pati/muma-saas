@@ -173,9 +173,6 @@ export default function ProductDetailModal({
         <div className="modal-body">
           <div className="modal-viewer">
             <div className="modal-viewer-inner">
-              {viewerSrc && (
-                <p className="modal-viewer-hint">Arrastra para rotar · Rueda para zoom</p>
-              )}
               {viewerSrc ? (
                 <iframe
                   title="3D viewer"

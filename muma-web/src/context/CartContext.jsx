@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useUser } from './UserContext';
+import { calculateTipologia } from '../utils/calculateTipologia';
 
 const CartContext = createContext(null);
 
@@ -79,6 +80,14 @@ export const CartProvider = ({ children }) => {
         return acc;
       }, {});
     }
+    const updatedByName = Object.fromEntries(
+      Object.entries(caracteristicas || {}).map(([id, v]) => [_componentOriginals[id]?.name || id, v ?? ''])
+    );
+    const tipologiaFromChange = calculateTipologia(_originalCaracteristicas || {}, updatedByName);
+    const hasMatchingVariant = !!product._selectedVariantId;
+    const computedType = tipologiaFromChange || (!hasMatchingVariant && Object.keys(updatedByName || {}).length > 0 ? 'p3' : undefined);
+    const type = computedType || selectedVariant?.type || product.type;
+
     const newItem = {
       ...product,
       id: uniqueId,
@@ -91,7 +100,7 @@ export const CartProvider = ({ children }) => {
       comentarios: product.comentarios || '',
       sapRef: selectedVariant?.sapRef ?? product.sapRef,
       sapCode: selectedVariant?.sapCode ?? product.sapCode,
-      type: selectedVariant?.type ?? product.type,
+      type,
     };
     setUserProject((prev) => {
       const next = [...prev, newItem];

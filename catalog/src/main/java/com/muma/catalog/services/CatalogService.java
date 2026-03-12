@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import jakarta.persistence.EntityManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -49,6 +50,7 @@ public class CatalogService {
     private final ProductEventPublisher productEventPublisher;
     private final ProjectRepository projectRepository;
     private final VariantQuoteRepo variantQuoteRepo;
+    private final EntityManager entityManager;
 
     @Transactional
     @CacheEvict(value = {"projects", "products"}, allEntries = true)
@@ -133,7 +135,8 @@ public class CatalogService {
         project.getVariants().add(savedVariant);
         projectRepository.save(project);
 
-        variantQuoteService.create(savedVariant.getId(), projectId, quoterId, variantDto.type(), variantDto.comments(), null);
+        String quoteType = isReusingVariant ? "p4" : (variantDto.type() != null ? variantDto.type() : null);
+        variantQuoteService.create(savedVariant.getId(), projectId, quoterId, quoteType, variantDto.comments(), null);
     }
 
     private void processP3(CreateP3Request request, UUID projectId, UUID quoterId) {
@@ -158,40 +161,46 @@ public class CatalogService {
     @Transactional(readOnly = true)
     public List<ProjectResponse> getProjectsAndVariants() {
         List<Project> projects = projectService.getAll();
-        return projects.stream().map(this::toProjectResponse).collect(Collectors.toList());
+        return projects.stream().map(p -> toProjectResponse(p, false)).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> getProjectsBySalesAndVariants(UUID salesId) {
         List<Project> projects = projectService.getBySalesId(salesId);
-        return projects.stream().map(this::toProjectResponse).collect(Collectors.toList());
+        return projects.stream().map(p -> toProjectResponse(p, false)).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> getProjectsByQuoterAndVariants(UUID quoterId) {
         List<Project> projects = projectService.getByQuoterId(quoterId);
-        return projects.stream().map(this::toProjectResponse).collect(Collectors.toList());
+        return projects.stream().map(p -> toProjectResponse(p, false)).collect(Collectors.toList());
     }
 
+    /** Solo proyectos efectivos; cada proyecto lista solo variantes marcadas efectivas. */
     @Transactional(readOnly = true)
     public List<ProjectResponse> getEffectiveProjects() {
         List<Project> projects = projectService.getAll();
         return projects.stream()
                 .filter(Project::isEffective)
-                .map(this::toProjectResponse)
+                .map(p -> toProjectResponse(p, true))
                 .collect(Collectors.toList());
     }
 
-    private ProjectResponse toProjectResponse(Project project) {
+    /** filterByEffective=true: en proyectos efectivos, solo variantes con quote.effective. */
+    private ProjectResponse toProjectResponse(Project project, boolean filterByEffective) {
+        boolean projectEffective = project.isEffective();
         List<ProjectVariantResponse> variants = project.getVariants().stream()
                 .map(variant -> {
                     VariantQuote quote = project.getVariantQuotes().stream()
                             .filter(vq -> vq.getVariant().getId().equals(variant.getId()))
                             .findFirst()
                             .orElse(null);
+                    if (filterByEffective && projectEffective && (quote == null || !quote.isEffective())) {
+                        return null;
+                    }
                     List<Component> effective = getEffectiveComponents(variant, quote);
                     List<ComponentResponse> components = effective.stream()
-                            .map(c -> toComponentResponse(c))
+                            .map(c -> toComponentResponse(c, variant))
                             .collect(Collectors.toList());
                     String baseCode = variant.getBaseCode();
                     var baseOpt = (baseCode != null && !baseCode.isBlank())
@@ -222,6 +231,7 @@ public class CatalogService {
                             line,
                             space);
                 })
+                .filter(v -> v != null)
                 .collect(Collectors.toList());
         return new ProjectResponse(project, variants);
     }
@@ -236,6 +246,7 @@ public class CatalogService {
         return baseService.findAll().stream()
                 .map(base -> {
                     List<VariantResponse> variantResponses = variantService.findByBaseCode(base.getCode()).stream()
+                            .filter(v -> v.getSourceVariantId() == null)
                             .filter(v -> !quoteVariantIds.contains(v.getId()))
                             .filter(v -> hasSapAndRef(v.getSapRef(), v.getSapCode()))
                             .map(v -> {
@@ -277,13 +288,24 @@ public class CatalogService {
 
     /** Backend devuelve todo; el front oculta sapCode cuando value != originalValue. */
     private ComponentResponse toComponentResponse(Component c) {
+        return toComponentResponse(c, c.getVariant() != null ? c.getVariant() : null);
+    }
+
+    private ComponentResponse toComponentResponse(Component c, Variant variant) {
+        String catalogOrig = null;
+        if (variant != null && c.getSapRef() != null && c.getVariant() == null) {
+            catalogOrig = ComponentService.findOriginalBySapRef(variant.getComponents(), c.getSapRef())
+                    .map(o -> o.getOriginalValue() != null ? o.getOriginalValue() : o.getValue())
+                    .orElse(null);
+        }
         return new ComponentResponse(
                 c.getId(),
                 c.getSapRef(),
                 c.getSapCode(),
                 c.getName(),
                 c.getValue(),
-                c.getOriginalValue());
+                c.getOriginalValue(),
+                catalogOrig);
     }
 
     private static boolean hasSapAndRef(String sapRef, String sapCode) {
@@ -305,40 +327,89 @@ public class CatalogService {
     @CacheEvict(value = {"projects", "products"}, allEntries = true)
     public Boolean updateVariantAndReopen(UUID projectId, UUID variantId, Integer quantity,
             String comments, String type, List<ComponentIdValue> components) {
+        Project project = projectService.getById(projectId);
+        if (project.isEffective()) {
+            reopenEffectiveProject(projectId, variantId, quantity, comments, type, components);
+            return true;
+        }
         Variant variant = variantService.findByIdWithComponents(variantId)
                 .orElseThrow(() -> new IllegalStateException("Variant not found"));
-        Project project = projectService.getById(projectId);
         if (!project.getVariants().stream().anyMatch(v -> v.getId().equals(variantId))) {
             throw new IllegalStateException("Variant not in project");
         }
         VariantQuote quote = variantQuoteService.findByVariantIdAndProjectId(variantId, projectId)
                 .orElseThrow(() -> new IllegalStateException("VariantQuote not found"));
+        quote.getComponentOverrides().clear();
+        boolean isClone = isCloneType(quote.getType());
+        System.out.println("[BACK] CatalogService quote.type=" + quote.getType() + " isClone=" + isClone + " components=" + (components != null ? components.size() : 0));
+        boolean allComponentsReverted = false;
         if (components != null && !components.isEmpty()) {
-            quote.getComponentOverrides().clear();
             var originals = variant.getComponents();
+            int revertCount = 0;
+            System.out.println("[BACK] variant.components count=" + (originals != null ? originals.size() : 0) + " sapRefs=" + (originals != null ? originals.stream().map(Component::getSapRef).toList() : "null"));
             for (ComponentIdValue c : components) {
                 String sapRef = c.componentSapRef() != null && !c.componentSapRef().isBlank() ? c.componentSapRef().trim() : null;
                 if (sapRef == null && c.componentId() != null) {
                     var orig = ComponentService.findOriginalById(originals, c.componentId());
                     sapRef = orig.map(Component::getSapRef).orElse(null);
                 }
-                if (sapRef == null) continue;
+                System.out.println("[BACK] procesando comp sapRef=" + sapRef + " value=" + c.value() + " modified=" + c.modified());
+                if (sapRef == null) {
+                    System.out.println("[BACK] SKIP sapRef null");
+                    continue;
+                }
                 String name = c.componentName() != null ? c.componentName() : sapRef;
-                String newVal = c.value() != null ? c.value() : "";
-                String origVal = ComponentService.findOriginalBySapRef(originals, sapRef)
+                String newVal = (c.value() != null ? c.value() : "").trim();
+                var variantCompOpt = ComponentService.findOriginalBySapRef(originals, sapRef);
+                String origVal = variantCompOpt
                         .map(o -> o.getValue() != null ? o.getValue() : o.getOriginalValue())
                         .orElse(newVal);
-                quote.getComponentOverrides().add(
-                        componentService.createOverride(quote, sapRef, name, newVal, origVal));
+                String origValTrim = (origVal != null ? origVal : "").trim();
+                boolean isRevert = Boolean.FALSE.equals(c.modified()) || newVal.equals(origValTrim);
+                final String sapRefF = sapRef;
+                final String newValF = newVal;
+                System.out.println("[BACK] sapRef=" + sapRef + " newVal='" + newVal + "' origVal='" + origValTrim + "' isRevert=" + isRevert + " variantCompPresent=" + variantCompOpt.isPresent());
+                if (isRevert) {
+                    revertCount++;
+                    if (isClone) variantCompOpt.ifPresentOrElse(vc -> {
+                        String current = vc.getValue() != null ? vc.getValue() : "";
+                        System.out.println("[BACK] REVERT UPDATE sapRef=" + sapRefF + " current='" + current + "' -> newVal='" + newValF + "'");
+                        if (!newValF.equals(current)) {
+                            vc.setValue(newValF);
+                            componentService.save(vc);
+                            entityManager.flush();
+                            System.out.println("[BACK] SAVE OK componente actualizado y flush");
+                        } else {
+                            System.out.println("[BACK] SKIP ya tiene ese valor");
+                        }
+                    }, () -> System.out.println("[BACK] REVERT pero variantComp NO ENCONTRADO por sapRef=" + sapRefF));
+                }
+                if (!isRevert) {
+                    System.out.println("[BACK] CREANDO override sapRef=" + sapRef + " newVal='" + newVal + "'");
+                    quote.getComponentOverrides().add(
+                            componentService.createOverride(quote, sapRef, name, newVal, origVal));
+                }
             }
-            variantQuoteRepo.save(quote);
+            allComponentsReverted = (revertCount == (components != null ? components.size() : 0)) && revertCount > 0;
         }
+        variantQuoteRepo.save(quote);
+        entityManager.flush();
         if (quantity != null) variantQuoteService.updateQuantity(projectId, variantId, quantity);
-        variantQuoteService.updateCommentsAndType(projectId, variantId, comments, type);
-        variantQuoteService.resetQuote(variantId);
+        if (allComponentsReverted && isClone) {
+            variantQuoteService.clearType(projectId, variantId);
+            if (comments != null) variantQuoteService.updateCommentsAndType(projectId, variantId, comments, null);
+        } else {
+            variantQuoteService.updateCommentsAndType(projectId, variantId, comments, type);
+        }
+        variantQuoteService.resetQuoteByProject(projectId);
         projectService.reOpen(projectId);
         List<VariantQuote> variantQuotes = variantQuoteService.findByProjectId(projectId);
         projectService.updateStateByQuote(projectId, variantQuotes);
+        variantService.findByIdWithComponents(variantId).ifPresent(v -> {
+            System.out.println("[BACK] FINAL variant components:");
+            v.getComponents().forEach(co -> System.out.println("  sapRef=" + co.getSapRef() + " value=" + co.getValue() + " originalValue=" + co.getOriginalValue()));
+        });
+        System.out.println("[BACK] updateVariantAndReopen DONE");
         return true;
     }
 
@@ -360,7 +431,7 @@ public class CatalogService {
         projectService.getById(projectId);
         List<VariantQuote> quotes = variantQuoteService.findByProjectId(projectId);
         List<UUID> quoteVariantIdsToDelete = quotes.stream()
-                .filter(vq -> isP1P2P3(vq.getType()))
+                .filter(vq -> isCloneType(vq.getType()))
                 .map(vq -> vq.getVariant().getId())
                 .distinct()
                 .toList();
@@ -380,7 +451,7 @@ public class CatalogService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Variant not in project"));
         VariantQuote vq = variantQuoteService.findByVariantIdAndProjectId(variantId, projectId).orElse(null);
-        boolean isQuoteVariant = vq != null && isP1P2P3(vq.getType());
+        boolean isQuoteVariant = vq != null && isCloneType(vq.getType());
         variantQuoteService.deleteByVariantIdAndProjectId(variantId, projectId);
         project.getVariants().remove(variant);
         projectRepository.save(project);
@@ -392,10 +463,156 @@ public class CatalogService {
         return true;
     }
 
-    private static boolean isP1P2P3(String type) {
+    @Transactional
+    @CacheEvict(value = {"projects", "products"}, allEntries = true)
+    public Boolean reOpenProject(UUID projectId) {
+        variantQuoteService.resetQuoteByProject(projectId);
+        projectService.reOpen(projectId);
+        List<VariantQuote> variantQuotes = variantQuoteService.findByProjectId(projectId);
+        projectService.updateStateByQuote(projectId, variantQuotes);
+        return true;
+    }
+
+    /**
+     * Proyecto efectivo + ediciones: crea NUEVO proyecto con variantes editadas + efectivas.
+     * El proyecto original permanece efectivo e inmutable.
+     */
+    @Transactional
+    @CacheEvict(value = {"projects", "products"}, allEntries = true)
+    public Boolean reopenEffectiveProject(UUID projectId, UUID editedVariantId, Integer quantity,
+            String comments, String type, List<ComponentIdValue> components) {
+        Project original = projectService.getById(projectId);
+        if (!original.isEffective()) {
+            throw new IllegalStateException("reopenEffectiveProject solo aplica a proyectos efectivos");
+        }
+        List<VariantQuote> originalQuotes = variantQuoteService.findByProjectId(projectId);
+
+        Project newProject = projectService.createCopy(original);
+        UUID quoterId = original.getQuoterId();
+
+        var effectiveQuotes = originalQuotes.stream().filter(VariantQuote::isEffective).toList();
+        var editedQuoteOpt = originalQuotes.stream()
+                .filter(vq -> vq.getVariant().getId().equals(editedVariantId))
+                .findFirst();
+
+        java.util.Set<UUID> addedVariantIds = new java.util.HashSet<>();
+
+        // 1. Añadir variantes efectivas (excluyendo la editada; la editada se añade después con cambios)
+        for (VariantQuote oq : effectiveQuotes) {
+            UUID vid = oq.getVariant().getId();
+            if (vid.equals(editedVariantId)) continue;
+            if (addedVariantIds.contains(vid)) continue;
+            addedVariantIds.add(vid);
+            Variant v = oq.getVariant();
+            newProject.getVariants().add(v);
+            projectRepository.save(newProject);
+            VariantQuote vq = variantQuoteService.create(v.getId(), newProject.getId(), quoterId, oq.getType(), oq.getComments(), oq.getImage());
+            if (oq.getQuantity() != null && oq.getQuantity() > 0) {
+                variantQuoteService.updateQuantity(newProject.getId(), v.getId(), oq.getQuantity());
+            }
+            for (Component ov : oq.getComponentOverrides() != null ? oq.getComponentOverrides() : List.<Component>of()) {
+                if (ov.getSapRef() != null) {
+                    vq.getComponentOverrides().add(componentService.createOverride(vq, ov.getSapRef(), ov.getName(),
+                            ov.getValue() != null ? ov.getValue() : "", ov.getOriginalValue() != null ? ov.getOriginalValue() : ""));
+                }
+            }
+            if (!vq.getComponentOverrides().isEmpty()) variantQuoteRepo.save(vq);
+        }
+
+        // 2. Añadir variante editada con modificaciones
+        Variant editedVariant = variantService.findByIdWithComponents(editedVariantId)
+                .orElseThrow(() -> new IllegalStateException("Variant not found"));
+        VariantQuote editedQuote = editedQuoteOpt.orElseThrow(() -> new IllegalStateException("VariantQuote not found"));
+
+        boolean isClone = isCloneType(editedQuote.getType());
+        Variant variantToAdd;
+
+        if (isClone) {
+            Variant cloned = variantService.cloneVariant(editedVariant);
+            List<Component> comps = new ArrayList<>();
+            var originals = editedVariant.getComponents();
+            var modBySapRef = new java.util.HashMap<String, String>();
+            if (components != null) {
+                for (ComponentIdValue c : components) {
+                    String sapRef = c.componentSapRef() != null && !c.componentSapRef().isBlank() ? c.componentSapRef().trim() : null;
+                    if (sapRef == null && c.componentId() != null) {
+                        sapRef = ComponentService.findOriginalById(originals, c.componentId()).map(Component::getSapRef).orElse(null);
+                    }
+                    if (sapRef != null) modBySapRef.put(sapRef, (c.value() != null ? c.value() : "").trim());
+                }
+            }
+            for (Component oc : originals) {
+                String sapRef = oc.getSapRef();
+                if (sapRef == null) continue;
+                String newVal = modBySapRef.getOrDefault(sapRef, oc.getValue() != null ? oc.getValue() : "");
+                String origVal = oc.getOriginalValue() != null ? oc.getOriginalValue() : (oc.getValue() != null ? oc.getValue() : "");
+                comps.add(componentService.createForVariant(cloned, sapRef, oc.getSapCode() != null ? oc.getSapCode() : sapRef, oc.getName(), newVal, origVal));
+            }
+            variantService.setComponents(cloned.getId(), comps);
+            variantToAdd = cloned;
+        } else {
+            variantToAdd = editedVariant;
+        }
+
+        newProject.getVariants().add(variantToAdd);
+        projectRepository.save(newProject);
+
+        VariantQuote newQuote = variantQuoteService.create(variantToAdd.getId(), newProject.getId(), quoterId,
+                type != null ? type : editedQuote.getType(), comments != null ? comments : editedQuote.getComments(), editedQuote.getImage());
+
+        if (!isClone && components != null && !components.isEmpty()) {
+            var originals = editedVariant.getComponents();
+            for (ComponentIdValue c : components) {
+                if (Boolean.TRUE.equals(c.modified())) {
+                    String sapRef = c.componentSapRef() != null && !c.componentSapRef().isBlank() ? c.componentSapRef().trim() : null;
+                    if (sapRef == null && c.componentId() != null) {
+                        sapRef = ComponentService.findOriginalById(originals, c.componentId()).map(Component::getSapRef).orElse(null);
+                    }
+                    if (sapRef == null) continue;
+                    String name = c.componentName() != null ? c.componentName() : sapRef;
+                    String newVal = (c.value() != null ? c.value() : "").trim();
+                    var origOpt = ComponentService.findOriginalBySapRef(originals, sapRef);
+                    String origVal = origOpt.map(o -> o.getValue() != null ? o.getValue() : o.getOriginalValue()).orElse(newVal);
+                    newQuote.getComponentOverrides().add(componentService.createOverride(newQuote, sapRef, name, newVal, origVal));
+                }
+            }
+            variantQuoteRepo.save(newQuote);
+        }
+
+        if (quantity != null) variantQuoteService.updateQuantity(newProject.getId(), variantToAdd.getId(), quantity);
+
+        variantQuoteService.resetQuoteByProject(newProject.getId());
+        List<VariantQuote> newQuotes = variantQuoteService.findByProjectId(newProject.getId());
+        projectService.updateStateByQuote(newProject.getId(), newQuotes);
+
+        projectEventPublisher.projectCreated(newProject.getId(), newProject.getCreatedAt(),
+                newProject.getSalesId(), newProject.getQuoterId(), newQuotes.size());
+        return true;
+    }
+
+    @Transactional
+    @CacheEvict(value = {"projects"}, allEntries = true)
+    public Boolean makeVariantQuoteEffective(UUID projectId, UUID variantId, boolean effective) {
+        Project project = projectService.getById(projectId);
+        if (!project.isEffective()) {
+            throw new IllegalStateException("Solo se pueden marcar variantes efectivas en proyectos ya efectivos.");
+        }
+        variantQuoteService.setEffective(projectId, variantId, effective);
+        return true;
+    }
+
+    @Transactional
+    @CacheEvict(value = {"projects"}, allEntries = true)
+    public Boolean toggleP3P5(UUID projectId, UUID variantId) {
+        variantQuoteService.toggleP3P5(projectId, variantId);
+        return true;
+    }
+
+    /** P1/P2/P3/P5 = clon/creado para proyecto. P4 = variante existente reutilizada. */
+    private static boolean isCloneType(String type) {
         if (type == null) return false;
         String t = type.trim().toLowerCase();
-        return "p1".equals(t) || "p2".equals(t) || "p3".equals(t);
+        return "p1".equals(t) || "p2".equals(t) || "p3".equals(t) || "p5".equals(t);
     }
 
     @Transactional

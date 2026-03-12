@@ -15,4 +15,6 @@ public class ComponentResponse {
     private String value;
     /** Valor original; si value != originalValue, no mostrar sapCode (solo sapRef) */
     private String originalValue;
+    /** Valor original del catálogo (variant). Usar para "revertir y tener 2 códigos" cuando hay override. */
+    private String catalogOriginalValue;
 }

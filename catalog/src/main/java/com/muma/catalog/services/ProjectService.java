@@ -64,16 +64,53 @@ public class ProjectService {
                         .build());
     }
 
+    /** Crea copia de proyecto (metadata). Para reabrir efectivo. */
     @Transactional
-    public Boolean makeEffective(UUID projectId) {
-        return projectRepository.findById(projectId)
-                .map(project -> {
-                    project.setEffective(!project.isEffective());
-                    project.setVersion(project.getVersion() + 1);
-                    projectRepository.save(project);
-                    return true;
-                })
-                .orElse(false);
+    public Project createCopy(Project source) {
+        String consecutive = generateNextConsecutivo();
+        return projectRepository.save(
+                Project.builder()
+                        .id(UUID.randomUUID())
+                        .consecutive(consecutive)
+                        .name(source.getName())
+                        .version(1)
+                        .city(source.getCity())
+                        .client(source.getClient())
+                        .clientPhone(source.getClientPhone())
+                        .region(source.getRegion())
+                        .salesName(source.getSalesName())
+                        .salesEmail(source.getSalesEmail())
+                        .salesPhone(source.getSalesPhone())
+                        .salesSignature(source.getSalesSignature())
+                        .salesJobTitle(source.getSalesJobTitle())
+                        .salesId(source.getSalesId())
+                        .quoterName(source.getQuoterName())
+                        .quoterEmail(source.getQuoterEmail())
+                        .quoterId(source.getQuoterId())
+                        .state(0)
+                        .createdAt(LocalDateTime.now())
+                        .modifiedAt(LocalDateTime.now())
+                        .quoted(false)
+                        .reopen(true)
+                        .effective(false)
+                        .estimatedTime(0)
+                        .totalCost(0)
+                        .build());
+    }
+
+    /** Marca proyecto como efectivo. No desmarca (efectivo es irreversible). */
+    @Transactional
+    @CacheEvict(value = {"projects", "products"}, allEntries = true)
+    public Boolean makeEffectiveOnly(UUID projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalStateException("Project not found"));
+        if (project.isEffective()) {
+            throw new IllegalStateException("El proyecto ya es efectivo. No se puede desmarcar.");
+        }
+        project.setEffective(true);
+        project.setVersion(project.getVersion() + 1);
+        projectRepository.save(project);
+        return true;
     }
 
     public List<Project> getAll() {

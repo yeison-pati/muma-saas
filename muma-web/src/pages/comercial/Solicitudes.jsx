@@ -55,11 +55,11 @@ function SolicitudesList({
   modificaciones,
   handleReopen,
   handleMakeEffective,
+  handleMakeVariantEffective,
   handleDeleteProject,
   openPdfModal,
   handleUpdateQuantity,
   handleProductUpdate,
-  handleRemoveVariant,
   refreshProjects,
 }) {
   if (list.length === 0) {
@@ -95,25 +95,37 @@ function SolicitudesList({
               </button>
               {isCotizadas && (
                 <div className="solicitudes-item-actions">
-                  {!p.effective && (
+                  {p.effective ? (
                     <button
                       type="button"
                       className="solicitudes-reopen-btn"
                       onClick={() => handleReopen(p.id)}
                       disabled={!modificaciones[p.id]}
-                      title={modificaciones[p.id] ? 'Reabrir con modificaciones' : 'Edita un producto para reabrir'}
+                      title={modificaciones[p.id] ? 'Crea nuevo proyecto con variantes editadas + efectivas' : 'Edita un producto para reabrir como nuevo proyecto'}
                     >
-                      {modificaciones[p.id] ? 'Reabrir / nueva versión' : 'Edita para reabrir'}
+                      {modificaciones[p.id] ? 'Reabrir (nuevo proyecto)' : 'Edita para reabrir'}
                     </button>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="solicitudes-reopen-btn"
+                        onClick={() => handleReopen(p.id)}
+                        disabled={!modificaciones[p.id]}
+                        title={modificaciones[p.id] ? 'Reabrir con modificaciones' : 'Edita un producto para reabrir'}
+                      >
+                        {modificaciones[p.id] ? 'Reabrir / nueva versión' : 'Edita para reabrir'}
+                      </button>
+                      <button
+                        type="button"
+                        className="solicitudes-effective-btn"
+                        onClick={() => handleMakeEffective(p.id)}
+                        title="Hacer efectivo (irreversible)"
+                      >
+                        Hacer efectivo
+                      </button>
+                    </>
                   )}
-                  <button
-                    type="button"
-                    className="solicitudes-effective-btn"
-                    onClick={() => handleMakeEffective(p.id)}
-                    title={p.effective ? 'Quitar efectivo' : 'Hacer efectivo'}
-                  >
-                    {p.effective ? 'Quitar efectivo' : 'Hacer efectivo'}
-                  </button>
                   <button
                     type="button"
                     className="solicitudes-pdf-btn"
@@ -149,11 +161,12 @@ function SolicitudesList({
                   projectId={p.id}
                   modificaciones={modificaciones[p.id]}
                   cotizadas={isCotizadas}
-                  allowEditableComponents={isCotizadas && !p.effective}
+                  allowEditableComponents={isCotizadas}
+                  projectEffective={p.effective}
                   onUpdateQuantity={handleUpdateQuantity}
                   onProductUpdate={handleProductUpdate}
-                  onRemoveVariant={handleRemoveVariant}
                   onRefresh={refreshProjects}
+                  onMakeVariantEffective={p.effective ? handleMakeVariantEffective : undefined}
                 />
               </div>
             )}
@@ -220,36 +233,40 @@ export default function ComercialSolicitudes() {
 
   const handleReopen = async (projectId) => {
     const modInfo = modificaciones[projectId];
+    console.log('[REOPEN] modInfo=', JSON.stringify(modInfo, null, 2));
     try {
       if (modInfo?.variantId) {
         const input = { projectId, variantId: modInfo.variantId };
         if (modInfo.quantity != null) input.quantity = modInfo.quantity;
         if (modInfo.comments != null) input.comments = modInfo.comments;
         if (modInfo.type != null) input.type = modInfo.type;
-        if (modInfo.components) {
-          const project = projects.find((p) => p.id === projectId);
-          const variant = project?.variants?.find((v) => String(v.id) === String(modInfo.variantId));
+        const project = projects.find((p) => p.id === projectId);
+        const variant = project?.variants?.find((v) => String(v.id) === String(modInfo.variantId));
+        console.log('[REOPEN] variant=', variant?.id, 'components=', variant?.components?.map((c) => ({ id: c.id, sapRef: c.sapRef, value: c.value, originalValue: c.originalValue, catalogOriginalValue: c.catalogOriginalValue })));
+        const componentsSource = modInfo.components && Object.keys(modInfo.components).length > 0
+          ? modInfo.components
+          : (variant?.components || []).reduce((acc, c) => (c?.id ? { ...acc, [c.id]: c.catalogOriginalValue ?? c.originalValue ?? c.value ?? '' } : acc), {});
+        console.log('[REOPEN] componentsSource=', componentsSource);
+        if (Object.keys(componentsSource).length > 0) {
           const compsById = (variant?.components || []).reduce((acc, c) => {
             if (c?.id) acc[c.id] = c;
             return acc;
           }, {});
-          input.components = Object.entries(modInfo.components).map(([componentId, value]) => {
+          input.components = Object.entries(componentsSource).map(([componentId, value]) => {
             const comp = compsById[componentId];
-            const origVal = String(comp?.originalValue ?? comp?.value ?? '').trim();
+            const revertTarget = comp?.catalogOriginalValue ?? comp?.originalValue ?? comp?.value ?? '';
+            const origVal = String(revertTarget).trim();
             const newVal = String(value ?? '').trim();
             const modified = origVal !== newVal;
-            if (modified && comp) {
-              return {
-                componentId: null,
-                componentSapRef: comp.sapRef || comp.sapCode,
-                componentName: comp.name,
-                value: newVal,
-                modified: true,
-              };
-            }
-            return { componentId, value: value ?? '' };
+            const sapRef = comp?.sapRef || comp?.sapCode;
+            const out = modified && comp
+              ? { componentId: null, componentSapRef: sapRef, componentName: comp.name, value: newVal, modified: true }
+              : { componentId, componentSapRef: sapRef, value: value ?? '', modified: false };
+            console.log('[REOPEN] comp', componentId, 'revertTarget=', revertTarget, 'newVal=', newVal, 'modified=', modified, 'out=', out);
+            return out;
           });
         }
+        console.log('[REOPEN] ENVIANDO input=', JSON.stringify(input, null, 2));
         await catalog.updateVariantAndReopen(input);
       } else {
         await catalog.reOpenProject(projectId);
@@ -257,7 +274,10 @@ export default function ComercialSolicitudes() {
       const next = { ...modificaciones };
       delete next[projectId];
       dispatch({ type: 'REMOVE_MODIFICACION', payload: next });
-      refreshProjects();
+      await (user?.id ? catalog.getProjectsBySales(user.id) : Promise.resolve([])).then((data) => {
+        if (Array.isArray(data)) dispatch({ type: 'SET_PROJECTS', payload: data });
+      });
+      dispatch({ type: 'SET_ACTIVE_TAB', payload: 'proceso' });
     } catch (err) {
       alert(err?.message || 'Error al reabrir');
     }
@@ -269,6 +289,15 @@ export default function ComercialSolicitudes() {
       refreshProjects();
     } catch (err) {
       alert(err?.message || 'Error al marcar efectivo');
+    }
+  };
+
+  const handleMakeVariantEffective = async (projectId, variantId, effective) => {
+    try {
+      await catalog.makeVariantQuoteEffective(projectId, variantId, effective);
+      refreshProjects();
+    } catch (err) {
+      alert(err?.message || 'Error al marcar variante efectiva');
     }
   };
 
@@ -288,10 +317,6 @@ export default function ComercialSolicitudes() {
     } catch (err) {
       alert(err?.message || 'Error al eliminar el proyecto');
     }
-  };
-
-  const handleRemoveVariant = async (projectId, variantId) => {
-    await catalog.removeVariantFromProject(projectId, variantId);
   };
 
   const handlePdfGenerate = async (pdfData) => {
@@ -408,11 +433,11 @@ export default function ComercialSolicitudes() {
             modificaciones={modificaciones}
             handleReopen={handleReopen}
             handleMakeEffective={handleMakeEffective}
+            handleMakeVariantEffective={handleMakeVariantEffective}
             handleDeleteProject={handleDeleteProject}
             openPdfModal={openPdfModal}
             handleUpdateQuantity={handleUpdateQuantity}
             handleProductUpdate={handleProductUpdate}
-            handleRemoveVariant={handleRemoveVariant}
             refreshProjects={refreshProjects}
           />
         </div>

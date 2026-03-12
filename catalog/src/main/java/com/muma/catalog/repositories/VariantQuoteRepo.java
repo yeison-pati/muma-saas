@@ -33,7 +33,7 @@ public interface VariantQuoteRepo extends JpaRepository<VariantQuote, UUID> {
     @Query("DELETE FROM VariantQuote vq WHERE vq.variant.id = :variantId AND vq.project.id = :projectId")
     void deleteByVariantIdAndProjectId(UUID variantId, UUID projectId);
 
-    @Query("SELECT vq.variant.id FROM VariantQuote vq WHERE vq.type IS NOT NULL AND LOWER(TRIM(vq.type)) IN ('p1', 'p2', 'p3')")
+    @Query("SELECT vq.variant.id FROM VariantQuote vq WHERE vq.type IS NOT NULL AND LOWER(TRIM(vq.type)) IN ('p1', 'p2', 'p3', 'p5')")
     List<UUID> findVariantIdsWithQuoteType();
 
     @Modifying
@@ -52,6 +52,16 @@ public interface VariantQuoteRepo extends JpaRepository<VariantQuote, UUID> {
             @org.springframework.data.repository.query.Param("type") String type);
 
     @Modifying
+    @Query("UPDATE VariantQuote vq SET vq.type = null WHERE vq.project.id = :projectId AND vq.variant.id = :variantId")
+    int clearType(@org.springframework.data.repository.query.Param("projectId") UUID projectId,
+            @org.springframework.data.repository.query.Param("variantId") UUID variantId);
+
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE VariantQuote vq SET vq.price = 0, vq.elaborationTime = 0, vq.criticalMaterial = null WHERE vq.variant.id = :variantId")
     int resetQuoteByVariantId(@org.springframework.data.repository.query.Param("variantId") UUID variantId);
+
+    /** Resetea precio/cotización de todas las variantes del proyecto (para reabrir correctamente al primer intento). */
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE VariantQuote vq SET vq.price = 0, vq.elaborationTime = 0, vq.criticalMaterial = null WHERE vq.project.id = :projectId")
+    int resetQuoteByProjectId(@org.springframework.data.repository.query.Param("projectId") UUID projectId);
 }

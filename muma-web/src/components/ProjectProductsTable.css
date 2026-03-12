@@ -51,7 +51,15 @@
 .col-valor-total { flex: 1; min-width: 100px; display: flex; align-items: center; justify-content: center; }
 .col-tiempo { flex: 0.8; min-width: 70px; display: flex; align-items: center; justify-content: center; }
 .col-material { flex: 1.2; min-width: 100px; display: flex; align-items: flex-start; justify-content: center; padding: 8px; font-size: 11px; color: #666; word-break: break-word; text-align: center; }
-.col-acciones { flex: 1; min-width: 90px; display: flex; align-items: center; justify-content: center; }
+.col-acciones {
+  flex: 1;
+  min-width: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
 
 /* Código - mumaviejo: uno encima del otro, SAP negro, REF gris */
 .codigo-stack {

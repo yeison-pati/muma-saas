@@ -87,6 +87,7 @@ public class VariantService {
                         .sapRef(source.getSapRef())
                         .sapCode(source.getSapCode())
                         .status(source.getStatus())
+                        .sourceVariantId(source.getId())
                         .build());
     }
 

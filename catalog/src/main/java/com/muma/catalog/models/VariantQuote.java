@@ -68,4 +68,8 @@ public class VariantQuote {
     private Integer quantity;
 
     private Integer price;
+
+    /** Si true: variante marcada efectiva. Proyecto efectivo lista solo estas. */
+    @Builder.Default
+    private boolean effective = false;
 }

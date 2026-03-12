@@ -24,7 +24,11 @@ export default function CartItem({
   const updatedByName = Object.fromEntries(
     Object.entries(updated).map(([id, v]) => [componentOriginals[id]?.name || id, v ?? ''])
   );
-  const tipologia = item?.tipologia || calculateTipologia(originalByName, updatedByName) || (isP3 ? 'P3' : '—');
+  const computedTipologia = calculateTipologia(originalByName, updatedByName);
+  // Computed primero: si hay cambios (edición) → P1/P2. Solo P4 cuando no hay cambios y es variante existente (en vez de —)
+  const tipologia = computedTipologia || item?.tipologia || item?.type
+    || (item?._selectedVariantId && !computedTipologia ? 'P4' : null)
+    || (isP3 ? 'P3' : '—');
 
   const displayName = item?.name || item?.subcategoria || item?.categoria || 'Producto';
 
@@ -93,7 +97,7 @@ export default function CartItem({
         </div>
 
         <div className="cart-item-actions">
-          <span className="cart-item-tipologia">{tipologia}</span>
+          <span className="cart-item-tipologia">{/^p[1-5]$/i.test(tipologia) ? tipologia.toUpperCase() : tipologia}</span>
           <div className="cart-item-qty">
             <button type="button" className="cart-item-qty-btn" onClick={(e) => { e.stopPropagation(); onDecrease?.(); }}>
               −

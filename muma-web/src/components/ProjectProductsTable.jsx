@@ -22,17 +22,7 @@ function DescripcionEstructurada({ variant, typeVal, compsArr, commentsVal, cara
             onClick={onToggleCaract}
           >
             {caractExpanded ? '▼' : '▶'} Características ({compsArr.length})
-            {!caractExpanded && compsArr.length > 0 && (
-              <span className="descripcion-caract-codes-preview">
-                {' — '}
-                {compsArr.map((c) => {
-                  const codesStr = c.codes
-                    ? (c.codes.secondary ? `${c.codes.secondary} · ${c.codes.primary}` : c.codes.primary)
-                    : '';
-                  return `${c.name}: ${c.val}${codesStr ? ` (${codesStr})` : ''}`;
-                }).join(', ')}
-              </span>
-            )}
+            
           </button>
           {caractExpanded && (
             <div className="descripcion-chips">
@@ -77,11 +67,14 @@ export default function ProjectProductsTable({
   proceso = false,
   reopen = false,
   allowEditableComponents = false,
+  projectEffective = false,
   onUpdateQuantity,
   onProductUpdate,
   onRemoveVariant,
   onQuoteClick,
   onRefresh,
+  onMakeVariantEffective,
+  onToggleP3P5,
 }) {
   const [imageUrls, setImageUrls] = useState({});
   const [editingQty, setEditingQty] = useState(null);
@@ -101,6 +94,24 @@ export default function ProjectProductsTable({
     });
   }, [projectId, modificaciones?.variantId]);
 
+  // Limpiar localMods cuando se reabre (modificaciones se borra) para mostrar datos frescos del servidor
+  useEffect(() => {
+    if (!modificaciones && variants.length > 0) {
+      setLocalMods((prev) => {
+        const variantIds = new Set(variants.map((v) => v.id));
+        const next = { ...prev };
+        let changed = false;
+        for (const vid of variantIds) {
+          if (next[vid]) {
+            delete next[vid];
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    }
+  }, [modificaciones, variants]);
+
   // Cargar URLs de imágenes
   useEffect(() => {
     const keys = variants.map((v) => v.baseImage).filter(Boolean);
@@ -114,28 +125,21 @@ export default function ProjectProductsTable({
       .then((data) => setImageUrls(data));
   }, [variants]);
 
-  // Características expandidas por defecto
-  useEffect(() => {
-    setExpandedCaract((prev) => {
-      const next = { ...prev };
-      let changed = false;
-      variants.forEach((v) => {
-        if (next[v.id] === undefined) { next[v.id] = true; changed = true; }
-      });
-      return changed ? next : prev;
-    });
-  }, [variants]);
+  // Características colapsadas por defecto (el usuario hace clic para expandir)
 
   const getSortCode = (v) => {
     const t = String(v.type || '').toLowerCase();
-    if (t === 'p3') return v.id || '';
+    if (t === 'p3' || t === 'p5') return v.id || '';
     return v.sapRef || v.sapCode || '';
   };
   const products = [...variants].sort((a, b) =>
     String(getSortCode(a)).localeCompare(String(getSortCode(b)), undefined, { numeric: true })
   );
 
-  const getVariantMods = (v) => localMods[v.id] || {};
+  const getVariantMods = (v) => {
+    if (!modificaciones?.variantId || modificaciones.variantId !== v.id) return {};
+    return localMods[v.id] || {};
+  };
   const getEffectiveQty = (v) => (getVariantMods(v).quantity != null ? getVariantMods(v).quantity : v.quantity ?? 1);
   const getEffectiveComments = (v) => (getVariantMods(v).comments != null ? getVariantMods(v).comments : v.comments ?? '');
   const getEffectiveComponents = (v) => {
@@ -189,7 +193,7 @@ export default function ProjectProductsTable({
     const mods = getVariantMods(v);
     const typeVal = useMods && 'type' in mods ? mods.type : v.type;
     const currentComps = useMods ? getEffectiveComponents(v) : (v.components || []).reduce((o, c) => ({ ...o, [c.id]: c.value }), {});
-    const originalComps = (v.components || []).reduce((o, c) => ({ ...o, [c.id]: c.originalValue ?? c.value }), {});
+    const originalComps = (v.components || []).reduce((o, c) => ({ ...o, [c.id]: c.catalogOriginalValue ?? c.originalValue ?? c.value }), {});
     return getVariantDisplayCodes({
       sapRef: v.sapRef,
       sapCode: v.sapCode,
@@ -208,7 +212,7 @@ export default function ProjectProductsTable({
       .map(([cid, val]) => {
         const comp = (v.components || []).find((c) => c && (c.id === cid || String(c.id) === String(cid)));
         const name = comp?.name ?? cid;
-        const origVal = comp?.originalValue ?? comp?.value ?? '';
+        const origVal = comp?.catalogOriginalValue ?? comp?.originalValue ?? comp?.value ?? '';
         const compCodes = getComponentDisplayCodes({
           sapRef: comp?.sapRef,
           sapCode: comp?.sapCode,
@@ -309,10 +313,11 @@ export default function ProjectProductsTable({
                                 id={`comp-${v.id}-${c.id}`}
                                 type="text"
                                 value={getEffectiveComponents(v)[c.id] ?? ''}
+                                placeholder={c.catalogOriginalValue ?? c.originalValue ?? label}
                                 onChange={(e) => {
                                   const updated = { ...getEffectiveComponents(v), [c.id]: e.target.value };
                                   const originalByKey = Object.fromEntries(
-                                    (v.components || []).map((x) => [x?.name || x.id, x?.originalValue ?? x?.value ?? ''])
+                                    (v.components || []).map((x) => [x?.name || x.id, x?.catalogOriginalValue ?? x?.originalValue ?? x?.value ?? ''])
                                   );
                                   const updatedByKey = Object.fromEntries(
                                     Object.entries(updated).map(([id, val]) => {
@@ -324,7 +329,6 @@ export default function ProjectProductsTable({
                                   const newType = v.type === 'p3' ? 'p3' : (calcType !== '' ? calcType : null);
                                   notifyProductUpdate(v.id, { components: updated, type: newType });
                                 }}
-                                placeholder={label}
                               />
                             </div>
                           );
@@ -406,25 +410,46 @@ export default function ProjectProductsTable({
               {(cotizadas || proceso) && (
                 <div className="col-acciones">
                   {proceso && onQuoteClick && (reopen || v.price == null) ? (
+                      <button
+                        type="button"
+                        className="btn-quote"
+                        onClick={() => onQuoteClick(v)}
+                        title="Cotizar"
+                      >
+                        Cotizar
+                      </button>
+                    ) : cotizadas && projectEffective && onMakeVariantEffective ? (
+                      <button
+                        type="button"
+                        className={v.effective ? 'btn-effective-on' : 'btn-effective-off'}
+                        onClick={() => onMakeVariantEffective(projectId, v.id, !v.effective)}
+                        disabled={loading === v.id}
+                        title={v.effective ? 'Marcado efectivo' : 'Marcar efectivo'}
+                      >
+                        {v.effective ? '✓ Efectivo' : 'Marcar efectivo'}
+                      </button>
+                    ) : cotizadas && onRemoveVariant ? (
+                      <button
+                        type="button"
+                        className="btn-remove"
+                        onClick={() => handleRemove(v.id)}
+                        disabled={loading === v.id}
+                        title="Quitar del proyecto"
+                      >
+                        Quitar
+                      </button>
+                    ) : null}
+                  {onToggleP3P5 && (v.type === 'p3' || v.type === 'p5') && (
                     <button
                       type="button"
-                      className="btn-quote"
-                      onClick={() => onQuoteClick(v)}
-                      title="Cotizar"
-                    >
-                      Cotizar
-                    </button>
-                  ) : cotizadas && onRemoveVariant ? (
-                    <button
-                      type="button"
-                      className="btn-remove"
-                      onClick={() => handleRemove(v.id)}
+                      className="btn-toggle-p3p5"
+                      onClick={() => onToggleP3P5(projectId, v.id)}
                       disabled={loading === v.id}
-                      title="Quitar del proyecto"
+                      title="Alternar P3 ↔ P5"
                     >
-                      Quitar
+                      P3↔P5
                     </button>
-                  ) : null}
+                  )}
                 </div>
               )}
             </div>

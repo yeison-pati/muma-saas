@@ -20,8 +20,12 @@ type Mutation {
   reOpenProject(projectId: ID!): Boolean
   "Actualizar variante (componentes, cantidad, comentarios) y reabrir proyecto"
   updateVariantAndReopen(input: UpdateVariantAndReopenInput!): Boolean
-  "Marcar proyecto como efectivo"
+  "Marcar proyecto como efectivo (irreversible)"
   makeProjectEffective(projectId: ID!): Boolean
+  "Marcar variante como efectiva en proyecto efectivo"
+  makeVariantQuoteEffective(projectId: ID!, variantId: ID!, effective: Boolean!): Boolean
+  "Alternar tipología P3/P5 (solo cotizador)"
+  toggleP3P5(projectId: ID!, variantId: ID!): Boolean
   "Eliminar proyecto (sustituto de DELETE /projects)"
   deleteProject(projectId: ID!): Boolean
   "Cotizar variante (sustituto de PATCH /products/quote)"
@@ -68,6 +72,7 @@ type ProjectVariant {
   sapRef: String
   sapCode: String
   type: String
+  effective: Boolean
   criticalMaterial: String
   comments: String
   elaborationTime: Int
@@ -93,6 +98,8 @@ type ComponentResponse {
   value: String
   "Valor original; si value != originalValue, no mostrar sapCode."
   originalValue: String
+  "Valor original del catálogo (para revertir y tener 2 códigos cuando hay override)."
+  catalogOriginalValue: String
 }
 
 type VariantQuote {

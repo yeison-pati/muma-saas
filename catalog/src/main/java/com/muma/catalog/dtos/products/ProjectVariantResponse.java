@@ -29,6 +29,7 @@ public class ProjectVariantResponse {
     private String subcategory;
     private String line;
     private String space;
+    private boolean effective;
 
     public ProjectVariantResponse(UUID id, String sapRef, String sapCode, VariantQuote variantQuote, List<ComponentResponse> components,
             String baseCode, String baseName, String baseImage, String category, String subcategory, String line, String space) {
@@ -41,6 +42,7 @@ public class ProjectVariantResponse {
         this.elaborationTime = variantQuote != null ? variantQuote.getElaborationTime() : null;
         this.quantity = variantQuote != null ? variantQuote.getQuantity() : null;
         this.price = variantQuote != null ? variantQuote.getPrice() : null;
+        this.effective = variantQuote != null && variantQuote.isEffective();
         this.components = components;
         this.baseCode = baseCode;
         this.baseName = baseName;
