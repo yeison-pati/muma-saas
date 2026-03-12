@@ -1,5 +1,6 @@
 package com.muma.catalog.models;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -77,6 +78,10 @@ public class Project {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    /** Fecha/hora exacta de solicitud del proyecto (comercial). Para métricas de tiempo. */
+    @Column(name = "requested_at")
+    private Instant requestedAt;
 
     @Column(name = "modified_at")
     private LocalDateTime modifiedAt;

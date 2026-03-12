@@ -13,7 +13,7 @@ const STORAGE_USER = 'user';
 const STORAGE_TOKEN = 'token';
 
 const roleToPath = (role) => {
-  const map = { ADMIN: 'admin', QUOTER: 'cotizador', SALES: 'comercial', DESIGNER: 'disenador' };
+  const map = { ADMIN: 'admin', QUOTER: 'cotizador', SALES: 'comercial', DESIGNER: 'disenador', DEVELOPMENT: 'desarrollo' };
   return map[role] || null;
 };
 

@@ -32,7 +32,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS).permitAll()
                         .requestMatchers("/graphql", "/graphql/**")
-                        .hasAnyRole("ADMIN", "QUOTER", "DESIGNER", "SALES")
+                        .hasAnyRole("ADMIN", "QUOTER", "DESIGNER", "SALES", "DEVELOPMENT")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter())));

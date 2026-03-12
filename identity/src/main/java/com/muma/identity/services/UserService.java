@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.muma.identity.dtos.response.DesignerResponse;
+import com.muma.identity.dtos.response.DeveloperResponse;
 import com.muma.identity.dtos.response.QuoterResponse;
 import com.muma.identity.dtos.response.SalesResponse;
 import com.muma.identity.dtos.response.UserResponse;
@@ -85,6 +86,13 @@ public class UserService {
                     UserResponse ur = getUserResponse(designer.getUserId());
                     return new DesignerResponse(ur, designer.getCreated(), designer.getEdited());
                 })
+                .collect(Collectors.toList());
+    }
+
+    @Cacheable(value = "developers", unless = "#result.isEmpty()")
+    public List<DeveloperResponse> getAllDevelopers() {
+        return userRepository.findByRole("DEVELOPMENT").stream()
+                .map(u -> new DeveloperResponse(new UserResponse(u)))
                 .collect(Collectors.toList());
     }
 

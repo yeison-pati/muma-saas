@@ -22,6 +22,13 @@ export default function UsuariosTabs({ tab, setTab }) {
       >
         Diseñadores
       </button>
+      <button
+        type="button"
+        className={tab === 'developers' ? 'active' : ''}
+        onClick={() => setTab('developers')}
+      >
+        Desarrollo
+      </button>
     </div>
   );
 }

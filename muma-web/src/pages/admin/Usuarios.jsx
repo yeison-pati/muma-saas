@@ -13,6 +13,7 @@ export default function AdminUsuarios() {
   const [quoters, setQuoters] = useState([]);
   const [sales, setSales] = useState([]);
   const [designers, setDesigners] = useState([]);
+  const [developers, setDevelopers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [tab, setTab] = useState('quoters');
@@ -33,11 +34,13 @@ export default function AdminUsuarios() {
       identity.getQuoters(),
       identity.getSales(),
       identity.getDesigners(),
+      identity.getDevelopers(),
     ])
-      .then(([q, s, d]) => {
+      .then(([q, s, d, dev]) => {
         setQuoters(q || []);
         setSales(s || []);
         setDesigners(d || []);
+        setDevelopers(dev || []);
       })
       .catch((err) => {
         setLoadError(err?.message || 'Error al cargar usuarios');
@@ -50,7 +53,14 @@ export default function AdminUsuarios() {
     loadUsers();
   }, []);
 
-  const users = tab === 'quoters' ? quoters : tab === 'sales' ? sales : designers;
+  const users =
+    tab === 'quoters'
+      ? quoters
+      : tab === 'sales'
+        ? sales
+        : tab === 'designers'
+          ? designers
+          : developers;
   const userList = users.map((u) => u.user || u);
 
   const canEditOrDelete = (u) => {
@@ -59,12 +69,22 @@ export default function AdminUsuarios() {
   };
 
   const openCreate = () => {
+    const role =
+      tab === 'quoters'
+        ? 'QUOTER'
+        : tab === 'sales'
+          ? 'SALES'
+          : tab === 'designers'
+            ? 'DESIGNER'
+            : tab === 'developers'
+              ? 'DEVELOPMENT'
+              : 'SALES';
     setForm({
       name: '',
       email: '',
       phone: '',
       password: '',
-      role: tab === 'quoters' ? 'QUOTER' : tab === 'sales' ? 'SALES' : 'DESIGNER',
+      role,
       region: '',
       jobTitle: '',
     });

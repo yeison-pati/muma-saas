@@ -35,7 +35,7 @@ public class SecurityConfig {
                                 .authorizeExchange(auth -> auth
                                                 .pathMatchers(HttpMethod.OPTIONS).permitAll()
                                                 .pathMatchers("/mediaFiles/**")
-                                                .hasAnyRole("ADMIN", "QUOTER", "DESIGNER", "SALES")
+                                                .hasAnyRole("ADMIN", "QUOTER", "DESIGNER", "SALES", "DEVELOPMENT")
                                                 .pathMatchers("/files/**").hasRole("SALES")
                                                 .anyExchange().authenticated())
                                 .oauth2ResourceServer(oauth2 -> oauth2

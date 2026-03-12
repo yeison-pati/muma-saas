@@ -69,6 +69,7 @@ export default function UsuariosModal({ mode, form, setForm, onClose, onSubmit }
                 <option value="SALES">Comercial</option>
                 <option value="QUOTER">Cotizador</option>
                 <option value="DESIGNER">Diseñador</option>
+                <option value="DEVELOPMENT">Desarrollo</option>
                 <option value="ADMIN">Admin</option>
               </select>
               <label htmlFor="usuarios-region">Región</label>

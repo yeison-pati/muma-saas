@@ -17,6 +17,9 @@ import DisenadorProductos from './pages/disenador/Productos';
 import DisenadorCrear from './pages/disenador/Crear';
 import DisenadorProyectos from './pages/disenador/Proyectos';
 
+// Desarrollo
+import DesarrolloProyectos from './pages/desarrollo/Proyectos';
+
 // Admin
 import AdminProyectos from './pages/admin/Proyectos';
 import AdminUsuarios from './pages/admin/Usuarios';
@@ -90,6 +93,17 @@ export default function App() {
         <Route index element={<DisenadorProductos />} />
         <Route path="crear" element={<DisenadorCrear />} />
         <Route path="proyectos" element={<DisenadorProyectos />} />
+      </Route>
+
+      <Route
+        path="/desarrollo"
+        element={
+          <ProtectedRoute allowedRoles={['desarrollo']}>
+            <DashboardLayout role="desarrollo" />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<DesarrolloProyectos />} />
       </Route>
 
       <Route

@@ -75,6 +75,7 @@ export default function ProjectProductsTable({
   onRefresh,
   onMakeVariantEffective,
   onToggleP3P5,
+  onMarkAsDesigned,
 }) {
   const [imageUrls, setImageUrls] = useState({});
   const [editingQty, setEditingQty] = useState(null);
@@ -407,7 +408,7 @@ export default function ProjectProductsTable({
               <div className="col-material">
                 {v.criticalMaterial || '-'}
               </div>
-              {(cotizadas || proceso) && (
+              {(cotizadas || proceso || onMarkAsDesigned) && (
                 <div className="col-acciones">
                   {proceso && onQuoteClick && (reopen || v.price == null) ? (
                       <button
@@ -448,6 +449,17 @@ export default function ProjectProductsTable({
                       title="Alternar P3 ↔ P5"
                     >
                       P3↔P5
+                    </button>
+                  )}
+                  {onMarkAsDesigned && v.quotedAt && !v.designedAt && (
+                    <button
+                      type="button"
+                      className="btn-mark-designed"
+                      onClick={() => onMarkAsDesigned(projectId, v.id)}
+                      disabled={loading === v.id}
+                      title="Marcar como diseñado"
+                    >
+                      Marcar diseñado
                     </button>
                   )}
                 </div>

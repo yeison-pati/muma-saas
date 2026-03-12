@@ -21,6 +21,7 @@ import com.muma.catalog.dtos.products.CreateBaseInitialComponent;
 import com.muma.catalog.dtos.products.CreateVariant;
 import com.muma.catalog.dtos.products.ProjectVariantResponse;
 import com.muma.catalog.dtos.products.QuoteVariant;
+import com.muma.catalog.dtos.products.TypologyStandardResponse;
 import com.muma.catalog.dtos.products.VariantResponse;
 import com.muma.catalog.dtos.components.ComponentIdValue;
 import com.muma.catalog.dtos.projects.CreateProject;
@@ -30,9 +31,11 @@ import com.muma.catalog.events.services.ProjectEventPublisher;
 import com.muma.catalog.models.Base;
 import com.muma.catalog.models.Component;
 import com.muma.catalog.models.Project;
+import com.muma.catalog.models.TypologyStandard;
 import com.muma.catalog.models.Variant;
 import com.muma.catalog.models.VariantQuote;
 import com.muma.catalog.repositories.ProjectRepository;
+import com.muma.catalog.repositories.TypologyStandardRepo;
 import com.muma.catalog.repositories.VariantQuoteRepo;
 
 import lombok.AllArgsConstructor;
@@ -41,24 +44,25 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class CatalogService {
 
-    private final VariantService variantService;
-    private final ComponentService componentService;
-    private final VariantQuoteService variantQuoteService;
-    private final ProjectService projectService;
-    private final BaseService baseService;
-    private final ProjectEventPublisher projectEventPublisher;
-    private final ProductEventPublisher productEventPublisher;
+        private final VariantService variantService;
+        private final ComponentService componentService;
+        private final VariantQuoteService variantQuoteService;
+        private final ProjectService projectService;
+        private final BaseService baseService;
+        private final ProjectEventPublisher projectEventPublisher;
+        private final ProductEventPublisher productEventPublisher;
     private final ProjectRepository projectRepository;
     private final VariantQuoteRepo variantQuoteRepo;
+    private final TypologyStandardRepo typologyStandardRepo;
     private final EntityManager entityManager;
 
-    @Transactional
+        @Transactional
     @CacheEvict(value = {"projects", "products"}, allEntries = true)
     public Project createProject(CreateProject createProject) {
-        boolean hasVariants = createProject.variants() != null && !createProject.variants().isEmpty();
-        boolean hasP3s = createProject.p3s() != null && !createProject.p3s().isEmpty();
+                boolean hasVariants = createProject.variants() != null && !createProject.variants().isEmpty();
+                boolean hasP3s = createProject.p3s() != null && !createProject.p3s().isEmpty();
 
-        if (!hasVariants && !hasP3s) {
+                if (!hasVariants && !hasP3s) {
             throw new IllegalArgumentException("At least one variant or P3 is required to create a project");
         }
 
@@ -78,10 +82,10 @@ public class CatalogService {
 
         int totalItems = (hasVariants ? createProject.variants().size() : 0) + (hasP3s ? createProject.p3s().size() : 0);
         projectEventPublisher.projectCreated(
-                projectSaved.getId(),
-                projectSaved.getCreatedAt(),
-                projectSaved.getSalesId(),
-                projectSaved.getQuoterId(),
+                                                                        projectSaved.getId(),
+                                                                        projectSaved.getCreatedAt(),
+                                                                        projectSaved.getSalesId(),
+                                                                        projectSaved.getQuoterId(),
                 totalItems);
 
         return projectRepository.findById(projectSaved.getId()).orElse(projectSaved);
@@ -186,6 +190,19 @@ public class CatalogService {
                 .collect(Collectors.toList());
     }
 
+    /** Alias para rol desarrollo: proyectos efectivos. */
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> getProjectsForDevelopment() {
+        return getEffectiveProjects();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TypologyStandardResponse> getTypologyStandards() {
+        return typologyStandardRepo.findAll().stream()
+                .map(TypologyStandardResponse::from)
+                .collect(Collectors.toList());
+    }
+
     /** filterByEffective=true: en proyectos efectivos, solo variantes con quote.effective. */
     private ProjectResponse toProjectResponse(Project project, boolean filterByEffective) {
         boolean projectEffective = project.isEffective();
@@ -218,8 +235,8 @@ public class CatalogService {
                     String sapCode = variant.getSapCode();
                     if (sapCode != null && sapCode.isBlank()) sapCode = null;
                     return new ProjectVariantResponse(
-                            variant.getId(),
-                            variant.getSapRef(),
+                                                                                                variant.getId(),
+                                                                                                variant.getSapRef(),
                             sapCode,
                             quote,
                             components,
@@ -258,16 +275,16 @@ public class CatalogService {
                             })
                             .collect(Collectors.toList());
                     return new BaseResponse(
-                            base.getId(),
-                            base.getCode(),
-                            base.getName(),
-                            base.getImage(),
-                            base.getModel(),
-                            base.getCategory(),
-                            base.getSubcategory(),
-                            base.getSpace(),
-                            base.getLine(),
-                            base.getBaseMaterial(),
+                                                                base.getId(),
+                                                                base.getCode(),
+                                                                base.getName(),
+                                                                base.getImage(),
+                                                                base.getModel(),
+                                                                base.getCategory(),
+                                                                base.getSubcategory(),
+                                                                base.getSpace(),
+                                                                base.getLine(),
+                                                                base.getBaseMaterial(),
                             variantResponses);
                 })
                 .filter(b -> b.getVariants() != null && !b.getVariants().isEmpty())
@@ -440,9 +457,9 @@ public class CatalogService {
             variantService.deleteById(vid);
         }
         return true;
-    }
+        }
 
-    @Transactional
+        @Transactional
     @CacheEvict(value = {"projects", "products"}, allEntries = true)
     public Boolean removeVariantFromProject(UUID projectId, UUID variantId) {
         Project project = projectService.getById(projectId);
@@ -477,7 +494,7 @@ public class CatalogService {
      * Proyecto efectivo + ediciones: crea NUEVO proyecto con variantes editadas + efectivas.
      * El proyecto original permanece efectivo e inmutable.
      */
-    @Transactional
+        @Transactional
     @CacheEvict(value = {"projects", "products"}, allEntries = true)
     public Boolean reopenEffectiveProject(UUID projectId, UUID editedVariantId, Integer quantity,
             String comments, String type, List<ComponentIdValue> components) {
@@ -605,6 +622,20 @@ public class CatalogService {
     @CacheEvict(value = {"projects"}, allEntries = true)
     public Boolean toggleP3P5(UUID projectId, UUID variantId) {
         variantQuoteService.toggleP3P5(projectId, variantId);
+        return true;
+    }
+
+    @Transactional
+    @CacheEvict(value = {"projects"}, allEntries = true)
+    public Boolean markVariantAsDesigned(UUID projectId, UUID variantId, UUID designerId) {
+        variantQuoteService.markAsDesigned(projectId, variantId, designerId);
+        return true;
+    }
+
+    @Transactional
+    @CacheEvict(value = {"projects"}, allEntries = true)
+    public Boolean markVariantAsDeveloped(UUID projectId, UUID variantId, UUID developmentUserId) {
+        variantQuoteService.markAsDeveloped(projectId, variantId, developmentUserId);
         return true;
     }
 

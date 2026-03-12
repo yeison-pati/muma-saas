@@ -11,7 +11,7 @@ export default function Login() {
   const [error, setError] = useState('');
 
   if (user && !isLoading) {
-    navigate(`/${user.role === 'ADMIN' ? 'admin' : user.role === 'QUOTER' ? 'cotizador' : user.role === 'SALES' ? 'comercial' : 'disenador'}`, {
+    navigate(`/${user.role === 'ADMIN' ? 'admin' : user.role === 'QUOTER' ? 'cotizador' : user.role === 'SALES' ? 'comercial' : user.role === 'DEVELOPMENT' ? 'desarrollo' : 'disenador'}`, {
       replace: true,
     });
     return null;
@@ -29,7 +29,9 @@ export default function Login() {
             ? '/cotizador'
             : u?.role === 'SALES'
               ? '/comercial'
-              : '/disenador';
+              : u?.role === 'DEVELOPMENT'
+                ? '/desarrollo'
+                : '/disenador';
       navigate(path, { replace: true });
     } catch (err) {
       setError(err?.message || 'Error al iniciar sesión');

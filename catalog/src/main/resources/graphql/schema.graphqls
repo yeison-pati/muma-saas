@@ -9,6 +9,10 @@ type Query {
   projectsByQuoter(quoterId: ID!): [Project!]!
   "Proyectos marcados efectivos"
   projectsEffective: [Project!]!
+  "Proyectos efectivos para rol desarrollo (datos maestros)"
+  projectsForDevelopment: [Project!]!
+  "Estándares de tiempo por tipología (para métricas)"
+  typologyStandards: [TypologyStandard!]!
 }
 
 type Mutation {
@@ -26,6 +30,10 @@ type Mutation {
   makeVariantQuoteEffective(projectId: ID!, variantId: ID!, effective: Boolean!): Boolean
   "Alternar tipología P3/P5 (solo cotizador)"
   toggleP3P5(projectId: ID!, variantId: ID!): Boolean
+  "Diseñador marca variante como diseñada"
+  markVariantAsDesigned(projectId: ID!, variantId: ID!, designerId: ID!): Boolean
+  "Desarrollo marca variante como desarrollada (agregada a SAP)"
+  markVariantAsDeveloped(projectId: ID!, variantId: ID!, developmentUserId: ID!): Boolean
   "Eliminar proyecto (sustituto de DELETE /projects)"
   deleteProject(projectId: ID!): Boolean
   "Cotizar variante (sustituto de PATCH /products/quote)"
@@ -64,7 +72,18 @@ type Project {
   totalCost: Int
   estimatedTime: Int
   createdAt: String!
+  "Fecha/hora exacta de solicitud (comercial). Para métricas."
+  requestedAt: String
   variants: [ProjectVariant!]!
+}
+
+type TypologyStandard {
+  id: ID!
+  tipologia: String!
+  daysCotiz: Int!
+  daysDiseno: Int!
+  daysDesarrollo: Int
+  hoursPerWeek: Int
 }
 
 type ProjectVariant {
@@ -78,6 +97,12 @@ type ProjectVariant {
   elaborationTime: Int
   quantity: Int
   price: Int
+  "Fecha/hora en que cotizador terminó de cotizar"
+  quotedAt: String
+  "Fecha/hora en que diseñador marcó como diseñada"
+  designedAt: String
+  "Fecha/hora en que desarrollo marcó como desarrollada"
+  developedAt: String
   components: [ComponentResponse!]!
   baseCode: String
   baseName: String

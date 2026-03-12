@@ -73,6 +73,23 @@ export const QUERY_DESIGNERS = `
   }
 `;
 
+export const QUERY_DEVELOPERS = `
+  query Developers {
+    developers {
+      user {
+        id
+        name
+        email
+        phone
+        role
+        region
+        jobTitle
+        createdBy
+      }
+    }
+  }
+`;
+
 export const MUTATION_CREATE_USER = `
   mutation CreateUser($input: RegisterInput!) {
     createUser(input: $input)

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useUser } from '../../context/UserContext';
 import { useCatalogService } from '../../hooks/useCatalogService';
 import ProjectProductsTable from '../../components/ProjectProductsTable';
 import './Proyectos.css';
 
 export default function DisenadorProyectos() {
+  const { user } = useUser();
   const catalog = useCatalogService();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,12 +13,16 @@ export default function DisenadorProyectos() {
   const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
+    load();
+  }, []);
+
+  const load = () => {
     catalog
       .getProjectsEffective()
       .then(setProjects)
       .catch(() => setProjects([]))
       .finally(() => setLoading(false));
-  }, []);
+  };
 
   const filtered = projects.filter((p) =>
     (p.consecutive || p.name || '').toLowerCase().includes(searchText.trim().toLowerCase())
@@ -74,7 +80,19 @@ export default function DisenadorProyectos() {
                       <span className="badge badge-version">v{p.version ?? 1}</span>
                       <span className="badge badge-estado">Estado: {p.state ?? 0}%</span>
                     </div>
-                    <ProjectProductsTable variants={variants} projectId={p.id} />
+                    <ProjectProductsTable
+                      variants={variants}
+                      projectId={p.id}
+                      onMarkAsDesigned={user?.id ? async (projectId, variantId) => {
+                        try {
+                          await catalog.markVariantAsDesigned(projectId, variantId, user.id);
+                          load();
+                        } catch (err) {
+                          alert(err?.message || 'Error al marcar diseñado');
+                        }
+                      } : undefined}
+                      onRefresh={load}
+                    />
                   </div>
                 )}
               </li>

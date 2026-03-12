@@ -54,7 +54,7 @@ public class AdminService {
     }
 
     @Transactional
-    @CacheEvict(value = {"quoters", "sales", "designers"}, allEntries = true)
+    @CacheEvict(value = {"quoters", "sales", "designers", "developers"}, allEntries = true)
     public Boolean createUser(RegisterRequest request) {
         User user = userRepository.save(
                 User.builder()
@@ -103,12 +103,15 @@ public class AdminService {
                                 .build());
                 yield true;
             }
+            case "DEVELOPMENT" -> {
+                yield true;
+            }
             default -> throw new RuntimeException("Invalid role");
         };
     }
 
     @Transactional
-    @CacheEvict(value = {"quoters", "sales", "designers"}, allEntries = true)
+    @CacheEvict(value = {"quoters", "sales", "designers", "developers"}, allEntries = true)
     public Boolean deleteUser(UUID userId) {
         try {
             quoterRepository.deleteByUserId(userId);
@@ -124,7 +127,7 @@ public class AdminService {
     }
 
     @Transactional
-    @CacheEvict(value = {"quoters", "sales", "designers"}, allEntries = true)
+    @CacheEvict(value = {"quoters", "sales", "designers", "developers"}, allEntries = true)
     public Boolean editUser(UUID userId, UserUpdate userUpdate) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));

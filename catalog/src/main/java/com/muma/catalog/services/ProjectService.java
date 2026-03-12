@@ -1,5 +1,6 @@
 package com.muma.catalog.services;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -56,6 +57,7 @@ public class ProjectService {
                         .quoterId(project.quoterId())
                         .state(0)
                         .createdAt(LocalDateTime.now())
+                        .requestedAt(Instant.now())
                         .quoted(false)
                         .reopen(false)
                         .effective(false)
@@ -90,6 +92,7 @@ public class ProjectService {
                         .state(0)
                         .createdAt(LocalDateTime.now())
                         .modifiedAt(LocalDateTime.now())
+                        .requestedAt(Instant.now())
                         .quoted(false)
                         .reopen(true)
                         .effective(false)

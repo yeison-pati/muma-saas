@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 
 import com.muma.catalog.dtos.projects.ProjectResponse;
 import com.muma.catalog.dtos.products.BaseResponse;
+import com.muma.catalog.dtos.products.TypologyStandardResponse;
 import com.muma.catalog.dtos.products.CreateBaseInitialComponent;
 import com.muma.catalog.dtos.products.VariantResponse;
 import com.muma.catalog.models.Base;
@@ -53,6 +54,16 @@ public class CatalogGraphQLController {
     @QueryMapping
     public List<ProjectResponse> projectsEffective() {
         return catalogService.getEffectiveProjects();
+    }
+
+    @QueryMapping
+    public List<ProjectResponse> projectsForDevelopment() {
+        return catalogService.getProjectsForDevelopment();
+    }
+
+    @QueryMapping
+    public List<TypologyStandardResponse> typologyStandards() {
+        return catalogService.getTypologyStandards();
     }
 
     @MutationMapping
@@ -153,6 +164,28 @@ public class CatalogGraphQLController {
             @Argument("projectId") String projectId,
             @Argument("variantId") String variantId) {
         return catalogService.toggleP3P5(UUID.fromString(projectId), UUID.fromString(variantId));
+    }
+
+    @MutationMapping
+    public Boolean markVariantAsDesigned(
+            @Argument("projectId") String projectId,
+            @Argument("variantId") String variantId,
+            @Argument("designerId") String designerId) {
+        return catalogService.markVariantAsDesigned(
+                UUID.fromString(projectId),
+                UUID.fromString(variantId),
+                UUID.fromString(designerId));
+    }
+
+    @MutationMapping
+    public Boolean markVariantAsDeveloped(
+            @Argument("projectId") String projectId,
+            @Argument("variantId") String variantId,
+            @Argument("developmentUserId") String developmentUserId) {
+        return catalogService.markVariantAsDeveloped(
+                UUID.fromString(projectId),
+                UUID.fromString(variantId),
+                UUID.fromString(developmentUserId));
     }
 
     @MutationMapping

@@ -1,5 +1,6 @@
 package com.muma.catalog.services;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,6 +55,11 @@ public class VariantQuoteService {
         variantQuote.setPrice(quoteProduct.price());
         variantQuote.setElaborationTime(quoteProduct.elaborationTime());
         variantQuote.setCriticalMaterial(quoteProduct.criticalMaterial());
+        variantQuote.setQuotedAt(Instant.now());
+        // P1: diseño = 0 días, asignar designedAt = quotedAt automáticamente
+        if ("p1".equalsIgnoreCase(variantQuote.getType())) {
+            variantQuote.setDesignedAt(Instant.now());
+        }
         return variantQuoteRepository.save(variantQuote);
     }
 
@@ -136,6 +142,40 @@ public class VariantQuoteService {
         } else {
             throw new IllegalArgumentException("Solo variantes P3 o P5 pueden alternar tipología. Actual: " + t);
         }
+        return variantQuoteRepository.save(vq);
+    }
+
+    /** Diseñador marca variante como diseñada. P1 ya tiene designedAt=quotedAt. */
+    @Transactional
+    public VariantQuote markAsDesigned(UUID projectId, UUID variantId, UUID designerId) {
+        VariantQuote vq = variantQuoteRepository.findByVariantIdAndProjectId(variantId, projectId)
+                .orElseThrow(() -> new IllegalStateException("VariantQuote not found"));
+        if (vq.getQuotedAt() == null) {
+            throw new IllegalStateException("La variante debe estar cotizada antes de marcar como diseñada");
+        }
+        vq.setDesignedAt(Instant.now());
+        vq.setDesignerId(designerId);
+        return variantQuoteRepository.save(vq);
+    }
+
+    /** Desarrollo (datos maestros) marca variante como desarrollada (agregada a SAP). Solo en proyectos efectivos. */
+    @Transactional
+    public VariantQuote markAsDeveloped(UUID projectId, UUID variantId, UUID developmentUserId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalStateException("Project not found"));
+        if (!project.isEffective()) {
+            throw new IllegalStateException("Solo se puede marcar desarrollado en proyectos efectivos");
+        }
+        VariantQuote vq = variantQuoteRepository.findByVariantIdAndProjectId(variantId, projectId)
+                .orElseThrow(() -> new IllegalStateException("VariantQuote not found"));
+        if (!vq.isEffective()) {
+            throw new IllegalStateException("Solo se puede marcar desarrollado en variantes efectivas");
+        }
+        if (vq.getDesignedAt() == null) {
+            throw new IllegalStateException("La variante debe estar diseñada antes de marcar como desarrollada");
+        }
+        vq.setDevelopedAt(Instant.now());
+        vq.setDevelopmentUserId(developmentUserId);
         return variantQuoteRepository.save(vq);
     }
 }

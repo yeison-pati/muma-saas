@@ -4,6 +4,7 @@ import {
   QUERY_QUOTERS,
   QUERY_SALES,
   QUERY_DESIGNERS,
+  QUERY_DEVELOPERS,
   MUTATION_CREATE_USER,
   MUTATION_DELETE_USER,
   MUTATION_EDIT_USER,
@@ -23,6 +24,10 @@ export const createIdentityService = (getToken) => ({
   getDesigners: () =>
     identityGraphQL(QUERY_DESIGNERS, {}, getToken).then(
       (d) => d?.designers ?? []
+    ),
+  getDevelopers: () =>
+    identityGraphQL(QUERY_DEVELOPERS, {}, getToken).then(
+      (d) => d?.developers ?? []
     ),
   createUser: (input) =>
     identityGraphQL(MUTATION_CREATE_USER, { input }, getToken),

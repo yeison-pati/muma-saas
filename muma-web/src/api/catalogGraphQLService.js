@@ -12,6 +12,8 @@ import {
   MUTATION_MAKE_PROJECT_EFFECTIVE,
   MUTATION_MAKE_VARIANT_QUOTE_EFFECTIVE,
   MUTATION_TOGGLE_P3_P5,
+  MUTATION_MARK_VARIANT_AS_DESIGNED,
+  MUTATION_MARK_VARIANT_AS_DEVELOPED,
   MUTATION_QUOTE_VARIANT,
   MUTATION_UPDATE_VARIANT_QUOTE_QUANTITY,
   MUTATION_REMOVE_VARIANT_FROM_PROJECT,
@@ -79,6 +81,16 @@ export const createCatalogService = (getToken) => ({
   toggleP3P5: (projectId, variantId) =>
     catalogGraphQL(MUTATION_TOGGLE_P3_P5, { projectId, variantId }, getToken).then(
       (d) => d?.toggleP3P5
+    ),
+
+  markVariantAsDesigned: (projectId, variantId, designerId) =>
+    catalogGraphQL(MUTATION_MARK_VARIANT_AS_DESIGNED, { projectId, variantId, designerId }, getToken).then(
+      (d) => d?.markVariantAsDesigned
+    ),
+
+  markVariantAsDeveloped: (projectId, variantId, developmentUserId) =>
+    catalogGraphQL(MUTATION_MARK_VARIANT_AS_DEVELOPED, { projectId, variantId, developmentUserId }, getToken).then(
+      (d) => d?.markVariantAsDeveloped
     ),
 
   quoteVariant: (input) =>

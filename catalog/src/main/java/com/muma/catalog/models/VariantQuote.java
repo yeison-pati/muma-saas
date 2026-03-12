@@ -1,5 +1,6 @@
 package com.muma.catalog.models;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -72,4 +73,24 @@ public class VariantQuote {
     /** Si true: variante marcada efectiva. Proyecto efectivo lista solo estas. */
     @Builder.Default
     private boolean effective = false;
+
+    /** Fecha/hora exacta en que el cotizador terminó de cotizar. Para métricas. */
+    @Column(name = "quoted_at")
+    private Instant quotedAt;
+
+    /** Fecha/hora en que el diseñador marcó como diseñado. P1: puede ser = quotedAt. */
+    @Column(name = "designed_at")
+    private Instant designedAt;
+
+    /** Fecha/hora en que desarrollo (datos maestros) marcó como desarrollado (agregado a SAP). */
+    @Column(name = "developed_at")
+    private Instant developedAt;
+
+    /** ID del diseñador que marcó como diseñado. */
+    @Column(name = "designer_id")
+    private UUID designerId;
+
+    /** ID del usuario de desarrollo que marcó como desarrollado. */
+    @Column(name = "development_user_id")
+    private UUID developmentUserId;
 }

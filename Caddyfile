@@ -18,6 +18,10 @@
                 reverse_proxy document:8080
         }
 
+        handle_path /analytics/* {
+      reverse_proxy metabase:3000
+  }
+
         # ---------- MINIO IMAGES (SIGNED SAFE) ----------
         handle /images/* {
                 reverse_proxy minio:9000 {

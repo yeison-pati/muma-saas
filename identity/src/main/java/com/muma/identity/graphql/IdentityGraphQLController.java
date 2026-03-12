@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 
 import com.muma.identity.dtos.auth.TokenResponse;
 import com.muma.identity.dtos.response.DesignerResponse;
+import com.muma.identity.dtos.response.DeveloperResponse;
 import com.muma.identity.dtos.response.QuoterResponse;
 import com.muma.identity.dtos.response.SalesResponse;
 import com.muma.identity.dtos.response.UserResponse;
@@ -75,21 +76,27 @@ public class IdentityGraphQLController {
     }
 
     @QueryMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'QUOTER', 'DESIGNER', 'SALES')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'QUOTER', 'DESIGNER', 'SALES', 'DEVELOPMENT')")
     public List<QuoterResponse> quoters() {
         return userService.getAllQuoters();
     }
 
     @QueryMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'QUOTER', 'DESIGNER', 'SALES')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'QUOTER', 'DESIGNER', 'SALES', 'DEVELOPMENT')")
     public List<SalesResponse> sales() {
         return userService.getAllSales();
     }
 
     @QueryMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'QUOTER', 'DESIGNER', 'SALES')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'QUOTER', 'DESIGNER', 'SALES', 'DEVELOPMENT')")
     public List<DesignerResponse> designers() {
         return userService.getAllDesigners();
+    }
+
+    @QueryMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'QUOTER', 'DESIGNER', 'SALES', 'DEVELOPMENT')")
+    public List<DeveloperResponse> developers() {
+        return userService.getAllDevelopers();
     }
 
     private static UserUpdate toUserUpdate(UUID id, UserUpdateInput input) {

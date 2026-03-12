@@ -33,6 +33,7 @@ public record ProjectResponse(
         boolean effective,
         Integer totalCost,
         Integer estimatedTime,
+        String requestedAt,
         List<ProjectVariantResponse> variants) {
 
         public ProjectResponse(Project project, List<ProjectVariantResponse> variants) {
@@ -61,6 +62,7 @@ public record ProjectResponse(
                         project.isEffective(),
                         project.getTotalCost(),
                         project.getEstimatedTime(),
+                        project.getRequestedAt() != null ? project.getRequestedAt().toString() : null,
                         variants);
         }
     

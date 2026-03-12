@@ -21,6 +21,9 @@ public class ProjectVariantResponse {
     private Integer elaborationTime;
     private Integer quantity;
     private Integer price;
+    private String quotedAt;
+    private String designedAt;
+    private String developedAt;
     private List<ComponentResponse> components;
     private String baseCode;
     private String baseName;
@@ -42,6 +45,9 @@ public class ProjectVariantResponse {
         this.elaborationTime = variantQuote != null ? variantQuote.getElaborationTime() : null;
         this.quantity = variantQuote != null ? variantQuote.getQuantity() : null;
         this.price = variantQuote != null ? variantQuote.getPrice() : null;
+        this.quotedAt = variantQuote != null && variantQuote.getQuotedAt() != null ? variantQuote.getQuotedAt().toString() : null;
+        this.designedAt = variantQuote != null && variantQuote.getDesignedAt() != null ? variantQuote.getDesignedAt().toString() : null;
+        this.developedAt = variantQuote != null && variantQuote.getDevelopedAt() != null ? variantQuote.getDevelopedAt().toString() : null;
         this.effective = variantQuote != null && variantQuote.isEffective();
         this.components = components;
         this.baseCode = baseCode;

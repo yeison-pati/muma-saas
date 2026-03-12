@@ -380,3 +380,22 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.btn-mark-designed {
+  padding: 6px 12px;
+  background: #6f42c1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.btn-mark-designed:hover:not(:disabled) {
+  background: #5a32a3;
+}
+
+.btn-mark-designed:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -25,6 +25,7 @@ const RUTAS = {
     { name: 'PROYECTOS', path: '/admin' },
     { name: 'USUARIOS', path: '/admin/usuarios' },
   ],
+  desarrollo: [{ name: 'PROYECTOS EFECTIVOS', path: '/desarrollo' }],
 };
 
 function LayoutContent({ role }) {

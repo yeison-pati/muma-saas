@@ -9,6 +9,8 @@ type Query {
   sales: [SalesResponse!]!
   "Lista de diseñadores (sustituto de GET /public/designers)"
   designers: [DesignerResponse!]!
+  "Lista de usuarios desarrollo/datos maestros"
+  developers: [DeveloperResponse!]!
 }
 
 type Mutation {
@@ -60,6 +62,10 @@ type DesignerResponse {
   user: UserResponse!
   created: Int!
   edited: Int!
+}
+
+type DeveloperResponse {
+  user: UserResponse!
 }
 
 input LoginInput {

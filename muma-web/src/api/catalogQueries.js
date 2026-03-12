@@ -190,6 +190,7 @@ export const QUERY_PROJECTS_EFFECTIVE = `
       totalCost
       estimatedTime
       createdAt
+      requestedAt
       variants {
         id
         sapRef
@@ -200,6 +201,9 @@ export const QUERY_PROJECTS_EFFECTIVE = `
         quantity
         type
         effective
+        quotedAt
+        designedAt
+        developedAt
         criticalMaterial
         comments
         baseName
@@ -268,6 +272,18 @@ export const MUTATION_MAKE_VARIANT_QUOTE_EFFECTIVE = `
 export const MUTATION_TOGGLE_P3_P5 = `
   mutation ToggleP3P5($projectId: ID!, $variantId: ID!) {
     toggleP3P5(projectId: $projectId, variantId: $variantId)
+  }
+`;
+
+export const MUTATION_MARK_VARIANT_AS_DESIGNED = `
+  mutation MarkVariantAsDesigned($projectId: ID!, $variantId: ID!, $designerId: ID!) {
+    markVariantAsDesigned(projectId: $projectId, variantId: $variantId, designerId: $designerId)
+  }
+`;
+
+export const MUTATION_MARK_VARIANT_AS_DEVELOPED = `
+  mutation MarkVariantAsDeveloped($projectId: ID!, $variantId: ID!, $developmentUserId: ID!) {
+    markVariantAsDeveloped(projectId: $projectId, variantId: $variantId, developmentUserId: $developmentUserId)
   }
 `;
 

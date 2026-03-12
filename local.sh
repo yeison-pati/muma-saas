@@ -20,7 +20,13 @@ fi
 echo "Iniciando servicios..."
 
 # Si se pasa un servicio (ej: ./local.sh muma), solo se construye y arranca ese servicio.
-# Sin argumentos, se construye y arranca todo.
+# metabase-init: ejecuta el init con el script actual (recarga cambios en metabase_init.py)
+if [ "$1" = "metabase-init" ]; then
+  echo "Ejecutando metabase-init (script actual)..."
+  docker compose stop metabase-init metabase
+  docker compose rm metabase-init metabase -f -v
+fi
+
 if [ -n "$1" ]; then
   echo "Construyendo solo: $1"
   docker compose build "$1"

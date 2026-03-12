@@ -245,6 +245,96 @@ services:
       - muma
     networks:
       - system
+  
+  metabasedb:
+    image: postgres:17-alpine
+    container_name: metabasedb
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: metabase
+      POSTGRES_PASSWORD: metabase
+      POSTGRES_DB: metabase
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - metabase_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metabase -d metabase"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - system
+
+
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+
+    environment:
+
+      # URL pública
+      MB_SITE_URL: http://localhost:8000
+
+      # para servirlo en /analytics si usas Caddy
+      MB_JETTY_CONTEXT_PATH: /analytics
+
+      # DB interna de Metabase
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: metabase
+      MB_DB_PASS: metabase
+      MB_DB_HOST: metabasedb
+
+      # opcional
+      MB_ANON_TRACKING_ENABLED: "false"
+      MB_ENABLE_PUBLIC_SHARING: "true"
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:3000/api/health | grep -q '\"status\":\"ok\"' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+    depends_on:
+      metabasedb:
+        condition: service_healthy
+      catalogdb:
+        condition: service_healthy
+
+    networks:
+      - system
+
+  metabase-init:
+    image: python:3-alpine
+    container_name: metabase-init
+    restart: "no"
+    environment:
+      METABASE_BASE: http://metabase:3000
+      METABASE_ADMIN_1_EMAIL: ${METABASE_ADMIN_1_EMAIL:-admin@muma.local}
+      METABASE_ADMIN_1_PASS: ${METABASE_ADMIN_1_PASS:-Muma.Admin2024!}
+      METABASE_VIEWER_EMAIL: ${METABASE_VIEWER_EMAIL:-viewer@muma.local}
+      METABASE_VIEWER_PASS: ${METABASE_VIEWER_PASS:-Muma.Viewer2024!}
+      CATALOG_DB_HOST: ${CATALOG_DB_HOST:-catalogdb}
+      # Puerto interno de Postgres en la red Docker (no el mapeo host)
+      CATALOG_DB_PORT: 5432
+      CATALOG_DB_USER: ${CATALOG_DB_USER:-postgres}
+      CATALOG_DB_PASS: ${CATALOG_DB_PASS:-postgres123}
+      CATALOG_DB_NAME: ${CATALOG_DB_NAME:-catalog_db}
+      METABASE_QUERIES_DIR: /queries
+    volumes:
+      - ./metabase/init/metabase_init.py:/init.py
+      - ./metabase/queries:/queries:ro
+    entrypoint: ["python3", "/init.py"]
+    depends_on:
+      metabase:
+        condition: service_healthy
+    networks:
+      - system
 
 volumes:
   identity_data:
@@ -255,6 +345,7 @@ volumes:
   minio_data:
   caddy_data:
   caddy_config:
+  metabase_data:
 
 networks:
   system:
