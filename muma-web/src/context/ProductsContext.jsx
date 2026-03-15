@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useCatalogService } from '../hooks/useCatalogService';
+import { useProductsService } from '../hooks/useProductsService';
 import { getMediaUrls } from '../api/documentService';
 
 const ProductsContext = createContext(null);
@@ -11,14 +11,14 @@ export const useProducts = () => {
 };
 
 export const ProductsProvider = ({ children }) => {
-  const catalog = useCatalogService();
+  const productsService = useProductsService();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const bases = await catalog.getProducts();
+      const bases = await productsService.getProducts();
       if (!bases?.length) {
         setProducts([]);
         return;

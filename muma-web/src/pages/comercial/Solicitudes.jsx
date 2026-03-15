@@ -55,6 +55,7 @@ function SolicitudesList({
   modificaciones,
   handleReopen,
   handleMakeEffective,
+  handleQuitarEffective,
   handleMakeVariantEffective,
   handleDeleteProject,
   openPdfModal,
@@ -96,15 +97,25 @@ function SolicitudesList({
               {isCotizadas && (
                 <div className="solicitudes-item-actions">
                   {p.effective ? (
-                    <button
-                      type="button"
-                      className="solicitudes-reopen-btn"
-                      onClick={() => handleReopen(p.id)}
-                      disabled={!modificaciones[p.id]}
-                      title={modificaciones[p.id] ? 'Crea nuevo proyecto con variantes editadas + efectivas' : 'Edita un producto para reabrir como nuevo proyecto'}
-                    >
-                      {modificaciones[p.id] ? 'Reabrir (nuevo proyecto)' : 'Edita para reabrir'}
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className="solicitudes-reopen-btn"
+                        onClick={() => handleReopen(p.id)}
+                        disabled={!modificaciones[p.id]}
+                        title={modificaciones[p.id] ? 'Crea nuevo proyecto con variantes editadas + efectivas. El original pierde efectivo.' : 'Edita un producto para reabrir como nuevo proyecto'}
+                      >
+                        {modificaciones[p.id] ? 'Reabrir (nuevo proyecto)' : 'Edita para reabrir'}
+                      </button>
+                      <button
+                        type="button"
+                        className="solicitudes-quitar-effective-btn"
+                        onClick={() => handleQuitarEffective(p.id)}
+                        title="Quitar efectivo del proyecto"
+                      >
+                        Quitar efectivo
+                      </button>
+                    </>
                   ) : (
                     <>
                       <button
@@ -292,6 +303,15 @@ export default function ComercialSolicitudes() {
     }
   };
 
+  const handleQuitarEffective = async (projectId) => {
+    try {
+      await catalog.quitarProjectEffective(projectId);
+      refreshProjects();
+    } catch (err) {
+      alert(err?.message || 'Error al quitar efectivo');
+    }
+  };
+
   const handleMakeVariantEffective = async (projectId, variantId, effective) => {
     try {
       await catalog.makeVariantQuoteEffective(projectId, variantId, effective);
@@ -433,6 +453,7 @@ export default function ComercialSolicitudes() {
             modificaciones={modificaciones}
             handleReopen={handleReopen}
             handleMakeEffective={handleMakeEffective}
+            handleQuitarEffective={handleQuitarEffective}
             handleMakeVariantEffective={handleMakeVariantEffective}
             handleDeleteProject={handleDeleteProject}
             openPdfModal={openPdfModal}

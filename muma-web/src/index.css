@@ -3,23 +3,76 @@
   --color-primary: #17a2b8;
   --color-primary-dark: #138496;
   --color-primary-light: #e9f7fb;
+  --color-primary-light-alt: #e7f3f5;
+  --color-primary-light-hover: #e7f6f8;
   --color-primary-border: #b5e7f1;
+  --color-primary-text: #0c5460;
+  --color-primary-alpha-08: rgba(23, 162, 184, 0.08);
+  --color-primary-alpha-10: rgba(23, 162, 184, 0.1);
+  --color-primary-alpha-20: rgba(23, 162, 184, 0.2);
   /* Texto */
   --color-text: #1a1a1a;
   --color-text-muted: #6c757d;
   --color-text-secondary: #666;
   --color-text-tertiary: #999;
+  --color-text-input: #495057;
+  --color-text-dark: #333;
+  --color-text-heading: #2c3e50;
+  --color-text-soft: #555;
+  --color-text-muted-alt: #5a6c7d;
+  --color-text-muted-dark: #7f8c8d;
+  --color-text-slate: #64748b;
+  --color-bg-muted: #ecf0f1;
   /* Fondos y bordes */
   --color-bg: #f8f9fa;
   --color-bg-white: #ffffff;
+  --color-on-primary: #ffffff;
+  --color-bg-hover: #e9ecef;
+  --color-bg-input: #eee;
   --color-border: #dee2e6;
   --color-border-light: #e8ebf0;
+  --color-border-hover: #e9ecef;
+  --color-border-input: #ced4da;
+  --color-border-focus: #adb5bd;
+  --color-border-soft: #e1e8ed;
+  /* Sombras */
   --color-shadow: rgba(0, 0, 0, 0.1);
+  --color-shadow-sm: rgba(0, 0, 0, 0.06);
+  --color-shadow-md: rgba(0, 0, 0, 0.08);
+  --color-shadow-lg: rgba(0, 0, 0, 0.15);
+  --color-shadow-xl: rgba(0, 0, 0, 0.2);
+  --color-overlay: rgba(0, 0, 0, 0.5);
+  --color-overlay-light: rgba(0, 0, 0, 0.45);
+  --color-bg-white-alpha-90: rgba(255, 255, 255, 0.9);
   /* Acentos */
+  --color-accent: #fd7e14;
+  --color-accent-dark: #e96a00;
   --color-chip-bg: #f0f5ff;
   --color-chip-border: #d8e4f0;
+  /* Estados */
+  --color-success: #28a745;
+  --color-success-dark: #155724;
+  --color-success-bg: #d4edda;
+  --color-info-bg: #d1ecf1;
+  --color-info-text: #0c5460;
+  --color-info-bg-alt: #cce5ff;
+  --color-info-text-alt: #004085;
   --color-danger: #e74c3c;
   --color-danger-dark: #c0392b;
+  --color-danger-darker: #c82333;
+  --color-danger-bg: #fff5f5;
+  --color-danger-border: #feb2b2;
+  --color-danger-modal: #dc3545;
+  --color-danger-modal-dark: #c53030;
+  --color-danger-modal-bg: #e53e3e;
+  --color-danger-text: #742a2a;
+  --color-accent-bg: #fff3e6;
+  --color-primary-alt: #0d9db4;
+  --color-primary-alt-dark: #0b8a9e;
+  --color-design: #6f42c1;
+  --color-design-dark: #5a32a3;
+  --color-bg-soft: #fafafa;
+  --color-bg-soft-hover: #fafbfc;
   /* Tipografía */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-size-xs: 0.7rem;

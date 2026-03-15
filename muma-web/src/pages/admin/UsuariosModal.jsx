@@ -92,6 +92,14 @@ export default function UsuariosModal({ mode, form, setForm, onClose, onSubmit }
                 onChange={(e) => setForm((p) => ({ ...p, jobTitle: e.target.value }))}
                 placeholder="Cargo / jobTitle"
               />
+              <label className="usuarios-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={form.isLeader ?? false}
+                  onChange={(e) => setForm((p) => ({ ...p, isLeader: e.target.checked }))}
+                />
+                Líder / Jefe (puede asignar productos a otros)
+              </label>
             </>
           )}
           {mode === 'edit' && (
@@ -116,6 +124,14 @@ export default function UsuariosModal({ mode, form, setForm, onClose, onSubmit }
                 onChange={(e) => setForm((p) => ({ ...p, jobTitle: e.target.value }))}
                 placeholder="Cargo / jobTitle"
               />
+              <label className="usuarios-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={form.isLeader ?? false}
+                  onChange={(e) => setForm((p) => ({ ...p, isLeader: e.target.checked }))}
+                />
+                Líder / Jefe (puede asignar productos a otros)
+              </label>
             </>
           )}
           <div className="usuarios-modal-actions">

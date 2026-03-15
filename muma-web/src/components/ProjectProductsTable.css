@@ -1,45 +1,45 @@
 /* Estilo mumaviejo - tabla de productos en cotizaciones */
 .project-products-table-wrap {
-  background: #fff;
+  background: var(--color-bg-white);
   overflow-x: auto;
   border-radius: 6px;
-  border: 1px solid #e8ebf0;
+  border: 1px solid var(--color-border-light);
 }
 
 .project-products-header {
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background: #17a2b8;
+  background: var(--color-primary);
   color: white;
   font-weight: 600;
   font-size: 0.85rem;
 }
 
 .project-products-body {
-  background: #fff;
+  background: var(--color-bg-white);
 }
 
 .project-products-row {
   display: flex;
   align-items: stretch;
   min-height: 140px;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid var(--color-border-light);
   padding: 12px 16px;
   font-size: 0.9rem;
-  background: #fff;
+  background: var(--color-bg-white);
 }
 
 .project-products-row:hover {
-  background: #fafbfc;
+  background: var(--color-bg-soft-hover);
 }
 
 .project-products-empty {
   padding: 32px;
   text-align: center;
-  color: #6c757d;
+  color: var(--color-text-muted);
   font-style: italic;
-  background: #fff;
+  background: var(--color-bg-white);
 }
 
 /* Columnas - proporciones como mumaviejo */
@@ -50,7 +50,7 @@
 .col-valor { flex: 1; min-width: 90px; display: flex; align-items: center; justify-content: center; }
 .col-valor-total { flex: 1; min-width: 100px; display: flex; align-items: center; justify-content: center; }
 .col-tiempo { flex: 0.8; min-width: 70px; display: flex; align-items: center; justify-content: center; }
-.col-material { flex: 1.2; min-width: 100px; display: flex; align-items: flex-start; justify-content: center; padding: 8px; font-size: 11px; color: #666; word-break: break-word; text-align: center; }
+.col-material { flex: 1.2; min-width: 100px; display: flex; align-items: flex-start; justify-content: center; padding: 8px; font-size: 11px; color: var(--color-text-secondary); word-break: break-word; text-align: center; }
 .col-acciones {
   flex: 1;
   min-width: 90px;
@@ -59,6 +59,15 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+}
+
+.col-asignar {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
 }
 
 /* Código - mumaviejo: uno encima del otro, SAP negro, REF gris */
@@ -81,12 +90,12 @@
 .codigo-sap {
   font-weight: 600;
   font-size: 12px;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .codigo-ref {
   font-size: 10px;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .codigo-ref-only {
@@ -95,7 +104,7 @@
 }
 
 .codigo-empty {
-  color: #999;
+  color: var(--color-text-tertiary);
   font-style: italic;
 }
 
@@ -105,21 +114,21 @@
   height: 64px;
   object-fit: contain;
   border-radius: 6px;
-  border: 1px solid #e8ebf0;
-  background: #fafafa;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-soft);
 }
 
 .product-thumb-placeholder {
   width: 64px;
   height: 64px;
   border-radius: 6px;
-  border: 1px solid #dee2e6;
-  background: #e9ecef;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-hover);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 10px;
-  color: #6c757d;
+  color: var(--color-text-muted);
   font-weight: 500;
 }
 
@@ -132,25 +141,25 @@
 .descripcion-category {
   font-weight: 600;
   font-size: 12px;
-  color: #1a1a1a;
+  color: var(--color-text);
   margin-bottom: 2px;
 }
 
 .descripcion-subcategory {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary);
   margin-bottom: 3px;
 }
 
 .descripcion-detail {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-tertiary);
   margin-bottom: 1px;
 }
 
 .descripcion-caracteristicas {
   margin-top: 6px;
-  border-top: 1px solid #e8ebf0;
+  border-top: 1px solid var(--color-border-light);
   padding-top: 6px;
 }
 
@@ -161,7 +170,7 @@
   cursor: pointer;
   font-size: 11px;
   font-weight: 600;
-  color: #17a2b8;
+  color: var(--color-primary);
 }
 
 .descripcion-caract-toggle:hover {
@@ -170,7 +179,7 @@
 
 .descripcion-caract-codes-preview {
   font-weight: normal;
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 10px;
 }
 
@@ -182,12 +191,12 @@
 }
 
 .descripcion-chip {
-  background: #f0f5ff;
+  background: var(--color-chip-bg);
   padding: 2px 6px;
   border-radius: 3px;
-  border: 0.5px solid #d8e4f0;
+  border: 0.5px solid var(--color-chip-border);
   font-size: 10px;
-  color: #17a2b8;
+  color: var(--color-primary);
 }
 
 .descripcion-chip-with-codes {
@@ -215,18 +224,18 @@
 
 .descripcion-comentarios {
   margin-top: 8px;
-  border-top: 1px solid #e8ebf0;
+  border-top: 1px solid var(--color-border-light);
   padding-top: 6px;
 }
 
 .descripcion-comentarios-label {
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text);
   margin-right: 4px;
 }
 
 .descripcion-comentarios-text {
-  color: #666;
+  color: var(--color-text-secondary);
   font-style: italic;
 }
 
@@ -238,7 +247,7 @@
   cursor: pointer;
   font-size: 11px;
   font-weight: 600;
-  color: #17a2b8;
+  color: var(--color-primary);
 }
 
 .descripcion-edit-toggle:hover {
@@ -251,21 +260,21 @@
   cursor: pointer;
   text-align: left;
   font-size: 11px;
-  color: #666;
+  color: var(--color-text-secondary);
   line-height: 1.4;
   padding: 0;
 }
 
 .descripcion-toggle:hover {
-  color: #17a2b8;
+  color: var(--color-primary);
 }
 
 .descripcion-edit {
   margin-top: 8px;
   padding: 8px;
-  background: #f8f9fa;
+  background: var(--color-bg);
   border-radius: 6px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--color-border-hover);
 }
 
 .descripcion-edit-row {
@@ -282,7 +291,7 @@
 .descripcion-edit-row label {
   min-width: 100px;
   font-size: 11px;
-  color: #666;
+  color: var(--color-text-secondary);
   flex-shrink: 0;
 }
 
@@ -290,7 +299,7 @@
 .descripcion-edit-row textarea {
   flex: 1;
   padding: 4px 8px;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 12px;
 }
@@ -303,16 +312,16 @@
 /* Edición cantidad */
 .btn-edit-qty {
   background: transparent;
-  border: 1px dashed #17a2b8;
+  border: 1px dashed var(--color-primary);
   border-radius: 4px;
   padding: 4px 10px;
   cursor: pointer;
-  color: #17a2b8;
+  color: var(--color-primary);
   font-size: inherit;
 }
 
 .btn-edit-qty:hover {
-  background: #e7f6f8;
+  background: var(--color-primary-light-hover);
 }
 
 .qty-edit {
@@ -324,7 +333,7 @@
 .qty-edit input {
   width: 48px;
   padding: 4px 6px;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 0.9rem;
 }
@@ -339,18 +348,18 @@
 }
 
 .btn-save-qty {
-  background: #28a745;
+  background: var(--color-success);
   color: white;
 }
 
 .btn-cancel-qty {
-  background: #dc3545;
+  background: var(--color-danger-modal);
   color: white;
 }
 
 .btn-quote {
   padding: 6px 12px;
-  background: #17a2b8;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 4px;
@@ -359,12 +368,12 @@
 }
 
 .btn-quote:hover {
-  background: #138496;
+  background: var(--color-primary-dark);
 }
 
 .btn-remove {
   padding: 6px 12px;
-  background: #dc3545;
+  background: var(--color-danger-modal);
   color: white;
   border: none;
   border-radius: 4px;
@@ -373,7 +382,7 @@
 }
 
 .btn-remove:hover:not(:disabled) {
-  background: #c82333;
+  background: var(--color-danger-darker);
 }
 
 .btn-remove:disabled {
@@ -383,7 +392,7 @@
 
 .btn-mark-designed {
   padding: 6px 12px;
-  background: #6f42c1;
+  background: var(--color-design);
   color: white;
   border: none;
   border-radius: 4px;
@@ -391,8 +400,28 @@
   font-size: 0.8rem;
 }
 
+.btn-assign-select {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-white);
+  min-width: 100px;
+}
+
+.btn-assign-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.btn-assign-select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: #f1f5f9;
+}
+
 .btn-mark-designed:hover:not(:disabled) {
-  background: #5a32a3;
+  background: var(--color-design-dark);
 }
 
 .btn-mark-designed:disabled {

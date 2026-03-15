@@ -33,6 +33,11 @@ public class ProjectVariantResponse {
     private String line;
     private String space;
     private boolean effective;
+    /** ID de variante original en Products (para comparación). */
+    private UUID productVariantId;
+    private UUID assignedQuoterId;
+    private UUID assignedDesignerId;
+    private UUID assignedDevelopmentUserId;
 
     public ProjectVariantResponse(UUID id, String sapRef, String sapCode, VariantQuote variantQuote, List<ComponentResponse> components,
             String baseCode, String baseName, String baseImage, String category, String subcategory, String line, String space) {
@@ -57,5 +62,11 @@ public class ProjectVariantResponse {
         this.subcategory = subcategory;
         this.line = line;
         this.space = space;
+        this.productVariantId = variantQuote != null
+                ? (variantQuote.getVariant() != null ? variantQuote.getVariant().getProductVariantId() : variantQuote.getProductVariantId())
+                : null;
+        this.assignedQuoterId = variantQuote != null ? variantQuote.getAssignedQuoterId() : null;
+        this.assignedDesignerId = variantQuote != null ? variantQuote.getAssignedDesignerId() : null;
+        this.assignedDevelopmentUserId = variantQuote != null ? variantQuote.getAssignedDevelopmentUserId() : null;
     }
 }

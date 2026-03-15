@@ -16,20 +16,20 @@
   width: 100%;
   max-width: 400px;
   padding: 10px 14px;
-  border: 1px solid var(--color-border, #dee2e6);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 0.95rem;
 }
 
 .cotizador-search input:focus {
   outline: none;
-  border-color: var(--color-primary, #17a2b8);
+  border-color: var(--color-primary);
 }
 
 .cotizador-tabs {
   display: flex;
   gap: 0;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid var(--color-border-hover);
   margin-bottom: 24px;
 }
 
@@ -40,23 +40,23 @@
   border-bottom: 3px solid transparent;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #6c757d;
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .cotizador-tabs button:hover {
-  color: var(--color-primary, #17a2b8);
+  color: var(--color-primary);
 }
 
 .cotizador-tabs button.active {
-  color: var(--color-primary, #17a2b8);
-  border-bottom-color: var(--color-primary, #17a2b8);
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
 }
 
 .cotizador-loading {
   padding: 48px 0;
-  color: #6c757d;
+  color: var(--color-text-muted);
 }
 
 .cotizador-content {
@@ -66,7 +66,7 @@
 .cotizador-empty {
   padding: 48px 24px;
   text-align: center;
-  color: #6c757d;
+  color: var(--color-text-muted);
   margin: 0;
 }
 
@@ -105,15 +105,15 @@
 
 .cotizador-consecutivo {
   font-weight: 600;
-  color: var(--color-primary, #17a2b8);
+  color: var(--color-primary);
 }
 
 .cotizador-tag {
-  color: #28a745;
+  color: var(--color-success);
 }
 
 .cotizador-effective-tag {
-  color: #28a745;
+  color: var(--color-success);
   font-weight: 600;
 }
 
@@ -145,18 +145,18 @@
 }
 
 .cotizador-badges .badge-products {
-  background: #e9ecef;
-  color: #333;
+  background: var(--color-bg-hover);
+  color: var(--color-text-dark);
 }
 
 .cotizador-badges .badge-version {
-  background: #d1ecf1;
-  color: #0c5460;
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
 }
 
 .cotizador-badges .badge-estado {
-  background: #d4edda;
-  color: #155724;
+  background: var(--color-success-bg);
+  color: var(--color-success-dark);
 }
 
 .cotizador-quote-section {
@@ -173,7 +173,7 @@
 
 .cotizador-all-quoted {
   margin-top: 12px;
-  color: #28a745;
+  color: var(--color-success);
   font-size: 0.9rem;
 }
 
@@ -209,7 +209,7 @@
   border-radius: 6px;
   font-size: 0.85rem;
   cursor: pointer;
-  background: #fff;
+  background: var(--color-bg-white);
 }
 
 .cotizador-reopen-btn:hover,
@@ -239,7 +239,7 @@
   background: white;
   padding: 24px;
   border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 24px var(--color-shadow-xl);
   z-index: 1500;
   min-width: 320px;
 }

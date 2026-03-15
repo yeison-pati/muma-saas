@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useCatalogService } from '../hooks/useCatalogService';
+import { useProductsService } from '../hooks/useProductsService';
 import { useProducts } from '../context/ProductsContext';
 import { uploadFile } from '../api/documentService';
 import AutocompleteInput from './AutocompleteInput';
 import './BaseEditModal.css';
 
 export default function BaseEditModal({ product: productProp, onClose, onSaved }) {
-  const catalog = useCatalogService();
+  const productsService = useProductsService();
   const { products, reload } = useProducts();
   const product = products.find((p) => p.id === productProp?.id) ?? productProp;
 
@@ -92,7 +92,7 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
         const res = await uploadFile(modelFile, 'model');
         modelKey = res.key;
       }
-      await catalog.updateBase({
+      await productsService.updateBase({
         id: product.id,
         name: form.name,
         image: imageKey,
@@ -117,7 +117,7 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
     if (!confirm('¿Eliminar esta base y todas sus variantes?')) return;
     setSaving(true);
     try {
-      await catalog.deleteBase(product.id);
+      await productsService.deleteBase(product.id);
       reload();
       onClose();
     } catch (err) {
@@ -137,9 +137,9 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
     }
     setSaving(true);
     setMessage('');
-    catalog
+    productsService
       .addVariantToBase({
-        baseCode: product.code,
+        baseId: product.id,
         sapRef: newVariant.sapRef?.trim() || null,
         components: comps.map((c) => ({
           componentId: c.componentId || null,
@@ -184,7 +184,7 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
     }
     setSaving(true);
     setMessage('');
-    catalog
+    productsService
       .updateVariant({
         id: v.id,
         sapRef: v.sapRef || null,
@@ -209,7 +209,7 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
     if (!confirm(`¿Eliminar variante ${v.sapRef || v.id}?`)) return;
     setSaving(true);
     setMessage('');
-    catalog
+    productsService
       .deleteVariant(v.id)
       .then(() => {
         setVariants((prev) => prev.filter((_, i) => i !== vIdx));

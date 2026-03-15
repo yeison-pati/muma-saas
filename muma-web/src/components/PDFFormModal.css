@@ -1,7 +1,7 @@
 .pdf-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -27,7 +27,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  background: #0d9db4;
+  background: var(--color-primary-alt);
   color: white;
   border-radius: 12px 12px 0 0;
 }
@@ -64,8 +64,8 @@
   margin: 0 0 12px;
   font-size: 1rem;
   font-weight: 700;
-  color: #333;
-  border-bottom: 2px solid #0d9db4;
+  color: var(--color-text-dark);
+  border-bottom: 2px solid var(--color-primary-alt);
   padding-bottom: 6px;
 }
 
@@ -73,7 +73,7 @@
   display: block;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #555;
+  color: var(--color-text-soft);
   margin-top: 12px;
   margin-bottom: 4px;
 }
@@ -82,7 +82,7 @@
 .pdf-section textarea {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-input);
   border-radius: 6px;
   font-size: 0.95rem;
 }
@@ -112,22 +112,22 @@
   gap: 16px;
   margin-bottom: 16px;
   padding: 16px;
-  background: #f9f9f9;
+  background: var(--color-bg);
   border-radius: 8px;
-  border: 1px solid #eee;
+  border: 1px solid var(--color-bg-input);
 }
 
 .pdf-product-image {
   flex-shrink: 0;
   width: 80px;
   height: 80px;
-  background: #eee;
+  background: var(--color-bg-input);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.75rem;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .pdf-product-image-hint {
@@ -136,7 +136,7 @@
 }
 
 .pdf-product-image-placeholder {
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .pdf-product-fields {
@@ -163,15 +163,15 @@
 
 .pdf-product-subtotal span {
   font-weight: 600;
-  color: #0d9db4;
+  color: var(--color-primary-alt);
   padding: 8px 0;
 }
 
 .pdf-totales {
   padding: 16px;
-  background: #f0f8ff;
+  background: var(--color-chip-bg);
   border-radius: 8px;
-  border: 1px solid #d0e8f0;
+  border: 1px solid var(--color-chip-border);
 }
 
 .pdf-total-row {
@@ -183,8 +183,8 @@
 .pdf-total-final {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #0d9db4;
-  border-top: 2px solid #0d9db4;
+  color: var(--color-primary-alt);
+  border-top: 2px solid var(--color-primary-alt);
   margin-top: 8px;
   padding-top: 12px;
 }
@@ -192,7 +192,7 @@
 .pdf-generate-btn {
   width: 100%;
   padding: 14px;
-  background: #0d9db4;
+  background: var(--color-primary-alt);
   color: white;
   border: none;
   border-radius: 8px;
@@ -203,5 +203,5 @@
 }
 
 .pdf-generate-btn:hover {
-  background: #0b8a9e;
+  background: var(--color-primary-alt-dark);
 }

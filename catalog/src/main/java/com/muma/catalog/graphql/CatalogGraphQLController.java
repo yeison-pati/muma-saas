@@ -5,21 +5,20 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
 import com.muma.catalog.dtos.projects.ProjectResponse;
-import com.muma.catalog.dtos.products.BaseResponse;
 import com.muma.catalog.dtos.products.TypologyStandardResponse;
-import com.muma.catalog.dtos.products.CreateBaseInitialComponent;
-import com.muma.catalog.dtos.products.VariantResponse;
-import com.muma.catalog.models.Base;
+import com.muma.catalog.dtos.threads.ThreadResponse;
 import com.muma.catalog.models.Project;
-import com.muma.catalog.services.BaseService;
 import com.muma.catalog.services.CatalogService;
 import com.muma.catalog.services.ProjectService;
+import com.muma.catalog.services.ThreadService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,18 +26,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CatalogGraphQLController {
 
+    private static final Logger log = LoggerFactory.getLogger(CatalogGraphQLController.class);
+
     private final CatalogService catalogService;
     private final ProjectService projectService;
-    private final BaseService baseService;
+    private final ThreadService threadService;
 
     @QueryMapping
     public List<ProjectResponse> projects() {
         return catalogService.getProjectsAndVariants();
-    }
-
-    @QueryMapping
-    public List<BaseResponse> products() {
-        return catalogService.getVariants();
     }
 
     @QueryMapping
@@ -62,12 +58,49 @@ public class CatalogGraphQLController {
     }
 
     @QueryMapping
+    public List<ProjectResponse> projectsByAssignedQuoter(@Argument("quoterId") String quoterId) {
+        return catalogService.getProjectsByAssignedQuoter(UUID.fromString(quoterId));
+    }
+
+    @QueryMapping
+    public List<ProjectResponse> projectsByAssignedDesigner(@Argument("designerId") String designerId) {
+        return catalogService.getProjectsByAssignedDesigner(UUID.fromString(designerId));
+    }
+
+    @QueryMapping
+    public List<ProjectResponse> projectsByAssignedDevelopment(@Argument("userId") String userId) {
+        return catalogService.getProjectsByAssignedDevelopment(UUID.fromString(userId));
+    }
+
+    @QueryMapping
+    public List<ProjectResponse> projectsForAssignment(@Argument("role") String role) {
+        return catalogService.getProjectsForAssignment(role);
+    }
+
+    @QueryMapping
     public List<TypologyStandardResponse> typologyStandards() {
         return catalogService.getTypologyStandards();
     }
 
+    @QueryMapping
+    public List<ThreadResponse> threadsByProject(@Argument("projectId") String projectId) {
+        return threadService.findByProject(UUID.fromString(projectId)).stream()
+                .map(ThreadResponse::from)
+                .toList();
+    }
+
     @MutationMapping
     public Project createProject(@Argument("input") CreateProjectInput input) {
+        var variants = input.variants();
+        int n = variants != null ? variants.size() : 0;
+        log.info("[createProject] RECIBIDO variants={} p3s={}", n, input.p3s() != null ? input.p3s().size() : 0);
+        if (variants != null) {
+            for (int i = 0; i < variants.size(); i++) {
+                var v = variants.get(i);
+                log.info("[createProject] variant[{}] variantId={} baseCode={} type={}", i, v.variantId(), v.baseCode(), v.type());
+            }
+        }
+        log.info("[createProject] llamando catalogService.createProject");
         return catalogService.createProject(InputMapper.toCreateProject(input));
     }
 
@@ -118,6 +151,11 @@ public class CatalogGraphQLController {
     @MutationMapping
     public Boolean makeProjectEffective(@Argument("projectId") String projectId) {
         return projectService.makeEffectiveOnly(UUID.fromString(projectId));
+    }
+
+    @MutationMapping
+    public Boolean quitarProjectEffective(@Argument("projectId") String projectId) {
+        return projectService.quitarEffectiveOnly(UUID.fromString(projectId));
     }
 
     @MutationMapping
@@ -189,58 +227,37 @@ public class CatalogGraphQLController {
     }
 
     @MutationMapping
-    public Base createBase(@Argument("input") CreateBaseInput input) {
-        return baseService.create(InputMapper.toCreateBase(input));
+    public ThreadResponse openThread(
+            @Argument("projectId") String projectId,
+            @Argument("variantId") String variantId,
+            @Argument("type") String type,
+            @Argument("openedBy") String openedBy) {
+        return ThreadResponse.from(threadService.open(
+                UUID.fromString(projectId),
+                variantId != null ? UUID.fromString(variantId) : null,
+                type,
+                UUID.fromString(openedBy)));
     }
 
     @MutationMapping
-    public Base updateBase(@Argument("input") UpdateBaseInput input) {
-        return baseService.updateFields(
-                UUID.fromString(input.id()),
-                input.name(),
-                input.image(),
-                input.model(),
-                input.category(),
-                input.subcategory(),
-                input.space(),
-                input.line(),
-                input.baseMaterial());
+    public ThreadResponse closeThread(
+            @Argument("threadId") String threadId,
+            @Argument("closedBy") String closedBy) {
+        return ThreadResponse.from(threadService.close(
+                UUID.fromString(threadId),
+                UUID.fromString(closedBy)));
     }
 
     @MutationMapping
-    public Boolean deleteBase(@Argument("baseId") String baseId) {
-        catalogService.deleteBaseCascade(UUID.fromString(baseId));
-        return true;
-    }
-
-    @MutationMapping
-    public VariantResponse addVariantToBase(@Argument("input") AddVariantToBaseInput input) {
-        List<CreateBaseInitialComponent> components = input.components() == null
-                ? List.<CreateBaseInitialComponent>of()
-                : input.components().stream()
-                        .map(InputMapper::toCreateBaseInitialComponent)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-        return catalogService.addVariantToBase(input.baseCode(), input.sapRef(), components);
-    }
-
-    @MutationMapping
-    public VariantResponse updateVariant(@Argument("input") UpdateVariantInput input) {
-        List<CreateBaseInitialComponent> components = input.components() == null
-                ? List.<CreateBaseInitialComponent>of()
-                : input.components().stream()
-                        .map(InputMapper::toCreateBaseInitialComponent)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-        return catalogService.updateVariant(
-                UUID.fromString(input.id()),
-                input.sapRef(),
-                components);
-    }
-
-    @MutationMapping
-    public Boolean deleteVariant(@Argument("variantId") String variantId) {
-        catalogService.deleteVariant(UUID.fromString(variantId));
-        return true;
+    public Boolean assignVariantToUser(
+            @Argument("projectId") String projectId,
+            @Argument("variantId") String variantId,
+            @Argument("assigneeId") String assigneeId,
+            @Argument("roleType") String roleType) {
+        return catalogService.assignVariantToUser(
+                UUID.fromString(projectId),
+                UUID.fromString(variantId),
+                UUID.fromString(assigneeId),
+                roleType);
     }
 }

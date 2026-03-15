@@ -50,6 +50,10 @@ public class Variant {
     @Column(name = "source_variant_id")
     private UUID sourceVariantId;
 
+    /** Si no null: variante original en servicio Products. Para comparación. */
+    @Column(name = "product_variant_id")
+    private UUID productVariantId;
+
     @OneToMany(mappedBy = "variant", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @BatchSize(size = 32)
     @Builder.Default

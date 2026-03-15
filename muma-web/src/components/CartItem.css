@@ -1,14 +1,14 @@
 .cart-item {
-  border: 1px solid var(--color-border, #e9ecef);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 12px;
   margin-bottom: 12px;
-  background: var(--color-bg-white, #fdfefe);
+  background: var(--color-bg-white);
 }
 
 .cart-item-expanded {
-  border-color: #17a2b8;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 6px var(--color-shadow-md);
 }
 
 .cart-item-header {
@@ -38,7 +38,7 @@
   height: 46px;
   border-radius: 8px;
   overflow: hidden;
-  background: #e9f7fb;
+  background: var(--color-primary-light);
   flex-shrink: 0;
 }
 
@@ -68,7 +68,7 @@
 .cart-item-name {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -84,12 +84,12 @@
 .cart-item-code .codigo-sap {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .cart-item-code .codigo-ref {
   font-size: 0.65rem;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .cart-item-code .codigo-ref-only {
@@ -99,7 +99,7 @@
 
 .cart-item-code-grey {
   font-size: 0.65rem;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .cart-item-actions {
@@ -112,9 +112,9 @@
 .cart-item-tipologia {
   padding: 6px 10px;
   border-radius: 999px;
-  background: #e9f7fb;
-  border: 1px solid #b5e7f1;
-  color: #0f6674;
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-primary-border);
+  color: var(--color-primary-text);
   font-weight: 700;
   font-size: 0.75rem;
 }
@@ -129,9 +129,9 @@
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  border: 1px solid #17a2b8;
-  background: #fff;
-  color: #17a2b8;
+  border: 1px solid var(--color-primary);
+  background: var(--color-bg-white);
+  color: var(--color-primary);
   font-size: 1.125rem;
   font-weight: 700;
   cursor: pointer;
@@ -141,23 +141,23 @@
 }
 
 .cart-item-qty-btn:hover {
-  background: #e9f7fb;
+  background: var(--color-primary-light);
 }
 
 .cart-item-qty-value {
   width: 32px;
   text-align: center;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .cart-item-delete {
   width: 36px;
   height: 36px;
   border-radius: 6px;
-  background: #e74c3c;
-  border: 1px solid #c0392b;
-  color: #fff;
+  background: var(--color-danger);
+  border: 1px solid var(--color-danger-dark);
+  color: var(--color-bg-white);
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
@@ -167,11 +167,11 @@
 }
 
 .cart-item-delete:hover {
-  background: #c0392b;
+  background: var(--color-danger-dark);
 }
 
 .cart-item-expand {
-  color: #495057;
+  color: var(--color-text-input);
   font-size: 1rem;
   font-weight: 700;
 }
@@ -179,7 +179,7 @@
 .cart-item-body {
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid var(--color-border-hover);
 }
 
 .cart-item-caracteristicas {
@@ -191,7 +191,7 @@
 .cart-item-label {
   font-size: 0.8125rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .cart-item-fields {
@@ -210,7 +210,7 @@
 
 .cart-item-field label {
   font-size: 0.75rem;
-  color: #6c757d;
+  color: var(--color-text-muted);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -233,12 +233,12 @@
 .cart-item-field-codes .codigo-sap {
   font-size: 0.7rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .cart-item-field-codes .codigo-ref {
   font-size: 0.65rem;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .cart-item-field-codes .codigo-ref-only {
@@ -247,33 +247,33 @@
 }
 
 .cart-item-field input {
-  border: 1px solid #e1e8ed;
+  border: 1px solid var(--color-border-soft);
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 0.875rem;
-  background: #f8f9fa;
-  color: #2c3e50;
+  background: var(--color-bg);
+  color: var(--color-text-heading);
 }
 
 .cart-item-comment {
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid var(--color-border-hover);
 }
 
 .cart-item-comment textarea {
   width: 100%;
-  border: 1px solid #e1e8ed;
+  border: 1px solid var(--color-border-soft);
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 0.8125rem;
-  background: #f8f9fa;
-  color: #2c3e50;
+  background: var(--color-bg);
+  color: var(--color-text-heading);
   min-height: 60px;
   resize: vertical;
   font-family: inherit;
 }
 
 .cart-item-comment textarea::placeholder {
-  color: #6c757d;
+  color: var(--color-text-muted);
 }

@@ -66,7 +66,7 @@
 }
 
 .p3-filter-clear:hover {
-  background: rgba(23, 162, 184, 0.1);
+  background: var(--color-primary-alpha-10);
 }
 
 .p3-filter-section {
@@ -121,14 +121,14 @@
 }
 
 .p3-desc {
-  color: #6c757d;
+  color: var(--color-text-muted);
   margin: 0 0 20px;
   font-size: 0.9rem;
 }
 
 .p3-toggle {
   padding: 12px 20px;
-  background: var(--color-primary, #17a2b8);
+  background: var(--color-primary, var(--color-primary));
   color: white;
   border: none;
   border-radius: 8px;
@@ -142,8 +142,8 @@
 }
 
 .p3-card {
-  background: #fff;
-  border: 1px solid #dee2e6;
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 16px;
 }
@@ -154,7 +154,7 @@
   align-items: center;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--color-border-hover);
 }
 
 .p3-card-header h2 {
@@ -167,13 +167,13 @@
   background: none;
   border: none;
   font-size: 1.2rem;
-  color: #6c757d;
+  color: var(--color-text-muted);
   cursor: pointer;
   padding: 0 4px;
 }
 
 .p3-close:hover {
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .p3-form {
@@ -190,7 +190,7 @@
 
 .p3-section strong {
   font-size: 0.9rem;
-  color: #495057;
+  color: var(--color-text-input);
 }
 
 .p3-image-wrap {
@@ -205,7 +205,7 @@
 
 .p3-image-name {
   font-size: 0.8rem;
-  color: #6c757d;
+  color: var(--color-text-muted);
 }
 
 .p3-row {
@@ -224,7 +224,7 @@
 .p3-hint {
   margin: 0;
   font-size: 0.8rem;
-  color: #6c757d;
+  color: var(--color-text-muted);
 }
 
 .p3-components-grid {
@@ -242,7 +242,7 @@
 .p3-comp-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #495057;
+  color: var(--color-text-input);
 }
 
 .p3-value-chips {
@@ -254,11 +254,11 @@
 .p3-value-chip {
   padding: 6px 12px;
   font-size: 0.85rem;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--color-bg-white);
   cursor: pointer;
-  color: #495057;
+  color: var(--color-text-input);
 }
 
 .p3-value-chip:hover {
@@ -290,7 +290,7 @@
 }
 
 .p3-add-comp-btn:hover {
-  background: rgba(23, 162, 184, 0.08);
+  background: var(--color-primary-alpha-08);
 }
 
 .p3-new-value-input {
@@ -315,7 +315,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: #f8f9fa;
+  background: var(--color-bg);
   border-radius: 6px;
   font-size: 0.9rem;
 }
@@ -323,19 +323,19 @@
 .p3-remove-cart {
   background: none;
   border: none;
-  color: #dc3545;
+  color: var(--color-danger-modal);
   cursor: pointer;
   padding: 2px 6px;
   font-size: 0.9rem;
 }
 
 .p3-remove-cart:hover {
-  color: #c82333;
+  color: var(--color-danger-darker);
 }
 
 .p3-comentarios {
   padding: 10px 12px;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 0.9rem;
   resize: vertical;
@@ -350,8 +350,8 @@
 
 .p3-cancel {
   padding: 10px 18px;
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-weight: 600;
   font-size: 0.9rem;
@@ -360,7 +360,7 @@
 
 .p3-add {
   padding: 10px 18px;
-  background: var(--color-primary, #17a2b8);
+  background: var(--color-primary, var(--color-primary));
   color: white;
   border: none;
   border-radius: 6px;
@@ -375,7 +375,7 @@
 
 .p3-message {
   margin: 12px 0 0;
-  color: var(--color-primary, #17a2b8);
+  color: var(--color-primary, var(--color-primary));
   font-size: 0.9rem;
 }
 

@@ -1,7 +1,7 @@
 .base-edit-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -16,7 +16,7 @@
   width: 100%;
   max-height: 90vh;
   overflow: auto;
-  box-shadow: 0 2px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 24px var(--color-shadow-xl);
 }
 
 .base-edit-header {
@@ -93,8 +93,8 @@
 }
 
 .base-edit-form input:disabled {
-  background: #eee;
-  color: #666;
+  background: var(--color-bg-input);
+  color: var(--color-text-secondary);
 }
 
 .base-edit-actions {
@@ -117,7 +117,7 @@
 }
 
 .base-edit-delete {
-  background: #dc3545 !important;
+  background: var(--color-danger-modal) !important;
   color: white !important;
 }
 
@@ -126,7 +126,7 @@
   border: 1px solid var(--color-border);
   border-radius: 8px;
   margin-bottom: 12px;
-  background: var(--color-bg, #f8f9fa);
+  background: var(--color-bg, var(--color-bg));
 }
 
 .base-edit-variant-header {
@@ -152,7 +152,7 @@
 }
 
 .base-edit-variant-delete {
-  background: #dc3545 !important;
+  background: var(--color-danger-modal) !important;
 }
 
 .base-edit-variant-form {

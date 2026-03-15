@@ -51,14 +51,14 @@
 }
 
 .project-form-readonly {
-  background: #ecf0f1;
-  color: #5a6c7d;
+  background: var(--color-bg-muted);
+  color: var(--color-text-muted-alt);
 }
 
 .project-form-message {
   margin: 8px 0;
   font-size: 0.875rem;
-  color: #495057;
+  color: var(--color-text-input);
 }
 
 .project-form-map {
@@ -68,11 +68,11 @@
 }
 
 .project-form-required {
-  color: #c0392b;
+  color: var(--color-danger-dark);
 }
 
 .project-form-hint {
   font-size: 0.75rem;
-  color: #7f8c8d;
+  color: var(--color-text-muted-dark);
   margin-top: 4px;
 }

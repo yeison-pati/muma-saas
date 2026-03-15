@@ -8,5 +8,6 @@ public record RegisterInput(
         String role,
         String region,
         String jobTitle,
+        Boolean isLeader,
         String creator) {
 }

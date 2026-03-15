@@ -14,13 +14,13 @@
   margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .usuarios-create-btn {
   padding: 10px 20px;
-  background: #17a2b8;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -30,7 +30,7 @@
 }
 
 .usuarios-create-btn:hover {
-  background: #138496;
+  background: var(--color-primary-dark);
 }
 
 .usuarios-tabs {
@@ -41,58 +41,58 @@
 
 .usuarios-tabs button {
   padding: 10px 20px;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-bg-white);
   font-size: 0.9rem;
   font-weight: 600;
-  color: #495057;
+  color: var(--color-text-input);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .usuarios-tabs button:hover {
-  background: #f8f9fa;
-  border-color: #adb5bd;
+  background: var(--color-bg);
+  border-color: var(--color-border-focus);
 }
 
 .usuarios-tabs button.active {
-  background: #17a2b8;
-  color: white;
-  border-color: #17a2b8;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: var(--color-primary);
 }
 
 .usuarios-loading,
 .usuarios-empty {
   padding: 48px 24px;
   text-align: center;
-  color: #6c757d;
+  color: var(--color-text-muted);
   font-size: 1rem;
 }
 
 .usuarios-error {
   padding: 24px;
-  background: #fff5f5;
-  border: 1px solid #feb2b2;
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
   border-radius: 8px;
   margin-bottom: 24px;
 }
 
 .usuarios-error p {
   margin: 0 0 8px;
-  color: #c53030;
+  color: var(--color-danger-modal-dark);
 }
 
 .usuarios-error-hint {
   font-size: 0.9rem;
-  color: #742a2a !important;
+  color: var(--color-danger-text) !important;
 }
 
 .usuarios-retry-btn {
   margin-top: 12px;
   padding: 8px 16px;
-  background: #e53e3e;
-  color: white;
+  background: var(--color-danger-modal-bg);
+  color: var(--color-on-primary);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -100,7 +100,7 @@
 }
 
 .usuarios-retry-btn:hover {
-  background: #c53030;
+  background: var(--color-danger-modal-dark);
 }
 
 .usuarios-grid {
@@ -110,19 +110,19 @@
 }
 
 .usuarios-card {
-  background: #fff;
-  border: 1px solid #e9ecef;
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-hover);
   border-radius: 12px;
   padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px var(--color-shadow-sm);
   transition: box-shadow 0.2s;
 }
 
 .usuarios-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px var(--color-shadow-md);
 }
 
 .usuarios-card-body {
@@ -133,26 +133,26 @@
   margin: 0 0 6px;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .usuarios-card-email {
   margin: 0 0 4px;
   font-size: 0.9rem;
-  color: #495057;
+  color: var(--color-text-input);
 }
 
 .usuarios-card-phone {
   margin: 0 0 8px;
   font-size: 0.85rem;
-  color: #6c757d;
+  color: var(--color-text-muted);
 }
 
 .usuarios-card-role {
   display: inline-block;
   padding: 4px 10px;
-  background: #e7f3f5;
-  color: #17a2b8;
+  background: var(--color-primary-light-alt);
+  color: var(--color-primary);
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -176,36 +176,36 @@
 }
 
 .usuarios-btn-edit {
-  background: #17a2b8;
-  color: white;
-  border-color: #17a2b8;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: var(--color-primary);
 }
 
 .usuarios-btn-edit:hover {
-  background: #138496;
+  background: var(--color-primary-dark);
 }
 
 .usuarios-btn-delete {
-  background: #fff;
-  color: #dc3545;
-  border-color: #dc3545;
+  background: var(--color-bg-white);
+  color: var(--color-danger-modal);
+  border-color: var(--color-danger-modal);
 }
 
 .usuarios-btn-delete:hover {
-  background: #dc3545;
-  color: white;
+  background: var(--color-danger-modal);
+  color: var(--color-on-primary);
 }
 
 .usuarios-card-hint {
   font-size: 0.8rem;
-  color: #6c757d;
+  color: var(--color-text-muted);
 }
 
 /* Modal */
 .usuarios-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--color-overlay-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -213,19 +213,19 @@
 }
 
 .usuarios-modal {
-  background: white;
+  background: var(--color-bg-white);
   padding: 28px;
   border-radius: 12px;
   min-width: 380px;
   max-width: 90vw;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px var(--color-shadow-lg);
 }
 
 .usuarios-modal h2 {
   margin: 0 0 24px;
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .usuarios-modal label {
@@ -234,14 +234,14 @@
   margin-bottom: 4px;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #495057;
+  color: var(--color-text-input);
 }
 
 .usuarios-modal input,
 .usuarios-modal select {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 0.95rem;
   transition: border-color 0.2s;
@@ -250,12 +250,12 @@
 .usuarios-modal input:focus,
 .usuarios-modal select:focus {
   outline: none;
-  border-color: #17a2b8;
+  border-color: var(--color-primary);
 }
 
 .usuarios-modal input:disabled {
-  background: #f8f9fa;
-  color: #6c757d;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
 }
 
 .usuarios-modal-actions {
@@ -275,21 +275,21 @@
 }
 
 .usuarios-modal-actions button:first-child {
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  color: #495057;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-input);
 }
 
 .usuarios-modal-actions button:first-child:hover {
-  background: #e9ecef;
+  background: var(--color-border-hover);
 }
 
 .usuarios-modal-actions button:last-child {
-  background: #17a2b8;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   border: none;
 }
 
 .usuarios-modal-actions button:last-child:hover {
-  background: #138496;
+  background: var(--color-primary-dark);
 }

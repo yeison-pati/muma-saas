@@ -8,6 +8,7 @@ import ComercialProductos from './pages/comercial/Productos';
 import ComercialProyecto from './pages/comercial/Proyecto';
 import ComercialP3 from './pages/comercial/P3';
 import ComercialSolicitudes from './pages/comercial/Solicitudes';
+import Hilos from './pages/shared/Hilos';
 
 // Cotizador
 import CotizadorProyectos from './pages/cotizador/Proyectos';
@@ -19,6 +20,9 @@ import DisenadorProyectos from './pages/disenador/Proyectos';
 
 // Desarrollo
 import DesarrolloProyectos from './pages/desarrollo/Proyectos';
+
+// Asignación (solo líderes)
+import AsignacionProyectos from './pages/asignacion/Proyectos';
 
 // Admin
 import AdminProyectos from './pages/admin/Proyectos';
@@ -69,6 +73,7 @@ export default function App() {
         <Route path="proyecto" element={<ComercialProyecto />} />
         <Route path="p3" element={<ComercialP3 />} />
         <Route path="solicitudes" element={<ComercialSolicitudes />} />
+        <Route path="hilos" element={<Hilos />} />
       </Route>
 
       <Route
@@ -80,6 +85,7 @@ export default function App() {
         }
       >
         <Route index element={<CotizadorProyectos />} />
+        <Route path="asignacion" element={<AsignacionProyectos />} />
       </Route>
 
       <Route
@@ -93,6 +99,8 @@ export default function App() {
         <Route index element={<DisenadorProductos />} />
         <Route path="crear" element={<DisenadorCrear />} />
         <Route path="proyectos" element={<DisenadorProyectos />} />
+        <Route path="hilos" element={<Hilos />} />
+        <Route path="asignacion" element={<AsignacionProyectos />} />
       </Route>
 
       <Route
@@ -104,6 +112,8 @@ export default function App() {
         }
       >
         <Route index element={<DesarrolloProyectos />} />
+        <Route path="hilos" element={<Hilos />} />
+        <Route path="asignacion" element={<AsignacionProyectos />} />
       </Route>
 
       <Route

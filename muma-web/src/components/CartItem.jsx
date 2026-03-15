@@ -25,10 +25,13 @@ export default function CartItem({
     Object.entries(updated).map(([id, v]) => [componentOriginals[id]?.name || id, v ?? ''])
   );
   const computedTipologia = calculateTipologia(originalByName, updatedByName);
-  // Computed primero: si hay cambios (edición) → P1/P2. Solo P4 cuando no hay cambios y es variante existente (en vez de —)
-  const tipologia = computedTipologia || item?.tipologia || item?.type
-    || (item?._selectedVariantId && !computedTipologia ? 'P4' : null)
-    || (isP3 ? 'P3' : '—');
+  // P3 custom: siempre P3, no usar computedTipologia (evita que se muestre como P1 por caracteristicas).
+  // Para productos normales: computed primero, luego item.tipologia/type, P4 si variante sin cambios.
+  const tipologia = isP3
+    ? 'P3'
+    : (computedTipologia || item?.tipologia || item?.type
+        || (item?._selectedVariantId && !computedTipologia ? 'P4' : null)
+        || '—');
 
   const displayName = item?.name || item?.subcategoria || item?.categoria || 'Producto';
 

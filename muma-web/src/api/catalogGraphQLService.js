@@ -1,16 +1,24 @@
 import { catalogGraphQL } from './graphqlClient';
 import {
-  QUERY_PRODUCTS,
   QUERY_PROJECTS,
   QUERY_PROJECTS_BY_SALES,
   QUERY_PROJECTS_BY_QUOTER,
   QUERY_PROJECTS_EFFECTIVE,
+  QUERY_PROJECTS_FOR_ASSIGNMENT,
+  QUERY_PROJECTS_BY_ASSIGNED_QUOTER,
+  QUERY_PROJECTS_BY_ASSIGNED_DESIGNER,
+  QUERY_PROJECTS_BY_ASSIGNED_DEVELOPMENT,
   MUTATION_CREATE_PROJECT,
   MUTATION_UPDATE_PROJECT,
   MUTATION_REOPEN_PROJECT,
   MUTATION_UPDATE_VARIANT_AND_REOPEN,
   MUTATION_MAKE_PROJECT_EFFECTIVE,
+  MUTATION_QUITAR_PROJECT_EFFECTIVE,
   MUTATION_MAKE_VARIANT_QUOTE_EFFECTIVE,
+  QUERY_THREADS_BY_PROJECT,
+  MUTATION_OPEN_THREAD,
+  MUTATION_CLOSE_THREAD,
+  MUTATION_ASSIGN_VARIANT_TO_USER,
   MUTATION_TOGGLE_P3_P5,
   MUTATION_MARK_VARIANT_AS_DESIGNED,
   MUTATION_MARK_VARIANT_AS_DEVELOPED,
@@ -18,29 +26,44 @@ import {
   MUTATION_UPDATE_VARIANT_QUOTE_QUANTITY,
   MUTATION_REMOVE_VARIANT_FROM_PROJECT,
   MUTATION_DELETE_PROJECT,
-  MUTATION_CREATE_BASE,
-  MUTATION_UPDATE_BASE,
-  MUTATION_DELETE_BASE,
-  MUTATION_ADD_VARIANT_TO_BASE,
-  MUTATION_UPDATE_VARIANT,
-  MUTATION_DELETE_VARIANT,
 } from './catalogQueries';
 
 export const createCatalogService = (getToken) => ({
-  getProducts: () =>
-    catalogGraphQL(QUERY_PRODUCTS, {}, getToken).then((d) => d?.products ?? []),
-
   getProjects: () =>
     catalogGraphQL(QUERY_PROJECTS, {}, getToken).then((d) => d?.projects ?? []),
 
   getProjectsBySales: (salesId) =>
-    catalogGraphQL(QUERY_PROJECTS_BY_SALES, { salesId }, getToken).then(
-      (d) => d?.projectsBySales ?? []
-    ),
+    catalogGraphQL(QUERY_PROJECTS_BY_SALES, { salesId }, getToken).then((d) => {
+      const projects = d?.projectsBySales ?? [];
+      projects.forEach((p, i) => {
+        console.log('[catalog.getProjectsBySales] project', i, 'id=', p?.id, 'variants=', p?.variants?.length, p?.variants);
+      });
+      return projects;
+    }),
 
   getProjectsByQuoter: (quoterId) =>
     catalogGraphQL(QUERY_PROJECTS_BY_QUOTER, { quoterId }, getToken).then(
       (d) => d?.projectsByQuoter ?? []
+    ),
+
+  getProjectsByAssignedQuoter: (quoterId) =>
+    catalogGraphQL(QUERY_PROJECTS_BY_ASSIGNED_QUOTER, { quoterId }, getToken).then(
+      (d) => d?.projectsByAssignedQuoter ?? []
+    ),
+
+  getProjectsByAssignedDesigner: (designerId) =>
+    catalogGraphQL(QUERY_PROJECTS_BY_ASSIGNED_DESIGNER, { designerId }, getToken).then(
+      (d) => d?.projectsByAssignedDesigner ?? []
+    ),
+
+  getProjectsByAssignedDevelopment: (userId) =>
+    catalogGraphQL(QUERY_PROJECTS_BY_ASSIGNED_DEVELOPMENT, { userId }, getToken).then(
+      (d) => d?.projectsByAssignedDevelopment ?? []
+    ),
+
+  getProjectsForAssignment: (role) =>
+    catalogGraphQL(QUERY_PROJECTS_FOR_ASSIGNMENT, { role: role || null }, getToken).then(
+      (d) => d?.projectsForAssignment ?? []
     ),
 
   getProjectsEffective: () =>
@@ -48,10 +71,14 @@ export const createCatalogService = (getToken) => ({
       (d) => d?.projectsEffective ?? []
     ),
 
-  createProject: (input) =>
-    catalogGraphQL(MUTATION_CREATE_PROJECT, { input }, getToken).then(
-      (d) => d?.createProject
-    ),
+  createProject: (input) => {
+    console.log('[catalog.createProject] llamando input.variants=', input?.variants?.length);
+    return catalogGraphQL(MUTATION_CREATE_PROJECT, { input }, getToken).then((d) => {
+      const result = d?.createProject;
+      console.log('[catalog.createProject] respuesta', result ? { id: result.id, consecutive: result.consecutive } : result);
+      return result;
+    });
+  },
 
   updateProject: (input) =>
     catalogGraphQL(MUTATION_UPDATE_PROJECT, { input }, getToken).then(
@@ -71,6 +98,31 @@ export const createCatalogService = (getToken) => ({
   makeProjectEffective: (projectId) =>
     catalogGraphQL(MUTATION_MAKE_PROJECT_EFFECTIVE, { projectId }, getToken).then(
       (d) => d?.makeProjectEffective
+    ),
+
+  quitarProjectEffective: (projectId) =>
+    catalogGraphQL(MUTATION_QUITAR_PROJECT_EFFECTIVE, { projectId }, getToken).then(
+      (d) => d?.quitarProjectEffective
+    ),
+
+  getThreadsByProject: (projectId) =>
+    catalogGraphQL(QUERY_THREADS_BY_PROJECT, { projectId }, getToken).then(
+      (d) => d?.threadsByProject ?? []
+    ),
+
+  openThread: (projectId, variantId, type, openedBy) =>
+    catalogGraphQL(MUTATION_OPEN_THREAD, { projectId, variantId, type, openedBy }, getToken).then(
+      (d) => d?.openThread
+    ),
+
+  closeThread: (threadId, closedBy) =>
+    catalogGraphQL(MUTATION_CLOSE_THREAD, { threadId, closedBy }, getToken).then(
+      (d) => d?.closeThread
+    ),
+
+  assignVariantToUser: (projectId, variantId, assigneeId, roleType) =>
+    catalogGraphQL(MUTATION_ASSIGN_VARIANT_TO_USER, { projectId, variantId, assigneeId, roleType }, getToken).then(
+      (d) => d?.assignVariantToUser
     ),
 
   makeVariantQuoteEffective: (projectId, variantId, effective) =>
@@ -104,25 +156,4 @@ export const createCatalogService = (getToken) => ({
 
   deleteProject: (projectId) =>
     catalogGraphQL(MUTATION_DELETE_PROJECT, { projectId }, getToken).then((d) => d?.deleteProject),
-
-  createBase: (input) =>
-    catalogGraphQL(MUTATION_CREATE_BASE, { input }, getToken).then(
-      (d) => d?.createBase
-    ),
-  updateBase: (input) =>
-    catalogGraphQL(MUTATION_UPDATE_BASE, { input }, getToken).then(
-      (d) => d?.updateBase
-    ),
-  deleteBase: (baseId) =>
-    catalogGraphQL(MUTATION_DELETE_BASE, { baseId }, getToken),
-  addVariantToBase: (input) =>
-    catalogGraphQL(MUTATION_ADD_VARIANT_TO_BASE, { input }, getToken).then(
-      (d) => d?.addVariantToBase
-    ),
-  updateVariant: (input) =>
-    catalogGraphQL(MUTATION_UPDATE_VARIANT, { input }, getToken).then(
-      (d) => d?.updateVariant
-    ),
-  deleteVariant: (variantId) =>
-    catalogGraphQL(MUTATION_DELETE_VARIANT, { variantId }, getToken),
 });

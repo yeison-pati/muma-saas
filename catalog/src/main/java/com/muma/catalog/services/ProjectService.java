@@ -101,17 +101,31 @@ public class ProjectService {
                         .build());
     }
 
-    /** Marca proyecto como efectivo. No desmarca (efectivo es irreversible). */
+    /** Marca proyecto como efectivo. */
     @Transactional
     @CacheEvict(value = {"projects", "products"}, allEntries = true)
     public Boolean makeEffectiveOnly(UUID projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new IllegalStateException("Project not found"));
         if (project.isEffective()) {
-            throw new IllegalStateException("El proyecto ya es efectivo. No se puede desmarcar.");
+            throw new IllegalStateException("El proyecto ya es efectivo.");
         }
         project.setEffective(true);
         project.setVersion(project.getVersion() + 1);
+        projectRepository.save(project);
+        return true;
+    }
+
+    /** Quita efectivo de un proyecto. */
+    @Transactional
+    @CacheEvict(value = {"projects", "products"}, allEntries = true)
+    public Boolean quitarEffectiveOnly(UUID projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalStateException("Project not found"));
+        if (!project.isEffective()) {
+            throw new IllegalStateException("El proyecto no es efectivo.");
+        }
+        project.setEffective(false);
         projectRepository.save(project);
         return true;
     }

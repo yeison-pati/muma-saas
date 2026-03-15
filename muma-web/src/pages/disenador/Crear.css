@@ -137,7 +137,7 @@
 .crear-remove-variant {
   padding: 5px 10px !important;
   font-size: 0.75rem !important;
-  background: #dc3545 !important;
+  background: var(--color-danger-modal) !important;
   color: white !important;
   border: none !important;
   border-radius: 6px !important;
@@ -146,7 +146,7 @@
 }
 
 .crear-remove-variant:hover:not(:disabled) {
-  background: #c82333 !important;
+  background: var(--color-danger-darker) !important;
 }
 
 .crear-remove-variant:disabled {
@@ -250,9 +250,9 @@
 }
 
 .crear-component-row button:hover:not(:disabled) {
-  background: #dc3545;
+  background: var(--color-danger-modal);
   color: white;
-  border-color: #dc3545;
+  border-color: var(--color-danger-modal);
 }
 
 .crear-component-row button:disabled {
@@ -274,7 +274,7 @@
 }
 
 .crear-add-component:hover {
-  background: rgba(23, 162, 184, 0.08) !important;
+  background: var(--color-primary-alpha-08) !important;
 }
 
 .crear-add-variant {
@@ -291,7 +291,7 @@
 }
 
 .crear-add-variant:hover {
-  background: rgba(23, 162, 184, 0.08) !important;
+  background: var(--color-primary-alpha-08) !important;
 }
 
 /* Submit */

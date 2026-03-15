@@ -42,6 +42,27 @@ services:
     networks:
       - system
 
+  productsdb:
+    image: postgres:17-alpine
+    container_name: productsdb
+    restart: on-failure
+    ports:
+      - "${PRODUCTS_DB_PORT:-5434}:5432"
+    environment:
+      POSTGRES_USER: ${PRODUCTS_DB_USER}
+      POSTGRES_PASSWORD: ${PRODUCTS_DB_PASS}
+      POSTGRES_DB: ${PRODUCTS_DB_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - products_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PRODUCTS_DB_USER} -d ${PRODUCTS_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - system
+
   rabbitmq:
     image: rabbitmq:4-management-alpine
     container_name: rabbitmq
@@ -157,6 +178,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - PRODUCTS_SERVICE_URL=http://products:8080
     depends_on:
       catalogdb:
         condition: service_healthy
@@ -164,8 +186,34 @@ services:
         condition: service_healthy
       identity:
         condition: service_started
+      products:
+        condition: service_started
       redis:
         condition: service_healthy
+    networks:
+      - system
+
+  products:
+    build:
+      context: ./products
+      dockerfile: Dockerfile
+    container_name: products
+    restart: on-failure
+    ports:
+      - "${PRODUCTS_PORT:-8084}:8080"
+    environment:
+      - DB_HOST=${PRODUCTS_DB_HOST}
+      - DB_PORT=5432
+      - DB_NAME=${PRODUCTS_DB_NAME}
+      - DB_USER=${PRODUCTS_DB_USER}
+      - DB_PASS=${PRODUCTS_DB_PASS}
+      - SERVER_PORT=8080
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      productsdb:
+        condition: service_healthy
+      identity:
+        condition: service_started
     networks:
       - system
 
@@ -193,6 +241,7 @@ services:
       - minio_init
       - identity
       - catalog
+      - products
 
     networks:
       - system
@@ -242,6 +291,7 @@ services:
       - identity
       - catalog
       - document
+      - products
       - muma
     networks:
       - system
@@ -339,6 +389,7 @@ services:
 volumes:
   identity_data:
   catalog_data:
+  products_data:
   redis_data:
   rabbitmq_data:
   rabbitmq_logs:

@@ -8,4 +8,5 @@ export const SIDEBAR_ICONS = {
   PROYECTOS: '/icons/proyecto_azul.png',
   CREAR: '/icons/crear_producto_azul.png',
   USUARIOS: '/icons/usuario_azul.png',
+  ASIGNACIÓN: '/icons/proyecto_azul.png',
 };

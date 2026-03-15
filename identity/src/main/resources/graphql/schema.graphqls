@@ -39,6 +39,7 @@ type UserResponse {
   role: String!
   region: String
   jobTitle: String
+  isLeader: Boolean
   createdAt: String
   updatedAt: String
   createdBy: String
@@ -81,6 +82,7 @@ input RegisterInput {
   role: String!
   region: String
   jobTitle: String
+  isLeader: Boolean
   creator: String
 }
 
@@ -93,4 +95,5 @@ input UserUpdateInput {
   role: String
   region: String
   jobTitle: String
+  isLeader: Boolean
 }

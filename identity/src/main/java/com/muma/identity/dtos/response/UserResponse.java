@@ -14,11 +14,11 @@ public record UserResponse(
                 String role,
                 String region,
                 String jobTitle,
+                Boolean isLeader,
                 LocalDateTime createdAt,
                 LocalDateTime updatedAt,
                 String createdBy,
                 String updatedBy) implements Serializable {
-//CORREGIR no va created ni updated
         public UserResponse(User user) {
         this(
                 user.getId(),
@@ -28,6 +28,7 @@ public record UserResponse(
                 user.getRole(),
                 user.getRegion(),
                 user.getJobTitle(),
+                user.getIsLeader(),
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
                 user.getCreatedBy(),

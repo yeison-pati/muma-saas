@@ -5,7 +5,7 @@
 .autocomplete-input input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid var(--color-border, #dee2e6);
+  border: 1px solid var(--color-border, var(--color-border));
   border-radius: 6px;
   font-size: 1rem;
   box-sizing: border-box;
@@ -13,8 +13,8 @@
 
 .autocomplete-input input:focus {
   outline: none;
-  border-color: var(--color-primary, #17a2b8);
-  box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.2);
+  border-color: var(--color-primary, var(--color-primary));
+  box-shadow: 0 0 0 2px var(--color-primary-alpha-20);
 }
 
 .autocomplete-list {
@@ -26,9 +26,9 @@
   padding: 0;
   list-style: none;
   background: white;
-  border: 1px solid var(--color-border, #dee2e6);
+  border: 1px solid var(--color-border, var(--color-border));
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px var(--color-shadow-lg);
   max-height: 200px;
   overflow-y: auto;
   z-index: 100;
@@ -42,12 +42,12 @@
 
 .autocomplete-item:hover,
 .autocomplete-item.autocomplete-highlight {
-  background: #e7f3f5;
-  color: var(--color-primary, #17a2b8);
+  background: var(--color-primary-light-alt);
+  color: var(--color-primary, var(--color-primary));
 }
 
 .autocomplete-item.autocomplete-empty {
-  color: #6c757d;
+  color: var(--color-text-muted);
   cursor: default;
   font-style: italic;
 }

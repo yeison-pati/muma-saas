@@ -9,6 +9,7 @@ export const MUTATION_SIGN_IN = `
         role
         region
         jobTitle
+        isLeader
       }
       token
     }
@@ -26,6 +27,7 @@ export const QUERY_QUOTERS = `
         role
         region
         jobTitle
+        isLeader
         createdBy
       }
       quoted
@@ -46,6 +48,7 @@ export const QUERY_SALES = `
         role
         region
         jobTitle
+        isLeader
         createdBy
       }
       requested
@@ -65,6 +68,7 @@ export const QUERY_DESIGNERS = `
         role
         region
         jobTitle
+        isLeader
         createdBy
       }
       created
@@ -84,6 +88,7 @@ export const QUERY_DEVELOPERS = `
         role
         region
         jobTitle
+        isLeader
         createdBy
       }
     }

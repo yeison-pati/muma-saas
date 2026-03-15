@@ -18,6 +18,11 @@
                 reverse_proxy document:8080
         }
 
+        # ---------- PRODUCTS API ----------
+        handle_path /api/products/* {
+                reverse_proxy products:8080
+        }
+
         handle_path /analytics/* {
       reverse_proxy metabase:3000
   }

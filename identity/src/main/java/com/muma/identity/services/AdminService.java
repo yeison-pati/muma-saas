@@ -49,6 +49,7 @@ public class AdminService {
         user.setRole(userUpdate.role());
         user.setRegion(userUpdate.region());
         user.setJobTitle(userUpdate.jobTitle());
+        if (userUpdate.isLeader() != null) user.setIsLeader(userUpdate.isLeader());
         user.setUpdatedAt(LocalDateTime.now());
         return new UserResponse(userRepository.save(user));
     }
@@ -66,6 +67,7 @@ public class AdminService {
                         .role(request.role())
                         .region(request.region())
                         .jobTitle(request.jobTitle())
+                        .isLeader(Boolean.TRUE.equals(request.isLeader()))
                         .createdBy(request.creator())
                         .createdAt(LocalDateTime.now())
                         .updatedAt(LocalDateTime.now())
@@ -138,6 +140,7 @@ public class AdminService {
         user.setRole(userUpdate.role());
         user.setRegion(userUpdate.region());
         user.setJobTitle(userUpdate.jobTitle());
+        if (userUpdate.isLeader() != null) user.setIsLeader(userUpdate.isLeader());
         userRepository.save(user);
         return true;
     }

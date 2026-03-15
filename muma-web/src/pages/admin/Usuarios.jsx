@@ -26,6 +26,7 @@ export default function AdminUsuarios() {
     role: 'SALES',
     region: '',
     jobTitle: '',
+    isLeader: false,
   });
 
   const loadUsers = () => {
@@ -87,6 +88,7 @@ export default function AdminUsuarios() {
       role,
       region: '',
       jobTitle: '',
+      isLeader: false,
     });
     setModal({ open: true, mode: 'create', user: null });
   };
@@ -99,6 +101,7 @@ export default function AdminUsuarios() {
       password: '',
       region: u.region || '',
       jobTitle: u.jobTitle || '',
+      isLeader: u.isLeader ?? false,
     });
     setModal({ open: true, mode: 'edit', user: u });
   };
@@ -114,6 +117,7 @@ export default function AdminUsuarios() {
         role: form.role,
         region: form.region || null,
         jobTitle: form.jobTitle || null,
+        isLeader: form.isLeader ?? false,
         creator: user?.id || null,
       });
       setModal({ open: false });
@@ -132,6 +136,7 @@ export default function AdminUsuarios() {
         phone: form.phone || null,
         region: form.region || null,
         jobTitle: form.jobTitle || null,
+        isLeader: form.isLeader,
         ...(form.password && { password: form.password }),
       });
       setModal({ open: false });

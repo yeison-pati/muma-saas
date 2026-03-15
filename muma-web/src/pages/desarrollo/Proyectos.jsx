@@ -8,16 +8,18 @@ export default function DesarrolloProyectos() {
   const catalog = useCatalogService();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState('');
   const [expandedId, setExpandedId] = useState(null);
   const [marking, setMarking] = useState(null);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [user?.id]);
 
   const load = () => {
+    if (!user?.id) return;
     catalog
-      .getProjectsEffective()
+      .getProjectsByAssignedDevelopment(user.id)
       .then((data) => setProjects(data || []))
       .catch(() => setProjects([]))
       .finally(() => setLoading(false));
@@ -40,6 +42,10 @@ export default function DesarrolloProyectos() {
     return <p className="desarrollo-loading">Cargando proyectos efectivos...</p>;
   }
 
+  const filtered = projects.filter((p) =>
+    (p.consecutive || p.name || '').toLowerCase().includes(searchText.trim().toLowerCase())
+  );
+
   if (projects.length === 0) {
     return (
       <div className="desarrollo-page">
@@ -52,9 +58,17 @@ export default function DesarrolloProyectos() {
   return (
     <div className="desarrollo-page">
       <h1>Proyectos efectivos</h1>
-      <p className="desarrollo-desc">Agrega los productos a SAP y márcalos como desarrollados cuando estén listos.</p>
+      <p className="desarrollo-desc">Proyectos efectivos asignados a usted. Agregue los productos a SAP y márquelos como desarrollados cuando estén listos.</p>
+      <div className="desarrollo-search">
+        <input
+          type="text"
+          placeholder="Buscar por consecutivo"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+        />
+      </div>
       <ul className="desarrollo-list">
-        {projects.map((p) => {
+        {filtered.map((p) => {
           const variants = p.variants || [];
           const isExpanded = expandedId === p.id;
           return (

@@ -14,11 +14,12 @@ export default function DisenadorProyectos() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [user?.id]);
 
   const load = () => {
+    if (!user?.id) return;
     catalog
-      .getProjectsEffective()
+      .getProjectsByAssignedDesigner(user.id)
       .then(setProjects)
       .catch(() => setProjects([]))
       .finally(() => setLoading(false));
@@ -31,7 +32,7 @@ export default function DisenadorProyectos() {
   return (
     <div className="disenador-proyectos-page">
       <p className="disenador-proyectos-desc">
-        Proyectos marcados como efectivos (ventas cerradas). Vista de solo lectura.
+        Proyectos efectivos asignados a usted. Marque como diseñado cuando termine.
       </p>
 
       <div className="disenador-proyectos-search">

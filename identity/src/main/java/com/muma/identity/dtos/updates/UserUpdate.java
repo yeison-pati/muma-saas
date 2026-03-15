@@ -11,6 +11,7 @@ public record UserUpdate(
     String password,
     String role,
     String region,
-    String jobTitle
+    String jobTitle,
+    Boolean isLeader
 ) {
 }

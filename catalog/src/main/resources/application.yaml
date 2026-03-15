@@ -25,7 +25,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        format_sql: false
     open-in-view: false
   rabbitmq:
     host: ${RABBITMQ_HOST}
@@ -44,11 +44,12 @@ spring:
 app:
   public-endpoint: ${PUBLIC_ENDPOINT}
   identity-service: ${IDENTITY_SERVICE}
+  products-service-url: ${PRODUCTS_SERVICE_URL:-http://products:8080}
 
 server:
   port: ${SERVER_PORT}
 
 logging:
   level:
-    org.hibernate.SQL: DEBUG
+    org.hibernate.SQL: WARN
     root: INFO

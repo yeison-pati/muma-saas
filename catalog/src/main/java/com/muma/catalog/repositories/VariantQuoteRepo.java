@@ -25,6 +25,11 @@ public interface VariantQuoteRepo extends JpaRepository<VariantQuote, UUID> {
             @org.springframework.data.repository.query.Param("variantId") UUID variantId,
             @org.springframework.data.repository.query.Param("projectId") UUID projectId);
 
+    @Query("SELECT vq FROM VariantQuote vq WHERE vq.productVariantId = :productVariantId AND vq.project.id = :projectId")
+    Optional<VariantQuote> findByProductVariantIdAndProjectId(
+            @org.springframework.data.repository.query.Param("productVariantId") UUID productVariantId,
+            @org.springframework.data.repository.query.Param("projectId") UUID projectId);
+
     @Modifying
     @Query("DELETE FROM VariantQuote vq WHERE vq.variant.id = :variantId")
     void deleteByVariantId(UUID variantId);
@@ -33,12 +38,25 @@ public interface VariantQuoteRepo extends JpaRepository<VariantQuote, UUID> {
     @Query("DELETE FROM VariantQuote vq WHERE vq.variant.id = :variantId AND vq.project.id = :projectId")
     void deleteByVariantIdAndProjectId(UUID variantId, UUID projectId);
 
+    @Modifying
+    @Query("DELETE FROM VariantQuote vq WHERE vq.productVariantId = :productVariantId AND vq.project.id = :projectId")
+    void deleteByProductVariantIdAndProjectId(
+            @org.springframework.data.repository.query.Param("productVariantId") UUID productVariantId,
+            @org.springframework.data.repository.query.Param("projectId") UUID projectId);
+
     @Query("SELECT vq.variant.id FROM VariantQuote vq WHERE vq.type IS NOT NULL AND LOWER(TRIM(vq.type)) IN ('p1', 'p2', 'p3', 'p5')")
     List<UUID> findVariantIdsWithQuoteType();
 
     @Modifying
     @Query("UPDATE VariantQuote vq SET vq.quantity = :qty WHERE vq.project.id = :projectId AND vq.variant.id = :variantId")
     int updateQuantity(
+            @org.springframework.data.repository.query.Param("projectId") UUID projectId,
+            @org.springframework.data.repository.query.Param("variantId") UUID variantId,
+            @org.springframework.data.repository.query.Param("qty") int qty);
+
+    @Modifying
+    @Query("UPDATE VariantQuote vq SET vq.quantity = :qty WHERE vq.project.id = :projectId AND vq.productVariantId = :variantId")
+    int updateQuantityByProductVariantId(
             @org.springframework.data.repository.query.Param("projectId") UUID projectId,
             @org.springframework.data.repository.query.Param("variantId") UUID variantId,
             @org.springframework.data.repository.query.Param("qty") int qty);
@@ -52,8 +70,21 @@ public interface VariantQuoteRepo extends JpaRepository<VariantQuote, UUID> {
             @org.springframework.data.repository.query.Param("type") String type);
 
     @Modifying
+    @Query("UPDATE VariantQuote vq SET vq.comments = COALESCE(:comments, vq.comments), vq.type = COALESCE(:type, vq.type) WHERE vq.project.id = :projectId AND vq.productVariantId = :variantId")
+    int updateCommentsAndTypeByProductVariantId(
+            @org.springframework.data.repository.query.Param("projectId") UUID projectId,
+            @org.springframework.data.repository.query.Param("variantId") UUID variantId,
+            @org.springframework.data.repository.query.Param("comments") String comments,
+            @org.springframework.data.repository.query.Param("type") String type);
+
+    @Modifying
     @Query("UPDATE VariantQuote vq SET vq.type = null WHERE vq.project.id = :projectId AND vq.variant.id = :variantId")
     int clearType(@org.springframework.data.repository.query.Param("projectId") UUID projectId,
+            @org.springframework.data.repository.query.Param("variantId") UUID variantId);
+
+    @Modifying
+    @Query("UPDATE VariantQuote vq SET vq.type = null WHERE vq.project.id = :projectId AND vq.productVariantId = :variantId")
+    int clearTypeByProductVariantId(@org.springframework.data.repository.query.Param("projectId") UUID projectId,
             @org.springframework.data.repository.query.Param("variantId") UUID variantId);
 
     @Modifying(clearAutomatically = true)
@@ -64,4 +95,16 @@ public interface VariantQuoteRepo extends JpaRepository<VariantQuote, UUID> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE VariantQuote vq SET vq.price = 0, vq.elaborationTime = 0, vq.criticalMaterial = null WHERE vq.project.id = :projectId")
     int resetQuoteByProjectId(@org.springframework.data.repository.query.Param("projectId") UUID projectId);
+
+    /** IDs de proyectos con al menos una variante asignada a este cotizador. */
+    @Query("SELECT DISTINCT vq.project.id FROM VariantQuote vq WHERE vq.assignedQuoterId = :quoterId")
+    List<UUID> findProjectIdsByAssignedQuoterId(@org.springframework.data.repository.query.Param("quoterId") UUID quoterId);
+
+    /** IDs de proyectos con al menos una variante asignada a este diseñador. */
+    @Query("SELECT DISTINCT vq.project.id FROM VariantQuote vq WHERE vq.assignedDesignerId = :designerId")
+    List<UUID> findProjectIdsByAssignedDesignerId(@org.springframework.data.repository.query.Param("designerId") UUID designerId);
+
+    /** IDs de proyectos con al menos una variante asignada a este usuario de desarrollo. */
+    @Query("SELECT DISTINCT vq.project.id FROM VariantQuote vq WHERE vq.assignedDevelopmentUserId = :userId")
+    List<UUID> findProjectIdsByAssignedDevelopmentUserId(@org.springframework.data.repository.query.Param("userId") UUID userId);
 }

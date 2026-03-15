@@ -9,6 +9,7 @@ public record RegisterRequest(
     String role,
     String region,
     String jobTitle,
+    Boolean isLeader,
     String creator
 ) {
 }

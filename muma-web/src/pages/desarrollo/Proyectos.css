@@ -8,15 +8,27 @@
   margin-bottom: 8px;
 }
 
+.desarrollo-search {
+  margin-bottom: 16px;
+}
+
+.desarrollo-search input {
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  min-width: 250px;
+}
+
 .desarrollo-desc,
 .desarrollo-empty {
-  color: #666;
+  color: var(--color-text-secondary);
   margin-bottom: 20px;
 }
 
 .desarrollo-loading {
   padding: 24px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .desarrollo-list {
@@ -26,10 +38,10 @@
 }
 
 .desarrollo-item {
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--color-border-hover);
   border-radius: 8px;
   margin-bottom: 12px;
-  background: #fff;
+  background: var(--color-bg-white);
 }
 
 .desarrollo-item-btn {
@@ -46,24 +58,24 @@
 }
 
 .desarrollo-item-btn:hover {
-  background: #f8f9fa;
+  background: var(--color-bg);
 }
 
 .desarrollo-consecutivo {
   font-weight: 600;
-  color: #17a2b8;
+  color: var(--color-primary);
 }
 
 .desarrollo-badge {
   margin-left: auto;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .desarrollo-detail {
   padding: 12px 16px;
-  border-top: 1px solid #e9ecef;
-  background: #f8f9fa;
+  border-top: 1px solid var(--color-border-hover);
+  background: var(--color-bg);
 }
 
 .desarrollo-detail p {
@@ -82,10 +94,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  background: #fff;
+  background: var(--color-bg-white);
   border-radius: 6px;
   margin-bottom: 8px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--color-border-hover);
 }
 
 .desarrollo-variant-info {
@@ -93,14 +105,14 @@
 }
 
 .desarrollo-done {
-  color: #28a745;
+  color: var(--color-success);
   font-weight: 600;
   margin-left: 8px;
 }
 
 .desarrollo-mark-btn {
   padding: 6px 14px;
-  background: #17a2b8;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 6px;
@@ -109,7 +121,15 @@
 }
 
 .desarrollo-mark-btn:hover:not(:disabled) {
-  background: #138496;
+  background: var(--color-primary-dark);
+}
+
+.desarrollo-assign-select {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  margin-right: 8px;
 }
 
 .desarrollo-mark-btn:disabled {

@@ -34,6 +34,10 @@ public class User {
     @Column(name = "job_title")
     private String jobTitle;
 
+    /** Si true: es líder/jefe y puede asignar productos a otros (cotizador, diseñador, desarrollo). */
+    @Column(name = "is_leader")
+    private Boolean isLeader;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

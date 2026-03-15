@@ -21,19 +21,19 @@
   min-width: 200px;
   max-width: 400px;
   padding: 10px 14px;
-  border: 1px solid var(--color-border, #dee2e6);
+  border: 1px solid var(--color-border, var(--color-border));
   border-radius: 8px;
   font-size: 0.95rem;
 }
 
 .solicitudes-filters input:focus {
   outline: none;
-  border-color: var(--color-primary, #17a2b8);
+  border-color: var(--color-primary, var(--color-primary));
 }
 
 .solicitudes-region-select {
   padding: 10px 14px;
-  border: 1px solid var(--color-border, #dee2e6);
+  border: 1px solid var(--color-border, var(--color-border));
   border-radius: 8px;
   font-size: 0.95rem;
   min-width: 160px;
@@ -41,7 +41,7 @@
 
 .solicitudes-clear-btn {
   padding: 10px 16px;
-  background: #dc3545;
+  background: var(--color-danger-modal);
   color: white;
   border: none;
   border-radius: 8px;
@@ -50,13 +50,13 @@
 }
 
 .solicitudes-clear-btn:hover {
-  background: #c82333;
+  background: var(--color-danger-darker);
 }
 
 .solicitudes-tabs {
   display: flex;
   gap: 0;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid var(--color-border-hover);
   margin-bottom: 24px;
 }
 
@@ -67,23 +67,23 @@
   border-bottom: 3px solid transparent;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #6c757d;
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .solicitudes-tabs button:hover {
-  color: var(--color-primary, #17a2b8);
+  color: var(--color-primary, var(--color-primary));
 }
 
 .solicitudes-tabs button.active {
-  color: var(--color-primary, #17a2b8);
-  border-bottom-color: var(--color-primary, #17a2b8);
+  color: var(--color-primary, var(--color-primary));
+  border-bottom-color: var(--color-primary, var(--color-primary));
 }
 
 .solicitudes-loading {
   padding: 48px 0;
-  color: #6c757d;
+  color: var(--color-text-muted);
 }
 
 .solicitudes-content {
@@ -93,7 +93,7 @@
 .solicitudes-empty {
   padding: 48px 24px;
   text-align: center;
-  color: #6c757d;
+  color: var(--color-text-muted);
   margin: 0;
 }
 
@@ -105,7 +105,7 @@
 
 .solicitudes-item {
   margin-bottom: 8px;
-  border: 1px solid var(--color-border, #e9ecef);
+  border: 1px solid var(--color-border, var(--color-border-hover));
   border-radius: 8px;
   overflow: hidden;
 }
@@ -114,14 +114,14 @@
   width: 100%;
   padding: 12px 16px;
   text-align: left;
-  background: #fff;
+  background: var(--color-bg-white);
   border: none;
   cursor: pointer;
   font-size: 0.95rem;
 }
 
 .solicitudes-item-btn:hover {
-  background: #f8f9fa;
+  background: var(--color-bg);
 }
 
 .solicitudes-item-header {
@@ -142,18 +142,20 @@
 }
 
 .solicitudes-reopen-btn,
-.solicitudes-effective-btn {
+.solicitudes-effective-btn,
+.solicitudes-quitar-effective-btn {
   padding: 8px 14px;
-  border: 1px solid var(--color-border, #dee2e6);
+  border: 1px solid var(--color-border, var(--color-border));
   border-radius: 6px;
   font-size: 0.85rem;
   cursor: pointer;
-  background: #fff;
+  background: var(--color-bg-white);
 }
 
 .solicitudes-reopen-btn:hover:not(:disabled),
-.solicitudes-effective-btn:hover {
-  background: #f8f9fa;
+.solicitudes-effective-btn:hover,
+.solicitudes-quitar-effective-btn:hover {
+  background: var(--color-bg);
 }
 
 .solicitudes-reopen-btn:disabled {
@@ -162,13 +164,22 @@
 }
 
 .solicitudes-effective-btn {
-  border-color: var(--color-primary, #17a2b8);
-  color: var(--color-primary, #17a2b8);
+  border-color: var(--color-primary, var(--color-primary));
+  color: var(--color-primary, var(--color-primary));
+}
+
+.solicitudes-quitar-effective-btn {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.solicitudes-quitar-effective-btn:hover {
+  background: var(--color-accent-bg);
 }
 
 .solicitudes-pdf-btn {
   padding: 8px 16px;
-  background: var(--color-primary, #17a2b8);
+  background: var(--color-primary, var(--color-primary));
   color: white;
   border: none;
   border-radius: 6px;
@@ -178,12 +189,12 @@
 }
 
 .solicitudes-pdf-btn:hover {
-  background: #138496;
+  background: var(--color-primary-dark);
 }
 
 .solicitudes-delete-btn {
   padding: 8px 14px;
-  background: #dc3545;
+  background: var(--color-danger-modal);
   color: white;
   border: none;
   border-radius: 6px;
@@ -193,26 +204,26 @@
 }
 
 .solicitudes-delete-btn:hover {
-  background: #c82333;
+  background: var(--color-danger-darker);
 }
 
 .solicitudes-consecutivo {
   font-weight: 600;
-  color: #17a2b8;
+  color: var(--color-primary);
 }
 
 .solicitudes-client {
-  color: #333;
+  color: var(--color-text-dark);
 }
 
 .solicitudes-effective-tag {
-  color: #28a745;
+  color: var(--color-success);
   font-weight: 600;
 }
 
 .solicitudes-detail {
   padding: 12px 16px;
-  background: #f8f9fa;
+  background: var(--color-bg);
   font-size: 0.9rem;
 }
 
@@ -238,16 +249,16 @@
 }
 
 .badge-products {
-  background: #e9ecef;
-  color: #333;
+  background: var(--color-border-hover);
+  color: var(--color-text-dark);
 }
 
 .badge-version {
-  background: #d1ecf1;
-  color: #0c5460;
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
 }
 
 .badge-estado {
-  background: #d4edda;
-  color: #155724;
+  background: var(--color-success-bg);
+  color: var(--color-success-dark);
 }

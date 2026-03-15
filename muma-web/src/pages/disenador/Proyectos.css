@@ -10,7 +10,7 @@
 
 .disenador-proyectos-desc {
   margin: 0 0 24px;
-  color: #6c757d;
+  color: var(--color-text-muted);
   font-size: 0.95rem;
 }
 
@@ -22,21 +22,21 @@
   width: 100%;
   max-width: 400px;
   padding: 10px 14px;
-  border: 1px solid var(--color-border, #dee2e6);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 0.95rem;
 }
 
 .disenador-proyectos-search input:focus {
   outline: none;
-  border-color: var(--color-primary, #17a2b8);
+  border-color: var(--color-primary);
 }
 
 .disenador-proyectos-loading,
 .disenador-proyectos-empty {
   padding: 48px 24px;
   text-align: center;
-  color: #6c757d;
+  color: var(--color-text-muted);
   margin: 0;
 }
 
@@ -48,7 +48,7 @@
 
 .disenador-proyectos-item {
   margin-bottom: 8px;
-  border: 1px solid var(--color-border, #e9ecef);
+  border: 1px solid var(--color-border-hover);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -59,30 +59,30 @@
   width: 100%;
   padding: 12px 16px;
   text-align: left;
-  background: #fff;
+  background: var(--color-bg-white);
   border: none;
   cursor: pointer;
   font-size: 0.95rem;
 }
 
 .disenador-proyectos-item-btn:hover {
-  background: #f8f9fa;
+  background: var(--color-bg);
 }
 
 .disenador-consecutivo {
   font-weight: 600;
-  color: #17a2b8;
+  color: var(--color-primary);
 }
 
 .disenador-expand {
   margin-left: auto;
-  color: #17a2b8;
+  color: var(--color-primary);
   font-weight: bold;
 }
 
 .disenador-proyectos-detail {
   padding: 16px;
-  background: #f8f9fa;
+  background: var(--color-bg);
   font-size: 0.9rem;
 }
 
@@ -108,29 +108,29 @@
 }
 
 .disenador-badges .badge-products {
-  background: #e9ecef;
-  color: #333;
+  background: var(--color-border-hover);
+  color: var(--color-text-dark);
 }
 
 .disenador-badges .badge-version {
-  background: #d1ecf1;
-  color: #0c5460;
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
 }
 
 .disenador-badges .badge-estado {
-  background: #d4edda;
-  color: #155724;
+  background: var(--color-success-bg);
+  color: var(--color-success-dark);
 }
 
 .disenador-proyectos-variant {
   padding: 8px 0;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--color-border-hover);
 }
 
 .disenador-proyectos-pdf-btn {
   margin-top: 12px;
   padding: 8px 16px;
-  background: var(--color-primary, #17a2b8);
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 6px;
@@ -138,5 +138,5 @@
 }
 
 .disenador-proyectos-pdf-btn:hover {
-  background: #138496;
+  background: var(--color-primary-dark);
 }

@@ -1,0 +1,146 @@
+type Query {
+  "Todas las bases de producto"
+  bases: [Base!]!
+  "Productos (bases con variantes anidadas). Fuente de verdad para catálogo."
+  products: [Product!]!
+  "Variantes por base"
+  variantsByBase(baseId: ID!): [Variant!]!
+  "Componentes por variante"
+  componentsByVariant(variantId: ID!): [Component!]!
+}
+
+"Base con variantes anidadas. Misma forma que catalog para compatibilidad."
+type Product {
+  id: ID!
+  code: String!
+  name: String!
+  image: String
+  model: String
+  category: String
+  subcategory: String
+  space: String
+  line: String
+  baseMaterial: String
+  variants: [Variant!]!
+}
+
+type Mutation {
+  "Crear base"
+  createBase(input: CreateBaseInput!): Base
+  "Actualizar base"
+  updateBase(input: UpdateBaseInput!): Base
+  "Eliminar base"
+  deleteBase(baseId: ID!): Boolean
+  "Crear variante"
+  createVariant(input: CreateVariantInput!): Variant
+  "Actualizar variante"
+  updateVariant(input: UpdateVariantInput!): Variant
+  "Eliminar variante"
+  deleteVariant(variantId: ID!): Boolean
+  "Crear componente"
+  createComponent(input: CreateComponentInput!): Component
+  "Actualizar componente"
+  updateComponent(input: UpdateComponentInput!): Component
+  "Eliminar componente"
+  deleteComponent(componentId: ID!): Boolean
+}
+
+type Base {
+  id: ID!
+  code: String!
+  name: String!
+  image: String
+  model: String
+  category: String
+  subcategory: String
+  space: String
+  line: String
+  baseMaterial: String
+}
+
+type Variant {
+  id: ID!
+  sapRef: String
+  sapCode: String
+  status: String
+  components: [Component!]!
+}
+
+type Component {
+  id: ID!
+  sapRef: String
+  sapCode: String
+  name: String!
+  value: String
+  originalValue: String
+  "Alias de originalValue para compatibilidad con catalog"
+  catalogOriginalValue: String
+}
+
+input CreateBaseInput {
+  code: String!
+  name: String!
+  image: String
+  model: String
+  category: String
+  subcategory: String
+  space: String
+  line: String
+  baseMaterial: String
+  creatorId: ID
+  creatorName: String
+  initialVariants: [CreateBaseInitialVariantInput!]
+}
+
+input CreateBaseInitialVariantInput {
+  sapRef: String
+  components: [CreateBaseInitialComponentInput!]!
+}
+
+input CreateBaseInitialComponentInput {
+  componentId: ID
+  componentName: String
+  componentSapRef: String
+  componentSapCode: String
+  componentValue: String
+}
+
+input UpdateBaseInput {
+  id: ID!
+  name: String
+  image: String
+  model: String
+  category: String
+  subcategory: String
+  space: String
+  line: String
+  baseMaterial: String
+}
+
+input CreateVariantInput {
+  baseId: ID!
+  sapRef: String
+  components: [CreateBaseInitialComponentInput!]
+}
+
+input UpdateVariantInput {
+  id: ID!
+  sapRef: String
+  components: [CreateBaseInitialComponentInput!]
+}
+
+input CreateComponentInput {
+  variantId: ID!
+  sapRef: String
+  sapCode: String
+  name: String!
+  value: String
+}
+
+input UpdateComponentInput {
+  id: ID!
+  sapRef: String
+  sapCode: String
+  name: String
+  value: String
+}

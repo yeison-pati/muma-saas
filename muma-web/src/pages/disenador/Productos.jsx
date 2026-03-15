@@ -4,14 +4,14 @@ import ProductDetailModal from '../../components/ProductDetailModal';
 import BaseEditModal from '../../components/BaseEditModal';
 import DynamicFilterPanel from '../../components/DynamicFilterPanel';
 import BaseList from '../../components/BaseList';
-import { useCatalogService } from '../../hooks/useCatalogService';
+import { useProductsService } from '../../hooks/useProductsService';
 import { useProducts } from '../../context/ProductsContext';
 import './Productos.css';
 
 export default function DisenadorProductos() {
   const { productsByCategory } = useFilters();
   const { reload } = useProducts();
-  const catalog = useCatalogService();
+  const productsService = useProductsService();
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
 
@@ -33,7 +33,7 @@ export default function DisenadorProductos() {
   const handleDelete = async (product) => {
     if (!confirm('¿Eliminar este producto y todas sus variantes?')) return;
     try {
-      await catalog.deleteBase(product.id);
+      await productsService.deleteBase(product.id);
       setSelectedProduct(null);
       setEditingProduct(null);
       reload();

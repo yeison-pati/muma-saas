@@ -1,0 +1,65 @@
+.assign-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.assign-confirm-modal {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  min-width: 320px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.assign-confirm-modal h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+}
+
+.assign-confirm-modal p {
+  margin: 0.5rem 0;
+}
+
+.assign-confirm-count {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.assign-confirm-hint {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-top: 0.75rem;
+}
+
+.assign-confirm-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+}
+
+.assign-confirm-actions .btn-cancel {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.assign-confirm-actions .btn-confirm {
+  padding: 0.5rem 1rem;
+  background: #0ea5e9;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.assign-confirm-actions .btn-confirm:hover {
+  background: #0284c7;
+}

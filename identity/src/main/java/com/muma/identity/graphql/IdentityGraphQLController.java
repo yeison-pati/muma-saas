@@ -108,7 +108,8 @@ public class IdentityGraphQLController {
                 input.password(),
                 input.role(),
                 input.region(),
-                input.jobTitle());
+                input.jobTitle(),
+                input.isLeader());
     }
 
     private static RegisterRequest toRegisterRequest(RegisterInput input) {
@@ -120,6 +121,7 @@ public class IdentityGraphQLController {
                 input.role(),
                 input.region(),
                 input.jobTitle(),
+                input.isLeader(),
                 input.creator());
     }
 }

@@ -1,8 +1,8 @@
 .colombia-regiones-map {
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--color-border-hover);
   border-radius: 8px;
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--color-bg);
   overflow: auto;
   height: 100%;
   min-height: 280px;
@@ -14,7 +14,7 @@
 
 .colombia-regiones-zoom-hint {
   font-size: 0.7rem;
-  color: #64748b;
+  color: var(--color-text-slate);
   margin-bottom: 6px;
 }
 
@@ -44,5 +44,5 @@
   margin: 12px 0 0;
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--color-primary, #17a2b8);
+  color: var(--color-primary, var(--color-primary));
 }

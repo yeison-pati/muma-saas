@@ -129,7 +129,7 @@ export default function CotizadorProyectos() {
   useEffect(() => {
     if (user?.id) {
       catalog
-        .getProjectsByQuoter(user.id)
+        .getProjectsByAssignedQuoter(user.id)
         .then((data) => dispatch({ type: 'SET_PROJECTS', payload: data }))
         .catch(() => dispatch({ type: 'SET_PROJECTS', payload: [] }))
         .finally(() => dispatch({ type: 'SET_LOADING', payload: false }));
@@ -150,7 +150,7 @@ export default function CotizadorProyectos() {
 
   const refreshProjects = () => {
     if (user?.id) {
-      catalog.getProjectsByQuoter(user.id).then((data) => dispatch({ type: 'SET_PROJECTS', payload: data }));
+      catalog.getProjectsByAssignedQuoter(user.id).then((data) => dispatch({ type: 'SET_PROJECTS', payload: data }));
     }
   };
 

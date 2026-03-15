@@ -4,6 +4,7 @@ import { useCart } from '../../context/CartContext';
 import { useUser } from '../../context/UserContext';
 import { useProject } from '../../context/ProjectContext';
 import { useCatalogService } from '../../hooks/useCatalogService';
+import { getMediaUrls } from '../../api/documentService';
 import ProjectForm from '../../components/ProjectForm';
 import CartItem from '../../components/CartItem';
 import './Proyecto.css';
@@ -19,12 +20,12 @@ export default function ComercialProyecto() {
   const {
     userProject,
     customProducts,
-    removeProductFromProject,
     updateProductInProject,
+    updateCustomProduct,
+    removeProductFromProject,
     increaseProductQty,
     decreaseProductQty,
     removeCustomProduct,
-    updateCustomProduct,
     increaseCustomProductQty,
     decreaseCustomProductQty,
     clearCart,
@@ -47,6 +48,27 @@ export default function ComercialProyecto() {
       })
       .catch(() => setClientOptions([]));
   }, [user?.id, catalog]);
+
+  // Cargar fullUrl para items del carrito que tienen image pero no fullUrl (ej. restaurados de localStorage)
+  useEffect(() => {
+    const needsUrl = [...userProject, ...customProducts].filter((i) => i?.image && !i?.fullUrl);
+    if (needsUrl.length === 0) return;
+    const keys = [...new Set(needsUrl.map((i) => i.image).filter(Boolean))];
+    getMediaUrls(keys, 'image')
+      .then((res) => (res?.data || {}))
+      .catch(() => ({}))
+      .then((urlMap) => {
+        needsUrl.forEach((item) => {
+          if (item.image && urlMap[item.image]) {
+            if (userProject.some((p) => p.id === item.id)) {
+              updateProductInProject(item.id, { fullUrl: urlMap[item.image] });
+            } else {
+              updateCustomProduct(item.id, { fullUrl: urlMap[item.image] });
+            }
+          }
+        });
+      });
+  }, [userProject, customProducts, updateProductInProject, updateCustomProduct]);
 
   const isEmpty = userProject.length === 0 && customProducts.length === 0;
 

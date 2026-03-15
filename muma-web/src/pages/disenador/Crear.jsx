@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useCatalogService } from '../../hooks/useCatalogService';
+import { useProductsService } from '../../hooks/useProductsService';
 import { useUser } from '../../context/UserContext';
 import { useProducts } from '../../context/ProductsContext';
 import { uploadFile } from '../../api/documentService';
@@ -8,7 +8,7 @@ import CrearVariantsSection from './CrearVariantsSection';
 import './Crear.css';
 
 export default function DisenadorCrear() {
-  const catalog = useCatalogService();
+  const productsService = useProductsService();
   const { user } = useUser();
   const { products, reload } = useProducts();
   const [form, setForm] = useState({
@@ -235,7 +235,7 @@ export default function DisenadorCrear() {
         return;
       }
 
-      await catalog.createBase({
+      await productsService.createBase({
         ...form,
         image: imageKey,
         model: modelKey,
