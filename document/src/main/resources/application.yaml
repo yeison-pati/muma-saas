@@ -20,3 +20,9 @@ storage:
   images:
     public-base-url: ${IMAGES_PUBLIC_BASE_URL:http://localhost:8000/images}
     internal-base-url: ${IMAGES_INTERNAL_BASE_URL:http://caddy:8000/images}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

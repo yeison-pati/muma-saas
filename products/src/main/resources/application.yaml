@@ -25,6 +25,12 @@ spring:
 server:
   port: ${SERVER_PORT:8082}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
 logging:
   level:
     org.hibernate.SQL: WARN

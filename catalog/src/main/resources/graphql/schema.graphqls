@@ -19,8 +19,6 @@ type Query {
   projectsForAssignment(role: String): [Project!]!
   "Estándares de tiempo por tipología (para métricas)"
   typologyStandards: [TypologyStandard!]!
-  "Hilos de comunicación por proyecto (Comercial-Diseño, Comercial-Desarrollo)"
-  threadsByProject(projectId: ID!): [Thread!]!
 }
 
 type Mutation {
@@ -52,10 +50,6 @@ type Mutation {
   updateVariantQuoteQuantity(input: UpdateVariantQuoteQuantityInput!): Boolean
   "Quitar variante de proyecto (sin reabrir)"
   removeVariantFromProject(projectId: ID!, variantId: ID!): Boolean
-  "Abrir hilo de comunicación (COMMERCIAL_DESIGN o COMMERCIAL_DEVELOPMENT)"
-  openThread(projectId: ID!, variantId: ID, type: String!, openedBy: ID!): Thread
-  "Cerrar hilo"
-  closeThread(threadId: ID!, closedBy: ID!): Thread
   "Líder asigna variante a usuario (roleType: QUOTER, DESIGNER, DEVELOPMENT)"
   assignVariantToUser(projectId: ID!, variantId: ID!, assigneeId: ID!, roleType: String!): Boolean
 }
@@ -88,18 +82,6 @@ type TypologyStandard {
   daysDiseno: Int!
   daysDesarrollo: Int
   hoursPerWeek: Int
-}
-
-"Hilo de comunicación Comercial-Diseño o Comercial-Desarrollo. Tiempo suma a métricas."
-type Thread {
-  id: ID!
-  projectId: ID!
-  variantId: ID
-  type: String!
-  openedAt: String!
-  closedAt: String
-  openedBy: ID
-  closedBy: ID
 }
 
 type ProjectVariant {

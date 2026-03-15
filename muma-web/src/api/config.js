@@ -5,4 +5,5 @@ export const ENDPOINTS = {
   identity: API_BASE ? `${API_BASE}/api/identity/graphql` : '/api/identity/graphql',
   document: API_BASE ? `${API_BASE}/api/document` : '/api/document',
   products: API_BASE ? `${API_BASE}/api/products/graphql` : '/api/products/graphql',
+  threads: API_BASE ? `${API_BASE}/api/threads/graphql` : '/api/threads/graphql',
 };

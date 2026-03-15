@@ -34,6 +34,7 @@ public class SecurityConfig {
                                                 .frameOptions(frame -> frame.disable()))
                                 .authorizeExchange(auth -> auth
                                                 .pathMatchers(HttpMethod.OPTIONS).permitAll()
+                                                .pathMatchers("/actuator/**").permitAll()
                                                 .pathMatchers("/mediaFiles/**")
                                                 .hasAnyRole("ADMIN", "QUOTER", "DESIGNER", "SALES", "DEVELOPMENT")
                                                 .pathMatchers("/files/**").hasRole("SALES")

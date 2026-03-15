@@ -264,7 +264,7 @@ export default function ProductDetailModal({
                 ))}
                 {matchingVariant && (
                   <p className="modal-variant-match">
-                    Variante existente: {matchingVariant.sapRef || matchingVariant.id}
+                    Variante existente: {matchingVariant.sapRef || '—'}
                   </p>
                 )}
               </div>

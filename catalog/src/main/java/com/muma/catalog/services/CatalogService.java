@@ -826,7 +826,7 @@ public class CatalogService {
         var base = baseService.findById(baseId).orElseThrow(() -> new IllegalStateException("Base not found"));
         for (Variant variant : variantService.findByBaseCode(base.getCode())) {
             variantQuoteService.deleteByVariantId(variant.getId());
-            for (Project p : projectRepository.findProjectsContainingVariant(variant.getId())) {
+            for (Project p : projectRepository.findProjectsContainingVariantWithVariants(variant.getId())) {
                 p.getVariants().remove(variant);
                 projectRepository.save(p);
             }
@@ -932,7 +932,7 @@ public class CatalogService {
         Variant variant = variantService.findById(variantId)
                 .orElseThrow(() -> new IllegalStateException("Variant not found"));
         variantQuoteService.deleteByVariantId(variant.getId());
-        for (Project p : projectRepository.findProjectsContainingVariant(variant.getId())) {
+        for (Project p : projectRepository.findProjectsContainingVariantWithVariants(variant.getId())) {
             p.getVariants().remove(variant);
             projectRepository.save(p);
         }

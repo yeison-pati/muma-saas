@@ -16,81 +16,104 @@ export const MUTATION_SIGN_IN = `
   }
 `;
 
+export const QUERY_USERS_BY_IDS = `
+  query UsersByIds($userIds: [ID!]!) {
+    usersByIds(userIds: $userIds) {
+      id
+      name
+    }
+  }
+`;
+
+const QUOTER_FIELDS = `
+  user {
+    id
+    name
+    email
+    phone
+    role
+    region
+    jobTitle
+    isLeader
+    createdBy
+  }
+  quoted
+  projects
+  products
+`;
+
 export const QUERY_QUOTERS = `
-  query Quoters {
-    quoters {
-      user {
-        id
-        name
-        email
-        phone
-        role
-        region
-        jobTitle
-        isLeader
-        createdBy
-      }
-      quoted
-      projects
-      products
+  query Quoters($limit: Int, $offset: Int) {
+    quoters(limit: $limit, offset: $offset) {
+      items { ${QUOTER_FIELDS} }
+      pageInfo { total limit offset }
     }
   }
 `;
 
 export const QUERY_SALES = `
-  query Sales {
-    sales {
-      user {
-        id
-        name
-        email
-        phone
-        role
-        region
-        jobTitle
-        isLeader
-        createdBy
+  query Sales($limit: Int, $offset: Int) {
+    sales(limit: $limit, offset: $offset) {
+      items {
+        user {
+          id
+          name
+          email
+          phone
+          role
+          region
+          jobTitle
+          isLeader
+          createdBy
+        }
+        requested
+        effective
       }
-      requested
-      effective
+      pageInfo { total limit offset }
     }
   }
 `;
 
 export const QUERY_DESIGNERS = `
-  query Designers {
-    designers {
-      user {
-        id
-        name
-        email
-        phone
-        role
-        region
-        jobTitle
-        isLeader
-        createdBy
+  query Designers($limit: Int, $offset: Int) {
+    designers(limit: $limit, offset: $offset) {
+      items {
+        user {
+          id
+          name
+          email
+          phone
+          role
+          region
+          jobTitle
+          isLeader
+          createdBy
+        }
+        created
+        edited
       }
-      created
-      edited
+      pageInfo { total limit offset }
     }
   }
 `;
 
 export const QUERY_DEVELOPERS = `
-  query Developers {
-    developers {
-      user {
-        id
-        name
-        email
-        phone
-        role
-        region
-        jobTitle
-        isLeader
-        createdBy
+  query Developers($limit: Int, $offset: Int) {
+    developers(limit: $limit, offset: $offset) {
+      items {
+        user {
+          id
+          name
+          email
+          phone
+          role
+          region
+          jobTitle
+          isLeader
+          createdBy
+        }
       }
+      pageInfo { total limit offset }
     }
   }
 `;

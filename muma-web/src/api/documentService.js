@@ -1,4 +1,5 @@
 import { ENDPOINTS } from './config';
+import { getTraceId, TRACE_ID_HEADER } from './traceId';
 
 const getStoredToken = () => localStorage.getItem('token');
 
@@ -9,11 +10,16 @@ export async function uploadFile(file, type) {
   const res = await fetch(`${ENDPOINTS.document}/mediaFile/upload?type=${type}`, {
     method: 'POST',
     headers: {
+      [TRACE_ID_HEADER]: getTraceId(),
       ...(getStoredToken() && { Authorization: `Bearer ${getStoredToken()}` }),
     },
     body: formData,
   });
-  if (!res.ok) throw new Error('Error subiendo archivo');
+  if (!res.ok) {
+    const err = new Error('Error subiendo archivo');
+    err.traceId = res.headers.get(TRACE_ID_HEADER);
+    throw err;
+  }
   const json = await res.json();
   return { key: json.key };
 }
@@ -24,11 +30,16 @@ export async function getMediaUrls(keys, type = 'image') {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      [TRACE_ID_HEADER]: getTraceId(),
       ...(getStoredToken() && { Authorization: `Bearer ${getStoredToken()}` }),
     },
     body: JSON.stringify(keys),
   });
-  if (!res.ok) throw new Error('Error obteniendo URLs');
+  if (!res.ok) {
+    const err = new Error('Error obteniendo URLs');
+    err.traceId = res.headers.get(TRACE_ID_HEADER);
+    throw err;
+  }
   const json = await res.json();
   return { data: json };
 }
@@ -43,11 +54,16 @@ export async function generateProjectPdf(pdfData) {
     method: 'POST',
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
+      [TRACE_ID_HEADER]: getTraceId(),
       ...(getStoredToken() && { Authorization: `Bearer ${getStoredToken()}` }),
     },
     body: html,
   });
-  if (!res.ok) throw new Error('Error generando PDF');
+  if (!res.ok) {
+    const err = new Error('Error generando PDF');
+    err.traceId = res.headers.get(TRACE_ID_HEADER);
+    throw err;
+  }
   return res.blob();
 }
 

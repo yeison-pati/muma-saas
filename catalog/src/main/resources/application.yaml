@@ -41,6 +41,12 @@ spring:
           initial-interval: 1000
           max-attempts: 3
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
 app:
   public-endpoint: ${PUBLIC_ENDPOINT}
   identity-service: ${IDENTITY_SERVICE}

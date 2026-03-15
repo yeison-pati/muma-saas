@@ -34,5 +34,14 @@ spring:
           initial-interval: 1000
           max-attempts: 3
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: when-authorized
+
 app:
   public-endpoint: ${PUBLIC_ENDPOINT}

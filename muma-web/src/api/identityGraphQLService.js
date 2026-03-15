@@ -1,6 +1,7 @@
 import { identityGraphQL } from './graphqlClient';
 import {
   MUTATION_SIGN_IN,
+  QUERY_USERS_BY_IDS,
   QUERY_QUOTERS,
   QUERY_SALES,
   QUERY_DESIGNERS,
@@ -17,18 +18,16 @@ export const createIdentityService = (getToken) => ({
         data: d.signIn,
       })),
   },
-  getQuoters: () =>
-    identityGraphQL(QUERY_QUOTERS, {}, getToken).then((d) => d?.quoters ?? []),
-  getSales: () =>
-    identityGraphQL(QUERY_SALES, {}, getToken).then((d) => d?.sales ?? []),
-  getDesigners: () =>
-    identityGraphQL(QUERY_DESIGNERS, {}, getToken).then(
-      (d) => d?.designers ?? []
-    ),
-  getDevelopers: () =>
-    identityGraphQL(QUERY_DEVELOPERS, {}, getToken).then(
-      (d) => d?.developers ?? []
-    ),
+  getUsersByIds: (userIds) =>
+    identityGraphQL(QUERY_USERS_BY_IDS, { userIds }, getToken).then((d) => d?.usersByIds ?? []),
+  getQuoters: (limit, offset) =>
+    identityGraphQL(QUERY_QUOTERS, { limit, offset }, getToken).then((d) => d?.quoters?.items ?? []),
+  getSales: (limit, offset) =>
+    identityGraphQL(QUERY_SALES, { limit, offset }, getToken).then((d) => d?.sales?.items ?? []),
+  getDesigners: (limit, offset) =>
+    identityGraphQL(QUERY_DESIGNERS, { limit, offset }, getToken).then((d) => d?.designers?.items ?? []),
+  getDevelopers: (limit, offset) =>
+    identityGraphQL(QUERY_DEVELOPERS, { limit, offset }, getToken).then((d) => d?.developers?.items ?? []),
   createUser: (input) =>
     identityGraphQL(MUTATION_CREATE_USER, { input }, getToken),
   deleteUser: (userId) =>

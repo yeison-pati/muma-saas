@@ -1,10 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useUser } from '../../context/UserContext';
 import { useCatalogService } from '../../hooks/useCatalogService';
 import { createIdentityService } from '../../api/identityGraphQLService';
 import ProjectProductsTable from '../../components/ProjectProductsTable';
+import { formatErrorMessage } from '../../utils/formatError';
 import './Proyectos.css';
+
+/** Cuenta productos asignados por userId desde los proyectos. Identity no actualiza en asignación. */
+function countAssignedFromProjects(projects, field) {
+  const counts = {};
+  for (const p of projects || []) {
+    for (const v of p.variants || []) {
+      const uid = v[field];
+      if (uid) {
+        counts[uid] = (counts[uid] || 0) + 1;
+      }
+    }
+  }
+  return counts;
+}
 
 export default function AsignacionProyectos() {
   const { user, getToken } = useUser();
@@ -45,7 +60,7 @@ export default function AsignacionProyectos() {
       await catalog.assignVariantToUser(projectId, variantId, assigneeId, roleType);
       load();
     } catch (err) {
-      alert(err?.message || 'Error al asignar');
+      alert(formatErrorMessage(err, 'Error al asignar'));
     }
   };
 
@@ -60,6 +75,25 @@ export default function AsignacionProyectos() {
 
   const filtered = projects.filter((p) =>
     (p.consecutive || p.name || '').toLowerCase().includes(searchText.trim().toLowerCase())
+  );
+
+  const quoterCounts = useMemo(() => countAssignedFromProjects(projects, 'assignedQuoterId'), [projects]);
+  const designerCounts = useMemo(() => countAssignedFromProjects(projects, 'assignedDesignerId'), [projects]);
+  const developerCounts = useMemo(() => countAssignedFromProjects(projects, 'assignedDevelopmentUserId'), [projects]);
+
+  const getUserId = (item) => item?.user?.id || item?.id;
+
+  const quotersWithCount = useMemo(
+    () => quoters.map((q) => ({ ...q, projects: quoterCounts[getUserId(q)] ?? 0 })),
+    [quoters, quoterCounts]
+  );
+  const designersWithCount = useMemo(
+    () => designers.map((d) => ({ ...d, created: designerCounts[getUserId(d)] ?? 0, edited: 0 })),
+    [designers, designerCounts]
+  );
+  const developersWithCount = useMemo(
+    () => developers.map((d) => ({ ...d, projects: developerCounts[getUserId(d)] ?? 0 })),
+    [developers, developerCounts]
   );
 
   const descByRole = role === 'cotizador'
@@ -115,9 +149,9 @@ export default function AsignacionProyectos() {
                       assignOnly
                       assignRoleFilter={assignRoleFilter}
                       projectRegion={p.region}
-                      assigneesQuoter={quoters}
-                      assigneesDesigner={designers}
-                      assigneesDevelopment={developers}
+                      assigneesQuoter={quotersWithCount}
+                      assigneesDesigner={designersWithCount}
+                      assigneesDevelopment={developersWithCount}
                       onAssignVariant={handleAssignVariant}
                       onRefresh={load}
                     />

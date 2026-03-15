@@ -85,6 +85,7 @@ export default function App() {
         }
       >
         <Route index element={<CotizadorProyectos />} />
+        <Route path="hilos" element={<Hilos />} />
         <Route path="asignacion" element={<AsignacionProyectos />} />
       </Route>
 

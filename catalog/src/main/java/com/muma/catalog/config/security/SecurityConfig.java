@@ -31,6 +31,7 @@ public class SecurityConfig {
                         .frameOptions(frame -> frame.disable()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS).permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/graphql", "/graphql/**")
                         .hasAnyRole("ADMIN", "QUOTER", "DESIGNER", "SALES", "DEVELOPMENT")
                         .anyRequest().authenticated())

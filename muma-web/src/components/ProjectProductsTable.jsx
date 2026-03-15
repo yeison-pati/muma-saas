@@ -106,6 +106,7 @@ export default function ProjectProductsTable({
   onMakeVariantEffective,
   onToggleP3P5,
   onMarkAsDesigned,
+  onMarkAsDeveloped,
   isLeader = false,
   assignRoleType,
   assignees = [],
@@ -314,7 +315,7 @@ export default function ProjectProductsTable({
             {(!assignRoleFilter || assignRoleFilter === 'DEVELOPMENT') && <span className="col-asignar">Desarrollo</span>}
           </>
         )}
-        {(cotizadas || proceso) && !assignOnly && <span className="col-acciones">Acciones</span>}
+        {(cotizadas || proceso || onMarkAsDesigned || onMarkAsDeveloped) && !assignOnly && <span className="col-acciones">Acciones</span>}
       </div>
       <div className="project-products-body">
         {rows.map((v) => {
@@ -570,7 +571,7 @@ export default function ProjectProductsTable({
                   )}
                 </>
               )}
-              {(cotizadas || proceso || onMarkAsDesigned) && !assignOnly && (
+              {(cotizadas || proceso || onMarkAsDesigned || onMarkAsDeveloped) && !assignOnly && (
                 <div className="col-acciones">
                   {proceso && onQuoteClick && (reopen || v.price == null) ? (
                       <button
@@ -623,6 +624,20 @@ export default function ProjectProductsTable({
                     >
                       Marcar diseñado
                     </button>
+                  )}
+                  {onMarkAsDeveloped && v.designedAt && !v.developedAt && (
+                    <button
+                      type="button"
+                      className="btn-mark-developed"
+                      onClick={() => onMarkAsDeveloped(projectId, v.id)}
+                      disabled={loading === v.id}
+                      title="Marcar como desarrollado"
+                    >
+                      Marcar desarrollado
+                    </button>
+                  )}
+                  {onMarkAsDeveloped && v.developedAt && (
+                    <span className="desarrollo-done">✓ Desarrollado</span>
                   )}
                   {isLeader && assignRoleType && assignees.length > 0 && onAssignVariant && (
                     <select

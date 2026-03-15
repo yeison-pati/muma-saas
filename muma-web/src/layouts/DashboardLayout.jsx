@@ -17,7 +17,10 @@ const RUTAS = {
     { name: 'SOLICITUDES', path: '/comercial/solicitudes' },
     { name: 'HILOS', path: '/comercial/hilos' },
   ],
-  cotizador: [{ name: 'PROYECTOS', path: '/cotizador' }],
+  cotizador: [
+    { name: 'PROYECTOS', path: '/cotizador' },
+    { name: 'HILOS', path: '/cotizador/hilos' },
+  ],
   disenador: [
     { name: 'PRODUCTOS', path: '/disenador' },
     { name: 'CREAR', path: '/disenador/crear' },
@@ -80,7 +83,7 @@ export default function DashboardLayout({ role }) {
         </FiltersProvider>
       </ProductsProvider>
     ) : (
-      content
+      <ProductsProvider>{content}</ProductsProvider>
     );
 
   return (

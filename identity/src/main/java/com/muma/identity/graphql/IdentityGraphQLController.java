@@ -44,6 +44,13 @@ public class IdentityGraphQLController {
         return adminService.getUserResponse(UUID.fromString(jwt.getSubject()));
     }
 
+    @QueryMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'QUOTER', 'DESIGNER', 'SALES', 'DEVELOPMENT')")
+    public List<UserResponse> usersByIds(@Argument("userIds") List<String> userIds) {
+        if (userIds == null || userIds.isEmpty()) return List.of();
+        return adminService.getUsersByIds(userIds.stream().map(UUID::fromString).toList());
+    }
+
     @MutationMapping
     @PreAuthorize("hasRole('ADMIN')")
     public UserResponse updateAdmin(@AuthenticationPrincipal Jwt jwt, @Argument("input") UserUpdateInput input) {
@@ -77,26 +84,34 @@ public class IdentityGraphQLController {
 
     @QueryMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'QUOTER', 'DESIGNER', 'SALES', 'DEVELOPMENT')")
-    public List<QuoterResponse> quoters() {
-        return userService.getAllQuoters();
+    public com.muma.identity.dtos.response.QuotersPage quoters(
+            @Argument("limit") Integer limit,
+            @Argument("offset") Integer offset) {
+        return userService.getQuotersPaginated(limit, offset);
     }
 
     @QueryMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'QUOTER', 'DESIGNER', 'SALES', 'DEVELOPMENT')")
-    public List<SalesResponse> sales() {
-        return userService.getAllSales();
+    public com.muma.identity.dtos.response.SalesPage sales(
+            @Argument("limit") Integer limit,
+            @Argument("offset") Integer offset) {
+        return userService.getSalesPaginated(limit, offset);
     }
 
     @QueryMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'QUOTER', 'DESIGNER', 'SALES', 'DEVELOPMENT')")
-    public List<DesignerResponse> designers() {
-        return userService.getAllDesigners();
+    public com.muma.identity.dtos.response.DesignersPage designers(
+            @Argument("limit") Integer limit,
+            @Argument("offset") Integer offset) {
+        return userService.getDesignersPaginated(limit, offset);
     }
 
     @QueryMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'QUOTER', 'DESIGNER', 'SALES', 'DEVELOPMENT')")
-    public List<DeveloperResponse> developers() {
-        return userService.getAllDevelopers();
+    public com.muma.identity.dtos.response.DevelopersPage developers(
+            @Argument("limit") Integer limit,
+            @Argument("offset") Integer offset) {
+        return userService.getDevelopersPaginated(limit, offset);
     }
 
     private static UserUpdate toUserUpdate(UUID id, UserUpdateInput input) {

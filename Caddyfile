@@ -23,6 +23,11 @@
                 reverse_proxy products:8080
         }
 
+        # ---------- THREADS API ----------
+        handle /api/threads/* {
+                reverse_proxy threads:8080
+        }
+
         handle_path /analytics/* {
       reverse_proxy metabase:3000
   }

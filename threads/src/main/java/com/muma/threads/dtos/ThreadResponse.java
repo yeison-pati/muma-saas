@@ -1,8 +1,8 @@
-package com.muma.catalog.dtos.threads;
+package com.muma.threads.dtos;
+
+import com.muma.threads.models.Thread;
 
 import java.util.UUID;
-
-import com.muma.catalog.models.Thread;
 
 public record ThreadResponse(
         UUID id,
@@ -12,17 +12,18 @@ public record ThreadResponse(
         String openedAt,
         String closedAt,
         UUID openedBy,
-        UUID closedBy) {
-
+        UUID closedBy
+) {
     public static ThreadResponse from(Thread t) {
         return new ThreadResponse(
                 t.getId(),
-                t.getProject().getId(),
-                t.getVariant() != null ? t.getVariant().getId() : null,
+                t.getProjectId(),
+                t.getVariantId(),
                 t.getType(),
                 t.getOpenedAt() != null ? t.getOpenedAt().toString() : null,
                 t.getClosedAt() != null ? t.getClosedAt().toString() : null,
                 t.getOpenedBy(),
-                t.getClosedBy());
+                t.getClosedBy()
+        );
     }
 }

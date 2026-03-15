@@ -15,9 +15,6 @@ import {
   MUTATION_MAKE_PROJECT_EFFECTIVE,
   MUTATION_QUITAR_PROJECT_EFFECTIVE,
   MUTATION_MAKE_VARIANT_QUOTE_EFFECTIVE,
-  QUERY_THREADS_BY_PROJECT,
-  MUTATION_OPEN_THREAD,
-  MUTATION_CLOSE_THREAD,
   MUTATION_ASSIGN_VARIANT_TO_USER,
   MUTATION_TOGGLE_P3_P5,
   MUTATION_MARK_VARIANT_AS_DESIGNED,
@@ -103,21 +100,6 @@ export const createCatalogService = (getToken) => ({
   quitarProjectEffective: (projectId) =>
     catalogGraphQL(MUTATION_QUITAR_PROJECT_EFFECTIVE, { projectId }, getToken).then(
       (d) => d?.quitarProjectEffective
-    ),
-
-  getThreadsByProject: (projectId) =>
-    catalogGraphQL(QUERY_THREADS_BY_PROJECT, { projectId }, getToken).then(
-      (d) => d?.threadsByProject ?? []
-    ),
-
-  openThread: (projectId, variantId, type, openedBy) =>
-    catalogGraphQL(MUTATION_OPEN_THREAD, { projectId, variantId, type, openedBy }, getToken).then(
-      (d) => d?.openThread
-    ),
-
-  closeThread: (threadId, closedBy) =>
-    catalogGraphQL(MUTATION_CLOSE_THREAD, { threadId, closedBy }, getToken).then(
-      (d) => d?.closeThread
     ),
 
   assignVariantToUser: (projectId, variantId, assigneeId, roleType) =>

@@ -1,7 +1,9 @@
 package com.muma.identity.services;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +38,13 @@ public class AdminService {
         return userRepository.findById(userId)
                 .map(UserResponse::new)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    public List<UserResponse> getUsersByIds(List<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) return List.of();
+        return userRepository.findAllById(userIds).stream()
+                .map(UserResponse::new)
+                .collect(Collectors.toList());
     }
 
     @Transactional

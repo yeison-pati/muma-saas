@@ -8,6 +8,7 @@
 dist/
 build/
 web-build/
+target/
 *.jar
 *.war
 
@@ -53,3 +54,15 @@ coverage/
 # Misc
 *.pem
 *.key
+
+
+jaeger_data/
+prometheus_data/
+grafana_data/
+redis_data/
+caddy_data/
+caddy_config/
+otel-collector_data/
+metabase_data/
+doc/
+docs/

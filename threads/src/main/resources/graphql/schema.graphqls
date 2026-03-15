@@ -1,0 +1,50 @@
+type Query {
+  "Hilos de un proyecto. limit/offset opcionales para paginación."
+  threadsByProject(projectId: ID!, limit: Int, offset: Int): ThreadsPage!
+  "Mensajes de un hilo (chat). limit/offset opcionales para paginación."
+  threadMessages(threadId: ID!, limit: Int, offset: Int): ThreadMessagesPage!
+}
+
+type PageInfo {
+  total: Int!
+  limit: Int!
+  offset: Int!
+}
+
+type ThreadsPage {
+  items: [Thread!]!
+  pageInfo: PageInfo!
+}
+
+type ThreadMessagesPage {
+  items: [ThreadMessage!]!
+  pageInfo: PageInfo!
+}
+
+type Mutation {
+  "Abrir hilo (COMMERCIAL_DESIGN, COMMERCIAL_DEVELOPMENT, COMMERCIAL_QUOTE)"
+  openThread(projectId: ID!, variantId: ID, type: String!, openedBy: ID!): Thread
+  "Cerrar hilo"
+  closeThread(threadId: ID!, closedBy: ID!): Thread
+  "Enviar mensaje en un hilo"
+  addThreadMessage(threadId: ID!, userId: ID!, content: String!): ThreadMessage
+}
+
+type Thread {
+  id: ID!
+  projectId: ID!
+  variantId: ID
+  type: String!
+  openedAt: String
+  closedAt: String
+  openedBy: ID
+  closedBy: ID
+}
+
+type ThreadMessage {
+  id: ID!
+  threadId: ID!
+  userId: ID!
+  content: String!
+  createdAt: String
+}

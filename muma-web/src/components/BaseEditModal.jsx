@@ -206,7 +206,7 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
 
   const handleDeleteVariant = async (vIdx) => {
     const v = variants[vIdx];
-    if (!confirm(`¿Eliminar variante ${v.sapRef || v.id}?`)) return;
+    if (!confirm(`¿Eliminar variante ${v.sapRef || v.baseCode || '—'}?`)) return;
     setSaving(true);
     setMessage('');
     productsService
@@ -506,7 +506,7 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
               <div key={v.id} className="base-edit-variant-block">
                 <div className="base-edit-variant-header">
                   <span>
-                    Variante {vIdx + 1}: {v.sapRef || v.id}
+                    Variante {vIdx + 1}: {v.sapRef || v.baseCode || '—'}
                   </span>
                   <div>
                     {editingVariantIdx === vIdx ? (

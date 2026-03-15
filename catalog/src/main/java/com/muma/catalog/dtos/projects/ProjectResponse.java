@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.muma.catalog.dtos.products.ProjectVariantResponse;
 import com.muma.catalog.models.Project;
 
+/** createdAt y consecutive no pueden ser null (GraphQL schema los marca como required). */
 public record ProjectResponse(
         UUID id,
         String consecutive,
@@ -38,9 +39,9 @@ public record ProjectResponse(
 
         public ProjectResponse(Project project, List<ProjectVariantResponse> variants) {
                 this(project.getId(),
-                        project.getConsecutive(),
-                        project.getName(),
-                        project.getVersion(),
+                        project.getConsecutive() != null ? project.getConsecutive() : "",
+                        project.getName() != null ? project.getName() : "",
+                        project.getVersion() != null ? project.getVersion() : 1,
                         project.getCity(),
                         project.getClient(),
                         project.getClientPhone(),
@@ -54,8 +55,8 @@ public record ProjectResponse(
                         project.getQuoterName(),
                         project.getQuoterEmail(),
                         project.getQuoterId(),
-                        project.getState(),
-                        project.getCreatedAt(),
+                        project.getState() != null ? project.getState() : 0,
+                        project.getCreatedAt() != null ? project.getCreatedAt() : LocalDateTime.now(),
                         project.getModifiedAt(),
                         project.isQuoted(),
                         project.isReopen(),
@@ -63,7 +64,7 @@ public record ProjectResponse(
                         project.getTotalCost(),
                         project.getEstimatedTime(),
                         project.getRequestedAt() != null ? project.getRequestedAt().toString() : null,
-                        variants);
+                        variants != null ? variants : List.of());
         }
     
 }

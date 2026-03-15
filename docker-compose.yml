@@ -63,6 +63,27 @@ services:
     networks:
       - system
 
+  threadsdb:
+    image: postgres:17-alpine
+    container_name: threadsdb
+    restart: on-failure
+    ports:
+      - "${THREADS_DB_PORT:-5435}:5432"
+    environment:
+      POSTGRES_USER: ${THREADS_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${THREADS_DB_PASS:-postgres}
+      POSTGRES_DB: ${THREADS_DB_NAME:-threads_db}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - threads_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${THREADS_DB_USER:-postgres} -d ${THREADS_DB_NAME:-threads_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - system
+
   rabbitmq:
     image: rabbitmq:4-management-alpine
     container_name: rabbitmq
@@ -217,6 +238,30 @@ services:
     networks:
       - system
 
+  threads:
+    build:
+      context: ./threads
+      dockerfile: Dockerfile
+    container_name: threads
+    restart: on-failure
+    ports:
+      - "${THREADS_PORT:-8085}:8080"
+    environment:
+      - DB_HOST=${THREADS_DB_HOST:-threadsdb}
+      - DB_PORT=5432
+      - DB_NAME=${THREADS_DB_NAME:-threads_db}
+      - DB_USER=${THREADS_DB_USER:-postgres}
+      - DB_PASS=${THREADS_DB_PASS:-postgres}
+      - SERVER_PORT=8080
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      threadsdb:
+        condition: service_healthy
+      identity:
+        condition: service_started
+    networks:
+      - system
+
   document:
     build:
       context: ./document
@@ -242,7 +287,6 @@ services:
       - identity
       - catalog
       - products
-
     networks:
       - system
 
@@ -292,6 +336,7 @@ services:
       - catalog
       - document
       - products
+      - threads
       - muma
     networks:
       - system
@@ -390,6 +435,7 @@ volumes:
   identity_data:
   catalog_data:
   products_data:
+  threads_data:
   redis_data:
   rabbitmq_data:
   rabbitmq_logs:

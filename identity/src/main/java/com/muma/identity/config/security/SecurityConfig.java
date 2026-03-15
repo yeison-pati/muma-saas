@@ -33,6 +33,7 @@ public class SecurityConfig {
                         .frameOptions(frame -> frame.disable()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS).permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/graphql", "/graphql/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2

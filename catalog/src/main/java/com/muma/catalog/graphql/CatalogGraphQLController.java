@@ -14,11 +14,9 @@ import org.springframework.stereotype.Controller;
 
 import com.muma.catalog.dtos.projects.ProjectResponse;
 import com.muma.catalog.dtos.products.TypologyStandardResponse;
-import com.muma.catalog.dtos.threads.ThreadResponse;
 import com.muma.catalog.models.Project;
 import com.muma.catalog.services.CatalogService;
 import com.muma.catalog.services.ProjectService;
-import com.muma.catalog.services.ThreadService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,7 +28,6 @@ public class CatalogGraphQLController {
 
     private final CatalogService catalogService;
     private final ProjectService projectService;
-    private final ThreadService threadService;
 
     @QueryMapping
     public List<ProjectResponse> projects() {
@@ -39,12 +36,30 @@ public class CatalogGraphQLController {
 
     @QueryMapping
     public List<ProjectResponse> projectsBySales(@Argument("salesId") String salesId) {
-        return catalogService.getProjectsBySalesAndVariants(UUID.fromString(salesId));
+        if (salesId == null || salesId.isBlank()) {
+            log.warn("[projectsBySales] salesId vacío");
+            return List.of();
+        }
+        try {
+            return catalogService.getProjectsBySalesAndVariants(UUID.fromString(salesId));
+        } catch (IllegalArgumentException e) {
+            log.warn("[projectsBySales] salesId inválido: {}", salesId, e);
+            return List.of();
+        } catch (Exception e) {
+            log.error("[projectsBySales] salesId={} error", salesId, e);
+            throw e;
+        }
     }
 
     @QueryMapping
     public List<ProjectResponse> projectsByQuoter(@Argument("quoterId") String quoterId) {
-        return catalogService.getProjectsByQuoterAndVariants(UUID.fromString(quoterId));
+        if (quoterId == null || quoterId.isBlank()) return List.of();
+        try {
+            return catalogService.getProjectsByQuoterAndVariants(UUID.fromString(quoterId));
+        } catch (IllegalArgumentException e) {
+            log.warn("[projectsByQuoter] quoterId inválido: {}", quoterId, e);
+            return List.of();
+        }
     }
 
     @QueryMapping
@@ -69,7 +84,16 @@ public class CatalogGraphQLController {
 
     @QueryMapping
     public List<ProjectResponse> projectsByAssignedDevelopment(@Argument("userId") String userId) {
-        return catalogService.getProjectsByAssignedDevelopment(UUID.fromString(userId));
+        if (userId == null || userId.isBlank()) {
+            log.warn("[projectsByAssignedDevelopment] userId vacío");
+            return List.of();
+        }
+        try {
+            return catalogService.getProjectsByAssignedDevelopment(UUID.fromString(userId));
+        } catch (IllegalArgumentException e) {
+            log.warn("[projectsByAssignedDevelopment] userId inválido: {}", userId, e);
+            return List.of();
+        }
     }
 
     @QueryMapping
@@ -80,13 +104,6 @@ public class CatalogGraphQLController {
     @QueryMapping
     public List<TypologyStandardResponse> typologyStandards() {
         return catalogService.getTypologyStandards();
-    }
-
-    @QueryMapping
-    public List<ThreadResponse> threadsByProject(@Argument("projectId") String projectId) {
-        return threadService.findByProject(UUID.fromString(projectId)).stream()
-                .map(ThreadResponse::from)
-                .toList();
     }
 
     @MutationMapping
@@ -224,28 +241,6 @@ public class CatalogGraphQLController {
                 UUID.fromString(projectId),
                 UUID.fromString(variantId),
                 UUID.fromString(developmentUserId));
-    }
-
-    @MutationMapping
-    public ThreadResponse openThread(
-            @Argument("projectId") String projectId,
-            @Argument("variantId") String variantId,
-            @Argument("type") String type,
-            @Argument("openedBy") String openedBy) {
-        return ThreadResponse.from(threadService.open(
-                UUID.fromString(projectId),
-                variantId != null ? UUID.fromString(variantId) : null,
-                type,
-                UUID.fromString(openedBy)));
-    }
-
-    @MutationMapping
-    public ThreadResponse closeThread(
-            @Argument("threadId") String threadId,
-            @Argument("closedBy") String closedBy) {
-        return ThreadResponse.from(threadService.close(
-                UUID.fromString(threadId),
-                UUID.fromString(closedBy)));
     }
 
     @MutationMapping

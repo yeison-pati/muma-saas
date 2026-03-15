@@ -41,4 +41,8 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     @EntityGraph(attributePaths = { "variantQuotes", "variantQuotes.variant" })
     @Query("SELECT DISTINCT p FROM Project p WHERE p.id IN :ids")
     List<Project> findAllByIdWithVariantsAndQuotes(@Param("ids") List<UUID> ids);
+
+    @EntityGraph(attributePaths = { "variants" })
+    @Query("SELECT p FROM Project p JOIN p.variants v WHERE v.id = :variantId")
+    List<Project> findProjectsContainingVariantWithVariants(@Param("variantId") UUID variantId);
 }
