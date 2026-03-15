@@ -90,7 +90,9 @@ export const ProjectProvider = ({ children }) => {
       baseCode: product.code,
       variantSapRef: selectedVariant?.sapRef,
       type: tipologia || undefined,
+      quantity: product.quantity ?? 1,
       comments: product.comentarios || '',
+      image: product.image || undefined,
       components: comps.length ? comps : [{ componentId: null, componentSapRef: 'default', componentValue: 'default' }],
     };
   };
@@ -113,6 +115,7 @@ export const ProjectProvider = ({ children }) => {
     if (!userProject.length && !customProducts.length) throw new Error('El carrito está vacío');
 
     const variants = userProject.map(formatProductForVariant);
+    console.log('[submitProject] userProject=', userProject.length, 'variants=', variants.length, variants);
 
     const p3s = await Promise.all(
       customProducts.map(async (custom) => {
@@ -133,8 +136,11 @@ export const ProjectProvider = ({ children }) => {
       throw new Error('Debe seleccionar una región para crear el proyecto.');
     }
 
+    console.log('[submitProject] getQuoters...');
     const quoters = await identity.getQuoters();
+    console.log('[submitProject] quoters=', quoters?.length, 'regional=', regional);
     const quoter = pickQuoterForRegion(quoters, regional);
+    console.log('[submitProject] quoter elegido=', quoter?.user?.id, quoter?.user?.name);
     if (!quoter?.user) {
       throw new Error(
         `No hay cotizador asignado para la región "${regional}". No se puede crear el proyecto. Asigne un cotizador a esta región desde el panel de administración.`
@@ -156,7 +162,10 @@ export const ProjectProvider = ({ children }) => {
       p3s,
     };
 
-    await catalog.createProject(input);
+    console.log('[submitProject] input.variants=', input.variants?.length, input.variants);
+    console.log('[submitProject] catalog.createProject...');
+    const created = await catalog.createProject(input);
+    console.log('[submitProject] creado', created?.id, created?.consecutive);
     clearCart();
   };
 

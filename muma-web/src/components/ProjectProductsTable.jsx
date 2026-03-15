@@ -1,10 +1,40 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getMediaUrls } from '../api/documentService';
+import { useProducts } from '../context/ProductsContext';
 import { calculateTipologia } from '../utils/calculateTipologia';
 import { getVariantDisplayCodes, getComponentDisplayCodes } from '../utils/variantComponentCodes';
+import AssignConfirmModal from './AssignConfirmModal';
 import './ProjectProductsTable.css';
 
 const EMPTY_VARIANTS = [];
+
+/** P4: enriquece desde products en context (Catalog no llama a Products). */
+function enrichVariantsWithProducts(variants, products) {
+  if (!variants?.length || !products?.length) return variants || [];
+  return variants.map((v) => {
+    if (!v.productVariantId && v.sapRef) return v; // ya tiene datos
+    const pid = v.productVariantId || v.id;
+    for (const p of products) {
+      const pv = p.variants?.find((pv) => String(pv.id) === String(pid));
+      if (pv) {
+        return {
+          ...v,
+          sapRef: v.sapRef ?? pv.sapRef,
+          sapCode: v.sapCode ?? pv.sapCode,
+          baseCode: v.baseCode ?? p.code,
+          baseName: v.baseName ?? p.name,
+          baseImage: v.baseImage ?? p.image,
+          category: v.category ?? p.category,
+          subcategory: v.subcategory ?? p.subcategory,
+          line: v.line ?? p.line,
+          space: v.space ?? p.space,
+          components: v.components?.length ? v.components : (pv.components || []),
+        };
+      }
+    }
+    return v;
+  });
+}
 
 function DescripcionEstructurada({ variant, typeVal, compsArr, commentsVal, caractExpanded, onToggleCaract }) {
   return (
@@ -76,7 +106,29 @@ export default function ProjectProductsTable({
   onMakeVariantEffective,
   onToggleP3P5,
   onMarkAsDesigned,
+  isLeader = false,
+  assignRoleType,
+  assignees = [],
+  onAssignVariant,
+  assignOnly = false,
+  assignRoleFilter = null,
+  projectRegion = null,
+  assigneesQuoter = [],
+  assigneesDesigner = [],
+  assigneesDevelopment = [],
 }) {
+  const normalizeRegion = (s) => (!s ? '' : String(s).trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, ''));
+  const getUser = (item) => item?.user || item;
+  const filterByRegion = (list, region) =>
+    region ? list.filter((item) => normalizeRegion(getUser(item)?.region) === normalizeRegion(region)) : list;
+  const quotersForProject = assignRoleFilter === 'QUOTER' ? filterByRegion(assigneesQuoter, projectRegion) : assigneesQuoter;
+  const designersForProject = assignRoleFilter === 'DESIGNER' ? filterByRegion(assigneesDesigner, projectRegion) : assigneesDesigner;
+  const developersForProject = assignRoleFilter === 'DEVELOPMENT' ? filterByRegion(assigneesDevelopment, projectRegion) : assigneesDevelopment;
+
+  const { products } = useProducts();
+  const enrichedVariants = useMemo(() => enrichVariantsWithProducts(variants, products), [variants, products]);
+
+  const [pendingAssign, setPendingAssign] = useState(null);
   const [imageUrls, setImageUrls] = useState({});
   const [editingQty, setEditingQty] = useState(null);
   const [qtyValue, setQtyValue] = useState('');
@@ -84,6 +136,8 @@ export default function ProjectProductsTable({
   const [expandedDesc, setExpandedDesc] = useState(null);
   const [expandedCaract, setExpandedCaract] = useState({}); // variantId -> bool
   const [localMods, setLocalMods] = useState({}); // variantId -> { quantity?, comments?, components?, editedComponentIds?: Record<string, true> }
+
+  const displayVariants = enrichedVariants;
 
   // Sincronizar con modificaciones del padre al montar/re-expandir (no sobrescribir ediciones locales)
   useEffect(() => {
@@ -97,9 +151,9 @@ export default function ProjectProductsTable({
 
   // Limpiar localMods cuando se reabre (modificaciones se borra) para mostrar datos frescos del servidor
   useEffect(() => {
-    if (!modificaciones && variants.length > 0) {
+    if (!modificaciones && displayVariants.length > 0) {
       setLocalMods((prev) => {
-        const variantIds = new Set(variants.map((v) => v.id));
+        const variantIds = new Set(displayVariants.map((v) => v.id));
         const next = { ...prev };
         let changed = false;
         for (const vid of variantIds) {
@@ -111,11 +165,11 @@ export default function ProjectProductsTable({
         return changed ? next : prev;
       });
     }
-  }, [modificaciones, variants]);
+  }, [modificaciones, displayVariants]);
 
   // Cargar URLs de imágenes
   useEffect(() => {
-    const keys = variants.map((v) => v.baseImage).filter(Boolean);
+    const keys = displayVariants.map((v) => v.baseImage).filter(Boolean);
     if (keys.length === 0) {
       setImageUrls({});
       return;
@@ -124,7 +178,7 @@ export default function ProjectProductsTable({
       .then((res) => res.data || {})
       .catch(() => ({}))
       .then((data) => setImageUrls(data));
-  }, [variants]);
+  }, [displayVariants]);
 
   // Características colapsadas por defecto (el usuario hace clic para expandir)
 
@@ -133,7 +187,7 @@ export default function ProjectProductsTable({
     if (t === 'p3' || t === 'p5') return v.id || '';
     return v.sapRef || v.sapCode || '';
   };
-  const products = [...variants].sort((a, b) =>
+  const rows = [...displayVariants].sort((a, b) =>
     String(getSortCode(a)).localeCompare(String(getSortCode(b)), undefined, { numeric: true })
   );
 
@@ -234,7 +288,7 @@ export default function ProjectProductsTable({
     };
   };
 
-  if (products.length === 0) {
+  if (rows.length === 0) {
     return (
       <div className="project-products-empty">
         No hay productos en este proyecto
@@ -253,10 +307,17 @@ export default function ProjectProductsTable({
         <span className="col-valor-total">Valor Total</span>
         <span className="col-tiempo">Tiempo</span>
         <span className="col-material">Material crítico</span>
-        {(cotizadas || proceso) && <span className="col-acciones">Acciones</span>}
+        {assignOnly && (
+          <>
+            {(!assignRoleFilter || assignRoleFilter === 'QUOTER') && <span className="col-asignar">Cotizador</span>}
+            {(!assignRoleFilter || assignRoleFilter === 'DESIGNER') && <span className="col-asignar">Diseñador</span>}
+            {(!assignRoleFilter || assignRoleFilter === 'DEVELOPMENT') && <span className="col-asignar">Desarrollo</span>}
+          </>
+        )}
+        {(cotizadas || proceso) && !assignOnly && <span className="col-acciones">Acciones</span>}
       </div>
       <div className="project-products-body">
-        {products.map((v) => {
+        {rows.map((v) => {
           const qty = getEffectiveQty(v);
           const price = v.price ?? 0;
           const lineTotal = price * qty;
@@ -408,7 +469,108 @@ export default function ProjectProductsTable({
               <div className="col-material">
                 {v.criticalMaterial || '-'}
               </div>
-              {(cotizadas || proceso || onMarkAsDesigned) && (
+              {assignOnly && (
+                <>
+                  {(!assignRoleFilter || assignRoleFilter === 'QUOTER') && (
+                    <div className="col-asignar">
+                      <select
+                        className="btn-assign-select"
+                        value={pendingAssign?.variantId === v.id ? pendingAssign.assigneeId : (v.assignedQuoterId || '')}
+                        onChange={(e) => {
+                          const assigneeId = e.target.value;
+                          if (!assigneeId) return;
+                          const item = quotersForProject.find((q) => (getUser(q)?.id || q.id) === assigneeId);
+                          const u = getUser(item);
+                          setPendingAssign({
+                            variantId: v.id,
+                            roleType: 'QUOTER',
+                            assigneeId,
+                            assigneeName: u?.name || u?.email || '—',
+                            count: item?.projects ?? null,
+                          });
+                        }}
+                        disabled={!!v.assignedQuoterId}
+                        title={v.assignedQuoterId ? 'Ya asignado (no se puede cambiar)' : 'Asignar cotizador (solo de la región del proyecto)'}
+                      >
+                        <option value="">—</option>
+                        {quotersForProject.map((item) => {
+                          const u = getUser(item);
+                          const cnt = item?.projects ?? 0;
+                          const label = cnt != null ? `${u?.name || u?.email || '—'} (${cnt})` : (u?.name || u?.email || '—');
+                          return (
+                            <option key={u?.id || item.id} value={u?.id || item.id}>{label}</option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  )}
+                  {(!assignRoleFilter || assignRoleFilter === 'DESIGNER') && (
+                    <div className="col-asignar">
+                      <select
+                        className="btn-assign-select"
+                        value={pendingAssign?.variantId === v.id ? pendingAssign.assigneeId : (v.assignedDesignerId || '')}
+                        onChange={(e) => {
+                          const assigneeId = e.target.value;
+                          if (!assigneeId) return;
+                          const item = designersForProject.find((d) => (getUser(d)?.id || d.id) === assigneeId);
+                          const u = getUser(item);
+                          setPendingAssign({
+                            variantId: v.id,
+                            roleType: 'DESIGNER',
+                            assigneeId,
+                            assigneeName: u?.name || u?.email || '—',
+                            count: item?.created ?? item?.edited ?? null,
+                          });
+                        }}
+                        disabled={!!v.assignedDesignerId}
+                        title={v.assignedDesignerId ? 'Ya asignado (no se puede cambiar)' : 'Asignar diseñador (solo de la región del proyecto)'}
+                      >
+                        <option value="">—</option>
+                        {designersForProject.map((item) => {
+                          const u = getUser(item);
+                          const cnt = item?.created ?? item?.edited ?? 0;
+                          const label = cnt != null ? `${u?.name || u?.email || '—'} (${cnt})` : (u?.name || u?.email || '—');
+                          return (
+                            <option key={u?.id || item.id} value={u?.id || item.id}>{label}</option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  )}
+                  {(!assignRoleFilter || assignRoleFilter === 'DEVELOPMENT') && (
+                    <div className="col-asignar">
+                      <select
+                        className="btn-assign-select"
+                        value={pendingAssign?.variantId === v.id ? pendingAssign.assigneeId : (v.assignedDevelopmentUserId || '')}
+                        onChange={(e) => {
+                          const assigneeId = e.target.value;
+                          if (!assigneeId) return;
+                          const item = developersForProject.find((d) => (getUser(d)?.id || d.id) === assigneeId);
+                          const u = getUser(item);
+                          setPendingAssign({
+                            variantId: v.id,
+                            roleType: 'DEVELOPMENT',
+                            assigneeId,
+                            assigneeName: u?.name || u?.email || '—',
+                            count: null,
+                          });
+                        }}
+                        disabled={!!v.assignedDevelopmentUserId}
+                        title={v.assignedDevelopmentUserId ? 'Ya asignado (no se puede cambiar)' : 'Asignar desarrollo (solo de la región del proyecto)'}
+                      >
+                        <option value="">—</option>
+                        {developersForProject.map((item) => {
+                          const u = getUser(item);
+                          return (
+                            <option key={u?.id || item.id} value={u?.id || item.id}>{u?.name || u?.email || '—'}</option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  )}
+                </>
+              )}
+              {(cotizadas || proceso || onMarkAsDesigned) && !assignOnly && (
                 <div className="col-acciones">
                   {proceso && onQuoteClick && (reopen || v.price == null) ? (
                       <button
@@ -462,12 +624,53 @@ export default function ProjectProductsTable({
                       Marcar diseñado
                     </button>
                   )}
+                  {isLeader && assignRoleType && assignees.length > 0 && onAssignVariant && (
+                    <select
+                      className="btn-assign-select"
+                      value={
+                        assignRoleType === 'QUOTER' ? (v.assignedQuoterId || '') :
+                        assignRoleType === 'DESIGNER' ? (v.assignedDesignerId || '') :
+                        (v.assignedDevelopmentUserId || '')
+                      }
+                      onChange={(e) => {
+                        const assigneeId = e.target.value;
+                        if (assigneeId) onAssignVariant(projectId, v.id, assigneeId, assignRoleType);
+                      }}
+                      title={`Asignar ${assignRoleType === 'QUOTER' ? 'cotizador' : assignRoleType === 'DESIGNER' ? 'diseñador' : 'desarrollo'}`}
+                    >
+                      <option value="">Asignar...</option>
+                      {assignees.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name || a.email}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               )}
             </div>
           );
         })}
       </div>
+      {assignOnly && (
+        <AssignConfirmModal
+          visible={!!pendingAssign}
+          roleLabel={pendingAssign?.roleType === 'QUOTER' ? 'cotizador' : pendingAssign?.roleType === 'DESIGNER' ? 'diseñador' : 'desarrollo'}
+          assigneeName={pendingAssign?.assigneeName}
+          count={pendingAssign?.count}
+          onConfirm={async () => {
+            if (!pendingAssign) return;
+            try {
+              await onAssignVariant?.(projectId, pendingAssign.variantId, pendingAssign.assigneeId, pendingAssign.roleType);
+            } catch (err) {
+              alert(err?.message || 'Error al asignar');
+            } finally {
+              setPendingAssign(null);
+            }
+          }}
+          onCancel={() => setPendingAssign(null)}
+        />
+      )}
     </div>
   );
 }

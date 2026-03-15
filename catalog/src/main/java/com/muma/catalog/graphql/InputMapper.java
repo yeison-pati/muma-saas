@@ -48,6 +48,8 @@ final class InputMapper {
                 in.variantSapRef(),
                 in.type(),
                 in.comments(),
+                in.quantity(),
+                in.image(),
                 components);
     }
 

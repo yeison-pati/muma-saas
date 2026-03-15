@@ -51,6 +51,7 @@ export default function Login() {
             onChange={(e) => setEmail(e.target.value)}
             required
             className="login-input"
+            autoComplete="email"
           />
           <input
             type="password"
@@ -59,6 +60,7 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
             required
             className="login-input"
+            autoComplete="current-password"
           />
           {error && <p className="login-error">{error}</p>}
           <button type="submit" className="login-btn" disabled={isLoading}>

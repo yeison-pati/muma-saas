@@ -1,8 +1,6 @@
 type Query {
   "Proyectos con variantes y cotizaciones"
   projects: [Project!]!
-  "Bases con variantes listables (excluye P1/P2/P3 de cotización)"
-  products: [Product!]!
   "Proyectos del vendedor"
   projectsBySales(salesId: ID!): [Project!]!
   "Proyectos del cotizador"
@@ -11,8 +9,18 @@ type Query {
   projectsEffective: [Project!]!
   "Proyectos efectivos para rol desarrollo (datos maestros)"
   projectsForDevelopment: [Project!]!
+  "Proyectos con variantes asignadas a este cotizador (solo lo asignado)"
+  projectsByAssignedQuoter(quoterId: ID!): [Project!]!
+  "Proyectos efectivos con variantes asignadas a este diseñador (solo lo asignado)"
+  projectsByAssignedDesigner(designerId: ID!): [Project!]!
+  "Proyectos efectivos con variantes asignadas a este usuario de desarrollo (solo lo asignado)"
+  projectsByAssignedDevelopment(userId: ID!): [Project!]!
+  "Proyectos para que líderes asignen. role: cotizador (todos), disenador (cotizados), desarrollo (diseñados)"
+  projectsForAssignment(role: String): [Project!]!
   "Estándares de tiempo por tipología (para métricas)"
   typologyStandards: [TypologyStandard!]!
+  "Hilos de comunicación por proyecto (Comercial-Diseño, Comercial-Desarrollo)"
+  threadsByProject(projectId: ID!): [Thread!]!
 }
 
 type Mutation {
@@ -24,8 +32,10 @@ type Mutation {
   reOpenProject(projectId: ID!): Boolean
   "Actualizar variante (componentes, cantidad, comentarios) y reabrir proyecto"
   updateVariantAndReopen(input: UpdateVariantAndReopenInput!): Boolean
-  "Marcar proyecto como efectivo (irreversible)"
+  "Marcar proyecto como efectivo"
   makeProjectEffective(projectId: ID!): Boolean
+  "Quitar efectivo de un proyecto"
+  quitarProjectEffective(projectId: ID!): Boolean
   "Marcar variante como efectiva en proyecto efectivo"
   makeVariantQuoteEffective(projectId: ID!, variantId: ID!, effective: Boolean!): Boolean
   "Alternar tipología P3/P5 (solo cotizador)"
@@ -42,18 +52,12 @@ type Mutation {
   updateVariantQuoteQuantity(input: UpdateVariantQuoteQuantityInput!): Boolean
   "Quitar variante de proyecto (sin reabrir)"
   removeVariantFromProject(projectId: ID!, variantId: ID!): Boolean
-  "Crear base de producto (sustituto de POST /products/base)"
-  createBase(input: CreateBaseInput!): Base
-  "Actualizar base de producto"
-  updateBase(input: UpdateBaseInput!): Base
-  "Eliminar base y sus variantes"
-  deleteBase(baseId: ID!): Boolean
-  "Agregar variante a una base existente"
-  addVariantToBase(input: AddVariantToBaseInput!): VariantResponse
-  "Actualizar variante"
-  updateVariant(input: UpdateVariantInput!): VariantResponse
-  "Eliminar variante"
-  deleteVariant(variantId: ID!): Boolean
+  "Abrir hilo de comunicación (COMMERCIAL_DESIGN o COMMERCIAL_DEVELOPMENT)"
+  openThread(projectId: ID!, variantId: ID, type: String!, openedBy: ID!): Thread
+  "Cerrar hilo"
+  closeThread(threadId: ID!, closedBy: ID!): Thread
+  "Líder asigna variante a usuario (roleType: QUOTER, DESIGNER, DEVELOPMENT)"
+  assignVariantToUser(projectId: ID!, variantId: ID!, assigneeId: ID!, roleType: String!): Boolean
 }
 
 type Project {
@@ -86,6 +90,18 @@ type TypologyStandard {
   hoursPerWeek: Int
 }
 
+"Hilo de comunicación Comercial-Diseño o Comercial-Desarrollo. Tiempo suma a métricas."
+type Thread {
+  id: ID!
+  projectId: ID!
+  variantId: ID
+  type: String!
+  openedAt: String!
+  closedAt: String
+  openedBy: ID
+  closedBy: ID
+}
+
 type ProjectVariant {
   id: ID!
   sapRef: String
@@ -103,6 +119,10 @@ type ProjectVariant {
   designedAt: String
   "Fecha/hora en que desarrollo marcó como desarrollada"
   developedAt: String
+  "Asignado por líder: cotizador/diseñador/desarrollo responsable"
+  assignedQuoterId: ID
+  assignedDesignerId: ID
+  assignedDevelopmentUserId: ID
   components: [ComponentResponse!]!
   baseCode: String
   baseName: String
@@ -111,6 +131,8 @@ type ProjectVariant {
   subcategory: String
   line: String
   space: String
+  "ID variante original en Products (para comparación)"
+  productVariantId: ID
 }
 
 "Componente con códigos SAP. sapRef=referencia persistente. sapCode visible solo si value=originalValue."
@@ -131,40 +153,6 @@ type VariantQuote {
   id: ID!
   price: Int
   elaborationTime: Int
-}
-
-type Product {
-  id: ID!
-  code: String!
-  name: String!
-  image: String
-  model: String
-  category: String
-  subcategory: String
-  space: String
-  line: String
-  baseMaterial: String
-  variants: [VariantResponse!]!
-}
-
-type VariantResponse {
-  id: ID!
-  sapRef: String
-  sapCode: String
-  components: [ComponentResponse!]!
-}
-
-type Base {
-  id: ID!
-  code: String!
-  name: String!
-  image: String
-  model: String
-  category: String
-  subcategory: String
-  space: String
-  line: String
-  baseMaterial: String
 }
 
 input CreateProjectInput {
@@ -190,6 +178,8 @@ input CreateVariantInput {
   variantSapRef: String
   type: String
   comments: String
+  quantity: Int
+  image: String
   components: [CreateComponentInput!]!
 }
 
@@ -256,55 +246,3 @@ input ComponentIdValueInput {
   modified: Boolean
 }
 
-input CreateBaseInput {
-  code: String!
-  name: String!
-  image: String
-  model: String
-  category: String
-  subcategory: String
-  space: String
-  line: String
-  baseMaterial: String
-  creatorId: ID
-  creatorName: String
-  initialVariants: [CreateBaseInitialVariantInput!]
-}
-
-input CreateBaseInitialVariantInput {
-  sapRef: String
-  components: [CreateBaseInitialComponentInput!]!
-}
-
-"componentId = existente; componentName = nombre (indep. de SAP); componentSapRef/componentSapCode = códigos SAP."
-input CreateBaseInitialComponentInput {
-  componentId: ID
-  componentName: String
-  componentSapRef: String
-  componentSapCode: String
-  componentValue: String
-}
-
-input UpdateBaseInput {
-  id: ID!
-  name: String
-  image: String
-  model: String
-  category: String
-  subcategory: String
-  space: String
-  line: String
-  baseMaterial: String
-}
-
-input AddVariantToBaseInput {
-  baseCode: String!
-  sapRef: String
-  components: [CreateBaseInitialComponentInput!]!
-}
-
-input UpdateVariantInput {
-  id: ID!
-  sapRef: String
-  components: [CreateBaseInitialComponentInput!]!
-}

@@ -36,9 +36,18 @@ public class VariantQuote {
     @Id
     private UUID id;
 
+    /** Variante en catalog (legacy). Null si se usa product_variant_id. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "variant_id")
     private Variant variant;
+
+    /** Variante en Products. Fuente de verdad cuando no null. */
+    @Column(name = "product_variant_id")
+    private UUID productVariantId;
+
+    /** Base code para P4 (front enriquece desde context). */
+    @Column(name = "base_code")
+    private String baseCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
@@ -93,4 +102,16 @@ public class VariantQuote {
     /** ID del usuario de desarrollo que marcó como desarrollado. */
     @Column(name = "development_user_id")
     private UUID developmentUserId;
+
+    /** Asignado por líder: cotizador responsable. */
+    @Column(name = "assigned_quoter_id")
+    private UUID assignedQuoterId;
+
+    /** Asignado por líder: diseñador responsable. */
+    @Column(name = "assigned_designer_id")
+    private UUID assignedDesignerId;
+
+    /** Asignado por líder: desarrollo responsable. */
+    @Column(name = "assigned_development_user_id")
+    private UUID assignedDevelopmentUserId;
 }

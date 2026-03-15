@@ -83,6 +83,10 @@ public class Project {
     @Column(name = "requested_at")
     private Instant requestedAt;
 
+    /** Fecha en que todas las variantes del proyecto quedaron diseñadas (P2/P3/P4). Null si aún hay pendientes. */
+    @Column(name = "project_designed_at")
+    private Instant projectDesignedAt;
+
     @Column(name = "modified_at")
     private LocalDateTime modifiedAt;
 

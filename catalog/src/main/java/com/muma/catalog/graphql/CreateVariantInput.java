@@ -8,4 +8,6 @@ public record CreateVariantInput(
         String variantSapRef,
         String type,
         String comments,
+        Integer quantity,
+        String image,
         List<CreateComponentInput> components) {}

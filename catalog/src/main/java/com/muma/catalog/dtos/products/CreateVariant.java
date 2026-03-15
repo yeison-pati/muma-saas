@@ -11,7 +11,7 @@ public record CreateVariant(
     String variantSapRef,
     String type,
     String comments,
+    Integer quantity,
+    String image,
     List<CreateComponent> components
-) {
-    
-}
+) {}

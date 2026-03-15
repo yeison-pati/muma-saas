@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -44,6 +47,8 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class CatalogService {
 
+    private static final Logger log = LoggerFactory.getLogger(CatalogService.class);
+
         private final VariantService variantService;
         private final ComponentService componentService;
         private final VariantQuoteService variantQuoteService;
@@ -70,8 +75,11 @@ public class CatalogService {
         Project projectSaved = projectService.create(createProject, consecutive);
 
         if (hasVariants) {
+            int idx = 0;
             for (CreateVariant variantDto : createProject.variants()) {
+                log.info("[createProject] processStandardVariant idx={}/{} variantId={}", idx, createProject.variants().size(), variantDto.variantId());
                 processStandardVariant(variantDto, projectSaved.getId(), createProject.quoterId());
+                idx++;
             }
         }
         if (hasP3s) {
@@ -88,12 +96,15 @@ public class CatalogService {
                                                                         projectSaved.getQuoterId(),
                 totalItems);
 
+        List<VariantQuote> quotes = variantQuoteService.findByProjectId(projectSaved.getId());
+        log.info("[createProject] DONE totalItems={} VariantQuotesEnDB={}", totalItems, quotes.size());
         return projectRepository.findById(projectSaved.getId()).orElse(projectSaved);
     }
 
     /**
-     * Tal cual: reutiliza variante existente, crea VariantQuote sin overrides.
-     * P1/P2: clona variante, crea componentes para el clon.
+     * Tal cual: reutiliza variante existente (catalog o Products), crea VariantQuote.
+     * P1/P2: clona variante en catalog, crea componentes para el clon.
+     * Si variantId viene de Products (no existe en catalog), crea VariantQuote con product_variant_id.
      */
     private void processStandardVariant(CreateVariant variantDto, UUID projectId, UUID quoterId) {
         String type = variantDto.type() != null ? variantDto.type().trim().toLowerCase() : "";
@@ -102,7 +113,15 @@ public class CatalogService {
                 ? variantService.findByIdWithComponents(variantDto.variantId()).orElse(null)
                 : null;
 
+        if (sourceVariant == null && variantDto.variantId() != null && !hasModifications) {
+            String quoteType = type.isBlank() ? "p4" : type;
+            variantQuoteService.createWithProductVariantId(
+                    variantDto.variantId(), projectId, quoterId, quoteType, variantDto.comments(), variantDto.image(), variantDto.quantity(), variantDto.baseCode());
+            return;
+        }
+
         boolean isReusingVariant = sourceVariant != null && !hasModifications;
+        log.info("[processStandardVariant] catalog variant variantId={} baseCode={} sourceVariant={} hasModifications={} isReusing={}", variantDto.variantId(), variantDto.baseCode(), sourceVariant != null, hasModifications, isReusingVariant);
         Variant savedVariant = isReusingVariant
                 ? sourceVariant
                 : (sourceVariant != null && hasModifications
@@ -140,7 +159,7 @@ public class CatalogService {
         projectRepository.save(project);
 
         String quoteType = isReusingVariant ? "p4" : (variantDto.type() != null ? variantDto.type() : null);
-        variantQuoteService.create(savedVariant.getId(), projectId, quoterId, quoteType, variantDto.comments(), null);
+        variantQuoteService.create(savedVariant.getId(), projectId, quoterId, quoteType, variantDto.comments(), variantDto.image(), variantDto.quantity());
     }
 
     private void processP3(CreateP3Request request, UUID projectId, UUID quoterId) {
@@ -159,25 +178,25 @@ public class CatalogService {
         Project project = projectService.getById(projectId);
         project.getVariants().add(variantSaved);
         projectRepository.save(project);
-        variantQuoteService.create(variantSaved.getId(), projectId, quoterId, "p3", request.comment(), request.image());
+        variantQuoteService.create(variantSaved.getId(), projectId, quoterId, "p3", request.comment(), request.image(), null);
     }
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> getProjectsAndVariants() {
         List<Project> projects = projectService.getAll();
-        return projects.stream().map(p -> toProjectResponse(p, false)).collect(Collectors.toList());
+        return projects.stream().map(p -> toProjectResponse(p, false, null)).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> getProjectsBySalesAndVariants(UUID salesId) {
         List<Project> projects = projectService.getBySalesId(salesId);
-        return projects.stream().map(p -> toProjectResponse(p, false)).collect(Collectors.toList());
+        return projects.stream().map(p -> toProjectResponse(p, false, null)).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> getProjectsByQuoterAndVariants(UUID quoterId) {
         List<Project> projects = projectService.getByQuoterId(quoterId);
-        return projects.stream().map(p -> toProjectResponse(p, false)).collect(Collectors.toList());
+        return projects.stream().map(p -> toProjectResponse(p, false, null)).collect(Collectors.toList());
     }
 
     /** Solo proyectos efectivos; cada proyecto lista solo variantes marcadas efectivas. */
@@ -186,7 +205,7 @@ public class CatalogService {
         List<Project> projects = projectService.getAll();
         return projects.stream()
                 .filter(Project::isEffective)
-                .map(p -> toProjectResponse(p, true))
+                .map(p -> toProjectResponse(p, true, null))
                 .collect(Collectors.toList());
     }
 
@@ -196,6 +215,86 @@ public class CatalogService {
         return getEffectiveProjects();
     }
 
+    /** Proyectos con variantes asignadas a este cotizador. Solo variantes donde assignedQuoterId = quoterId. Sin fallback: si no hay asignaciones, no ve nada. */
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> getProjectsByAssignedQuoter(UUID quoterId) {
+        List<UUID> projectIds = variantQuoteRepo.findProjectIdsByAssignedQuoterId(quoterId);
+        if (projectIds.isEmpty()) return List.of();
+        List<Project> projects = projectRepository.findAllByIdWithVariantsAndQuotes(projectIds);
+        return projects.stream()
+                .map(p -> toProjectResponse(p, false, q -> quoterId.equals(q.getAssignedQuoterId())))
+                .filter(r -> r.variants() != null && !r.variants().isEmpty())
+                .collect(Collectors.toList());
+    }
+
+    /** Proyectos efectivos con variantes asignadas a este diseñador. Solo variantes donde assignedDesignerId = designerId. */
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> getProjectsByAssignedDesigner(UUID designerId) {
+        List<UUID> projectIds = variantQuoteRepo.findProjectIdsByAssignedDesignerId(designerId);
+        if (projectIds.isEmpty()) return List.of();
+        List<Project> projects = projectRepository.findAllByIdWithVariantsAndQuotes(projectIds);
+        return projects.stream()
+                .map(p -> toProjectResponse(p, true, q -> designerId.equals(q.getAssignedDesignerId())))
+                .filter(r -> r.variants() != null && !r.variants().isEmpty())
+                .collect(Collectors.toList());
+    }
+
+    /** Proyectos efectivos con variantes asignadas a este usuario de desarrollo. Solo variantes donde assignedDevelopmentUserId = userId. */
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> getProjectsByAssignedDevelopment(UUID userId) {
+        List<UUID> projectIds = variantQuoteRepo.findProjectIdsByAssignedDevelopmentUserId(userId);
+        if (projectIds.isEmpty()) return List.of();
+        List<Project> projects = projectRepository.findAllByIdWithVariantsAndQuotes(projectIds);
+        return projects.stream()
+                .map(p -> toProjectResponse(p, true, q -> userId.equals(q.getAssignedDevelopmentUserId())))
+                .filter(r -> r.variants() != null && !r.variants().isEmpty())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Proyectos para que líderes asignen según rol.
+     * QUOTER: todos los proyectos con productos (desde creación).
+     * DESIGNER: proyectos con al menos una variante cotizada (quotedAt) para asignar diseñador.
+     * DEVELOPMENT: proyectos con al menos una variante diseñada (designedAt) para asignar desarrollo.
+     */
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> getProjectsForAssignment(String role) {
+        List<Project> projects = projectService.getAll();
+        java.util.function.Predicate<VariantQuote> variantFilter = assignmentVariantFilter(role);
+        return projects.stream()
+                .filter(p -> !p.getVariantQuotes().isEmpty())
+                .filter(p -> filterByAssignmentRole(p, role))
+                .map(p -> toProjectResponse(p, p.isEffective(), variantFilter))
+                .filter(r -> r.variants() != null && !r.variants().isEmpty())
+                .collect(Collectors.toList());
+    }
+
+    private boolean filterByAssignmentRole(Project p, String role) {
+        if (role == null || role.isBlank()) return true;
+        String r = role.trim().toLowerCase();
+        if ("cotizador".equals(r) || "quoter".equals(r)) return true;
+        if ("disenador".equals(r) || "designer".equals(r)) {
+            return p.getVariantQuotes().stream().anyMatch(q -> q.getQuotedAt() != null);
+        }
+        if ("desarrollo".equals(r) || "development".equals(r)) {
+            return p.getVariantQuotes().stream().anyMatch(q -> q.getDesignedAt() != null);
+        }
+        return true;
+    }
+
+    private java.util.function.Predicate<VariantQuote> assignmentVariantFilter(String role) {
+        if (role == null || role.isBlank()) return null;
+        String r = role.trim().toLowerCase();
+        if ("cotizador".equals(r) || "quoter".equals(r)) return null;
+        if ("disenador".equals(r) || "designer".equals(r)) {
+            return q -> q.getQuotedAt() != null;
+        }
+        if ("desarrollo".equals(r) || "development".equals(r)) {
+            return q -> q.getDesignedAt() != null;
+        }
+        return null;
+    }
+
     @Transactional(readOnly = true)
     public List<TypologyStandardResponse> getTypologyStandards() {
         return typologyStandardRepo.findAll().stream()
@@ -203,53 +302,67 @@ public class CatalogService {
                 .collect(Collectors.toList());
     }
 
-    /** filterByEffective=true: en proyectos efectivos, solo variantes con quote.effective. */
-    private ProjectResponse toProjectResponse(Project project, boolean filterByEffective) {
+    /** filterByEffective=true: en proyectos efectivos, solo variantes con quote.effective. assignmentFilter: si no null, solo variantes cuyo quote cumple el predicado. */
+    private ProjectResponse toProjectResponse(Project project, boolean filterByEffective, Predicate<VariantQuote> assignmentFilter) {
         boolean projectEffective = project.isEffective();
-        List<ProjectVariantResponse> variants = project.getVariants().stream()
-                .map(variant -> {
-                    VariantQuote quote = project.getVariantQuotes().stream()
-                            .filter(vq -> vq.getVariant().getId().equals(variant.getId()))
-                            .findFirst()
-                            .orElse(null);
-                    if (filterByEffective && projectEffective && (quote == null || !quote.isEffective())) {
-                        return null;
-                    }
-                    List<Component> effective = getEffectiveComponents(variant, quote);
-                    List<ComponentResponse> components = effective.stream()
-                            .map(c -> toComponentResponse(c, variant))
-                            .collect(Collectors.toList());
-                    String baseCode = variant.getBaseCode();
-                    var baseOpt = (baseCode != null && !baseCode.isBlank())
-                            ? baseService.findByCode(baseCode)
-                            : Optional.<Base>empty();
-                    String baseName = baseOpt.map(Base::getName).orElse(null);
-                    String baseImage = baseOpt.map(Base::getImage).orElse(null);
-                    if (baseImage == null && quote != null && quote.getImage() != null) {
-                        baseImage = quote.getImage();
-                    }
-                    String category = baseOpt.map(Base::getCategory).orElse(null);
-                    String subcategory = baseOpt.map(Base::getSubcategory).orElse(null);
-                    String line = baseOpt.map(Base::getLine).orElse(null);
-                    String space = baseOpt.map(Base::getSpace).orElse(null);
-                    String sapCode = variant.getSapCode();
-                    if (sapCode != null && sapCode.isBlank()) sapCode = null;
-                    return new ProjectVariantResponse(
-                                                                                                variant.getId(),
-                                                                                                variant.getSapRef(),
-                            sapCode,
-                            quote,
-                            components,
-                            baseCode,
-                            baseName,
-                            baseImage,
-                            category,
-                            subcategory,
-                            line,
-                            space);
-                })
-                .filter(v -> v != null)
-                .collect(Collectors.toList());
+        List<ProjectVariantResponse> variants = new ArrayList<>();
+
+        var quotes = project.getVariantQuotes() != null ? project.getVariantQuotes() : List.<VariantQuote>of();
+        for (VariantQuote quote : quotes) {
+            if (filterByEffective && projectEffective && !quote.isEffective()) continue;
+            if (assignmentFilter != null && !assignmentFilter.test(quote)) continue;
+
+            if (quote.getProductVariantId() != null) {
+                // P4: Catalog devuelve mínimo. Front enriquece desde products en context.
+                variants.add(new ProjectVariantResponse(
+                        quote.getProductVariantId(),
+                        null,
+                        null,
+                        quote,
+                        List.of(),
+                        quote.getBaseCode(),
+                        null,
+                        quote.getImage(),
+                        null,
+                        null,
+                        null,
+                        null));
+            } else if (quote.getVariant() != null) {
+                Variant variant = quote.getVariant();
+                List<Component> effective = getEffectiveComponents(variant, quote);
+                List<ComponentResponse> components = effective.stream()
+                        .map(c -> toComponentResponse(c, variant))
+                        .collect(Collectors.toList());
+                String baseCode = variant.getBaseCode();
+                var baseOpt = (baseCode != null && !baseCode.isBlank())
+                        ? baseService.findByCode(baseCode)
+                        : Optional.<Base>empty();
+                String baseName = baseOpt.map(Base::getName).orElse(null);
+                String baseImage = baseOpt.map(Base::getImage).orElse(null);
+                String category = baseOpt.map(Base::getCategory).orElse(null);
+                String subcategory = baseOpt.map(Base::getSubcategory).orElse(null);
+                String line = baseOpt.map(Base::getLine).orElse(null);
+                String space = baseOpt.map(Base::getSpace).orElse(null);
+                if (baseImage == null && quote.getImage() != null) baseImage = quote.getImage();
+                String sapCode = variant.getSapCode();
+                if (sapCode != null && sapCode.isBlank()) sapCode = null;
+                log.info("[toProjectResponse] catalog variant agregado variantId={} type={}", variant.getId(), quote.getType());
+                variants.add(new ProjectVariantResponse(
+                        variant.getId(),
+                        variant.getSapRef(),
+                        sapCode,
+                        quote,
+                        components,
+                        baseCode,
+                        baseName,
+                        baseImage,
+                        category,
+                        subcategory,
+                        line,
+                        space));
+            }
+        }
+        log.info("[toProjectResponse] projectId={} variantsEnRespuesta={}", project.getId(), variants.size());
         return new ProjectResponse(project, variants);
     }
 
@@ -349,13 +462,21 @@ public class CatalogService {
             reopenEffectiveProject(projectId, variantId, quantity, comments, type, components);
             return true;
         }
+        VariantQuote quote = variantQuoteService.findByVariantIdAndProjectId(variantId, projectId)
+                .orElseThrow(() -> new IllegalStateException("VariantQuote not found"));
+        if (quote.getProductVariantId() != null) {
+            if (quantity != null) variantQuoteService.updateQuantity(projectId, variantId, quantity);
+            if (comments != null || type != null) variantQuoteService.updateCommentsAndType(projectId, variantId, comments, type);
+            variantQuoteService.resetQuoteByProject(projectId);
+            projectService.reOpen(projectId);
+            projectService.updateStateByQuote(projectId, variantQuoteService.findByProjectId(projectId));
+            return true;
+        }
         Variant variant = variantService.findByIdWithComponents(variantId)
                 .orElseThrow(() -> new IllegalStateException("Variant not found"));
         if (!project.getVariants().stream().anyMatch(v -> v.getId().equals(variantId))) {
             throw new IllegalStateException("Variant not in project");
         }
-        VariantQuote quote = variantQuoteService.findByVariantIdAndProjectId(variantId, projectId)
-                .orElseThrow(() -> new IllegalStateException("VariantQuote not found"));
         quote.getComponentOverrides().clear();
         boolean isClone = isCloneType(quote.getType());
         System.out.println("[BACK] CatalogService quote.type=" + quote.getType() + " isClone=" + isClone + " components=" + (components != null ? components.size() : 0));
@@ -448,7 +569,7 @@ public class CatalogService {
         projectService.getById(projectId);
         List<VariantQuote> quotes = variantQuoteService.findByProjectId(projectId);
         List<UUID> quoteVariantIdsToDelete = quotes.stream()
-                .filter(vq -> isCloneType(vq.getType()))
+                .filter(vq -> vq.getVariant() != null && isCloneType(vq.getType()))
                 .map(vq -> vq.getVariant().getId())
                 .distinct()
                 .toList();
@@ -463,16 +584,16 @@ public class CatalogService {
     @CacheEvict(value = {"projects", "products"}, allEntries = true)
     public Boolean removeVariantFromProject(UUID projectId, UUID variantId) {
         Project project = projectService.getById(projectId);
-        Variant variant = project.getVariants().stream()
-                .filter(v -> v.getId().equals(variantId))
-                .findFirst()
+        VariantQuote vq = variantQuoteService.findByVariantIdAndProjectId(variantId, projectId)
                 .orElseThrow(() -> new IllegalStateException("Variant not in project"));
-        VariantQuote vq = variantQuoteService.findByVariantIdAndProjectId(variantId, projectId).orElse(null);
-        boolean isQuoteVariant = vq != null && isCloneType(vq.getType());
+        boolean isProductVariant = vq.getProductVariantId() != null;
+        boolean isQuoteVariant = vq.getVariant() != null && isCloneType(vq.getType());
         variantQuoteService.deleteByVariantIdAndProjectId(variantId, projectId);
-        project.getVariants().remove(variant);
-        projectRepository.save(project);
-        if (isQuoteVariant) {
+        if (!isProductVariant) {
+            project.getVariants().stream().filter(v -> v.getId().equals(variantId)).findFirst()
+                    .ifPresent(v -> { project.getVariants().remove(v); projectRepository.save(project); });
+        }
+        if (isQuoteVariant && vq.getVariant() != null) {
             variantService.deleteById(variantId);
         }
         List<VariantQuote> remaining = variantQuoteService.findByProjectId(projectId);
@@ -509,37 +630,47 @@ public class CatalogService {
 
         var effectiveQuotes = originalQuotes.stream().filter(VariantQuote::isEffective).toList();
         var editedQuoteOpt = originalQuotes.stream()
-                .filter(vq -> vq.getVariant().getId().equals(editedVariantId))
+                .filter(vq -> (vq.getVariant() != null && vq.getVariant().getId().equals(editedVariantId))
+                        || (vq.getProductVariantId() != null && vq.getProductVariantId().equals(editedVariantId)))
                 .findFirst();
 
         java.util.Set<UUID> addedVariantIds = new java.util.HashSet<>();
 
         // 1. Añadir variantes efectivas (excluyendo la editada; la editada se añade después con cambios)
         for (VariantQuote oq : effectiveQuotes) {
-            UUID vid = oq.getVariant().getId();
+            UUID vid = oq.getVariant() != null ? oq.getVariant().getId() : oq.getProductVariantId();
+            if (vid == null) continue;
             if (vid.equals(editedVariantId)) continue;
             if (addedVariantIds.contains(vid)) continue;
             addedVariantIds.add(vid);
+            if (oq.getProductVariantId() != null) {
+                variantQuoteService.createWithProductVariantId(vid, newProject.getId(), quoterId, oq.getType(), oq.getComments(), oq.getImage(), oq.getQuantity(), oq.getBaseCode());
+                continue;
+            }
             Variant v = oq.getVariant();
             newProject.getVariants().add(v);
             projectRepository.save(newProject);
-            VariantQuote vq = variantQuoteService.create(v.getId(), newProject.getId(), quoterId, oq.getType(), oq.getComments(), oq.getImage());
-            if (oq.getQuantity() != null && oq.getQuantity() > 0) {
-                variantQuoteService.updateQuantity(newProject.getId(), v.getId(), oq.getQuantity());
-            }
+            VariantQuote newQuote = variantQuoteService.create(v.getId(), newProject.getId(), quoterId, oq.getType(), oq.getComments(), oq.getImage(), oq.getQuantity());
             for (Component ov : oq.getComponentOverrides() != null ? oq.getComponentOverrides() : List.<Component>of()) {
                 if (ov.getSapRef() != null) {
-                    vq.getComponentOverrides().add(componentService.createOverride(vq, ov.getSapRef(), ov.getName(),
+                    newQuote.getComponentOverrides().add(componentService.createOverride(newQuote, ov.getSapRef(), ov.getName(),
                             ov.getValue() != null ? ov.getValue() : "", ov.getOriginalValue() != null ? ov.getOriginalValue() : ""));
                 }
             }
-            if (!vq.getComponentOverrides().isEmpty()) variantQuoteRepo.save(vq);
+            if (!newQuote.getComponentOverrides().isEmpty()) variantQuoteRepo.save(newQuote);
         }
 
         // 2. Añadir variante editada con modificaciones
+        VariantQuote editedQuote = editedQuoteOpt.orElseThrow(() -> new IllegalStateException("VariantQuote not found"));
+        if (editedQuote.getProductVariantId() != null) {
+            variantQuoteService.createWithProductVariantId(editedQuote.getProductVariantId(), newProject.getId(), quoterId,
+                    type != null ? type : editedQuote.getType(), comments != null ? comments : editedQuote.getComments(), editedQuote.getImage(), quantity, editedQuote.getBaseCode());
+            variantQuoteService.resetQuoteByProject(newProject.getId());
+            projectService.updateStateByQuote(newProject.getId(), variantQuoteService.findByProjectId(newProject.getId()));
+            return true;
+        }
         Variant editedVariant = variantService.findByIdWithComponents(editedVariantId)
                 .orElseThrow(() -> new IllegalStateException("Variant not found"));
-        VariantQuote editedQuote = editedQuoteOpt.orElseThrow(() -> new IllegalStateException("VariantQuote not found"));
 
         boolean isClone = isCloneType(editedQuote.getType());
         Variant variantToAdd;
@@ -575,7 +706,7 @@ public class CatalogService {
         projectRepository.save(newProject);
 
         VariantQuote newQuote = variantQuoteService.create(variantToAdd.getId(), newProject.getId(), quoterId,
-                type != null ? type : editedQuote.getType(), comments != null ? comments : editedQuote.getComments(), editedQuote.getImage());
+                type != null ? type : editedQuote.getType(), comments != null ? comments : editedQuote.getComments(), editedQuote.getImage(), quantity);
 
         if (!isClone && components != null && !components.isEmpty()) {
             var originals = editedVariant.getComponents();
@@ -604,6 +735,11 @@ public class CatalogService {
 
         projectEventPublisher.projectCreated(newProject.getId(), newProject.getCreatedAt(),
                 newProject.getSalesId(), newProject.getQuoterId(), newQuotes.size());
+
+        // El original pierde efectivo al reabrir (la copia es la que sigue el flujo)
+        original.setEffective(false);
+        projectRepository.save(original);
+
         return true;
     }
 
@@ -636,6 +772,13 @@ public class CatalogService {
     @CacheEvict(value = {"projects"}, allEntries = true)
     public Boolean markVariantAsDeveloped(UUID projectId, UUID variantId, UUID developmentUserId) {
         variantQuoteService.markAsDeveloped(projectId, variantId, developmentUserId);
+        return true;
+    }
+
+    @Transactional
+    @CacheEvict(value = {"projects", "products"}, allEntries = true)
+    public Boolean assignVariantToUser(UUID projectId, UUID variantId, UUID assigneeId, String roleType) {
+        variantQuoteService.assignVariantToUser(projectId, variantId, assigneeId, roleType);
         return true;
     }
 

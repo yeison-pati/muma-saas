@@ -14,15 +14,15 @@ import com.muma.catalog.models.Project;
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
 
-    @EntityGraph(attributePaths = { "variants", "variantQuotes", "variantQuotes.variant" })
+    @EntityGraph(attributePaths = { "variantQuotes", "variantQuotes.variant" })
     @Query("SELECT DISTINCT p FROM Project p")
     List<Project> findAllWithVariantsAndQuotes();
 
-    @EntityGraph(attributePaths = { "variants", "variantQuotes", "variantQuotes.variant" })
+    @EntityGraph(attributePaths = { "variantQuotes", "variantQuotes.variant" })
     @Query("SELECT DISTINCT p FROM Project p WHERE p.salesId = :salesId")
     List<Project> findBySalesIdWithVariants(@Param("salesId") UUID salesId);
 
-    @EntityGraph(attributePaths = { "variants", "variantQuotes", "variantQuotes.variant" })
+    @EntityGraph(attributePaths = { "variantQuotes", "variantQuotes.variant" })
     @Query("SELECT DISTINCT p FROM Project p WHERE p.quoterId = :quoterId")
     List<Project> findByQuoterIdWithVariants(@Param("quoterId") UUID quoterId);
 
@@ -37,4 +37,8 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
 
     @Query("SELECT p FROM Project p JOIN p.variants v WHERE v.id = :variantId")
     List<Project> findProjectsContainingVariant(@Param("variantId") UUID variantId);
+
+    @EntityGraph(attributePaths = { "variantQuotes", "variantQuotes.variant" })
+    @Query("SELECT DISTINCT p FROM Project p WHERE p.id IN :ids")
+    List<Project> findAllByIdWithVariantsAndQuotes(@Param("ids") List<UUID> ids);
 }
