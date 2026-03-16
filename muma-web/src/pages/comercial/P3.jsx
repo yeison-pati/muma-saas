@@ -13,7 +13,7 @@ export default function ComercialP3() {
   const { products } = useProducts();
   const { addCustomProduct } = useCart();
 
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(true);
   const [filters, setFilters] = useState({ categoria: null, subcategoria: null, espacio: null, linea: null });
   const [cart, setCart] = useState([]);
   const [newCompName, setNewCompName] = useState('');
@@ -164,20 +164,6 @@ export default function ComercialP3() {
 
   const hasFilters = filters.categoria || filters.subcategoria || filters.espacio || filters.linea;
   const componentEntries = Object.entries(filteredComponents).filter(([, v]) => v?.length > 0);
-
-  if (!formOpen) {
-    return (
-      <div className="p3-page">
-        <p className="p3-desc">
-          Filtra para ver componentes, márcalos para añadirlos al carrito. Limpia filtros, filtra otros,
-          añade más. Con un comentario, añade la variante al proyecto (no al catálogo).
-        </p>
-        <button type="button" className="p3-toggle" onClick={() => setFormOpen(true)}>
-          + Crear variante P3
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div className="p3-page">

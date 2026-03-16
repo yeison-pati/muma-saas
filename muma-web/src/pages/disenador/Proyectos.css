@@ -32,6 +32,34 @@
   border-color: var(--color-primary);
 }
 
+.disenador-proyectos-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--color-border-hover);
+  margin-bottom: 24px;
+}
+
+.disenador-proyectos-tabs button {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.disenador-proyectos-tabs button:hover {
+  color: var(--color-primary);
+}
+
+.disenador-proyectos-tabs button.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
 .disenador-proyectos-loading,
 .disenador-proyectos-empty {
   padding: 48px 24px;

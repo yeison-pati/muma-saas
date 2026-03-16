@@ -11,6 +11,7 @@ export default function DisenadorProyectos() {
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [expandedId, setExpandedId] = useState(null);
+  const [activeTab, setActiveTab] = useState('proceso');
 
   useEffect(() => {
     load();
@@ -25,9 +26,23 @@ export default function DisenadorProyectos() {
       .finally(() => setLoading(false));
   };
 
-  const filtered = projects.filter((p) =>
-    (p.consecutive || p.name || '').toLowerCase().includes(searchText.trim().toLowerCase())
-  );
+  const enProceso = projects.filter((p) => {
+    const variants = p.variants || [];
+    return variants.some((v) => !v.designedAt);
+  });
+  const diseñados = projects.filter((p) => {
+    const variants = p.variants || [];
+    return variants.length > 0 && variants.every((v) => v.designedAt);
+  });
+
+  const filtered =
+    activeTab === 'proceso'
+      ? enProceso.filter((p) =>
+          (p.consecutive || p.name || '').toLowerCase().includes(searchText.trim().toLowerCase())
+        )
+      : diseñados.filter((p) =>
+          (p.consecutive || p.name || '').toLowerCase().includes(searchText.trim().toLowerCase())
+        );
 
   return (
     <div className="disenador-proyectos-page">
@@ -44,13 +59,32 @@ export default function DisenadorProyectos() {
         />
       </div>
 
+      <div className="disenador-proyectos-tabs">
+        <button
+          type="button"
+          className={activeTab === 'proceso' ? 'active' : ''}
+          onClick={() => setActiveTab('proceso')}
+        >
+          En Proceso ({enProceso.length})
+        </button>
+        <button
+          type="button"
+          className={activeTab === 'diseñados' ? 'active' : ''}
+          onClick={() => setActiveTab('diseñados')}
+        >
+          Diseñados ({diseñados.length})
+        </button>
+      </div>
+
       {loading ? (
         <p className="disenador-proyectos-loading">Cargando...</p>
       ) : filtered.length === 0 ? (
         <p className="disenador-proyectos-empty">
           {searchText.trim()
             ? 'No se encontraron proyectos'
-            : 'No hay proyectos efectivos'}
+            : activeTab === 'proceso'
+              ? 'No hay proyectos en proceso'
+              : 'No hay proyectos diseñados'}
         </p>
       ) : (
         <ul className="disenador-proyectos-list">
@@ -84,7 +118,7 @@ export default function DisenadorProyectos() {
                     <ProjectProductsTable
                       variants={variants}
                       projectId={p.id}
-                      onMarkAsDesigned={user?.id ? async (projectId, variantId) => {
+                      onMarkAsDesigned={activeTab === 'proceso' && user?.id ? async (projectId, variantId) => {
                         try {
                           await catalog.markVariantAsDesigned(projectId, variantId, user.id);
                           load();

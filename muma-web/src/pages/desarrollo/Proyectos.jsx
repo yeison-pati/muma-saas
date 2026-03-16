@@ -11,6 +11,7 @@ export default function DesarrolloProyectos() {
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [expandedId, setExpandedId] = useState(null);
+  const [activeTab, setActiveTab] = useState('proceso');
 
   useEffect(() => {
     load();
@@ -25,9 +26,23 @@ export default function DesarrolloProyectos() {
       .finally(() => setLoading(false));
   };
 
-  const filtered = projects.filter((p) =>
-    (p.consecutive || p.name || '').toLowerCase().includes(searchText.trim().toLowerCase())
-  );
+  const enProceso = projects.filter((p) => {
+    const variants = p.variants || [];
+    return variants.some((v) => !v.developedAt);
+  });
+  const desarrollados = projects.filter((p) => {
+    const variants = p.variants || [];
+    return variants.length > 0 && variants.every((v) => v.developedAt);
+  });
+
+  const filtered =
+    activeTab === 'proceso'
+      ? enProceso.filter((p) =>
+          (p.consecutive || p.name || '').toLowerCase().includes(searchText.trim().toLowerCase())
+        )
+      : desarrollados.filter((p) =>
+          (p.consecutive || p.name || '').toLowerCase().includes(searchText.trim().toLowerCase())
+        );
 
   return (
     <div className="desarrollo-page">
@@ -45,13 +60,32 @@ export default function DesarrolloProyectos() {
         />
       </div>
 
+      <div className="desarrollo-tabs">
+        <button
+          type="button"
+          className={activeTab === 'proceso' ? 'active' : ''}
+          onClick={() => setActiveTab('proceso')}
+        >
+          En Proceso ({enProceso.length})
+        </button>
+        <button
+          type="button"
+          className={activeTab === 'desarrollados' ? 'active' : ''}
+          onClick={() => setActiveTab('desarrollados')}
+        >
+          Desarrollados ({desarrollados.length})
+        </button>
+      </div>
+
       {loading ? (
         <p className="desarrollo-loading">Cargando...</p>
       ) : filtered.length === 0 ? (
         <p className="desarrollo-empty">
           {searchText.trim()
             ? 'No se encontraron proyectos'
-            : 'No hay proyectos efectivos asignados'}
+            : activeTab === 'proceso'
+              ? 'No hay proyectos en proceso'
+              : 'No hay proyectos desarrollados'}
         </p>
       ) : (
         <ul className="desarrollo-list">
@@ -85,7 +119,7 @@ export default function DesarrolloProyectos() {
                     <ProjectProductsTable
                       variants={variants}
                       projectId={p.id}
-                      onMarkAsDeveloped={user?.id ? async (projectId, variantId) => {
+                      onMarkAsDeveloped={activeTab === 'proceso' && user?.id ? async (projectId, variantId) => {
                         try {
                           await catalog.markVariantAsDeveloped(projectId, variantId, user.id);
                           load();

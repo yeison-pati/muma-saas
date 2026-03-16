@@ -573,6 +573,14 @@ public class CatalogService {
                 .map(vq -> vq.getVariant().getId())
                 .distinct()
                 .toList();
+        // Limpiar tablas que referencian project antes de borrar (project_threads en catalog, hilos en threads service)
+        try {
+            entityManager.createNativeQuery("DELETE FROM project_threads WHERE project_id = ?")
+                    .setParameter(1, projectId)
+                    .executeUpdate();
+        } catch (Exception e) {
+            log.debug("[deleteProject] project_threads no existe o vacío: {}", e.getMessage());
+        }
         projectService.delete(projectId);
         for (UUID vid : quoteVariantIdsToDelete) {
             variantService.deleteById(vid);

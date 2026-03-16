@@ -32,7 +32,7 @@ const RUTAS = {
     { name: 'USUARIOS', path: '/admin/usuarios' },
   ],
   desarrollo: [
-    { name: 'PROYECTOS EFECTIVOS', path: '/desarrollo' },
+    { name: 'EFECTIVOS', path: '/desarrollo' },
     { name: 'HILOS', path: '/desarrollo/hilos' },
   ],
 };
