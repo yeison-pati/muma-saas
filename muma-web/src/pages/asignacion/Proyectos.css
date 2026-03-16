@@ -66,6 +66,7 @@
 
 .asignacion-consecutivo {
   font-weight: 600;
+  color: var(--color-primary);
 }
 
 .asignacion-badge {

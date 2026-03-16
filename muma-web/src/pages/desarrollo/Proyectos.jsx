@@ -101,7 +101,7 @@ export default function DesarrolloProyectos() {
                   onClick={() => setExpandedId(isExpanded ? null : p.id)}
                 >
                   <span className="desarrollo-consecutivo">{p.consecutive || p.name}</span>
-                  <span> — {p.client || 'Sin cliente'}</span>
+                  <span> — {p.client || 'Sin cliente'} - {p.name || p.consecutive || 'Sin nombre'}</span>
                   <span className="desarrollo-expand">{isExpanded ? '▼' : '▶'}</span>
                 </button>
                 {isExpanded && (

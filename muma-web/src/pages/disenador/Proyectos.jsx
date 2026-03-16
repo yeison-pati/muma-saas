@@ -100,7 +100,7 @@ export default function DisenadorProyectos() {
                   onClick={() => setExpandedId(isExpanded ? null : p.id)}
                 >
                   <span className="disenador-consecutivo">{p.consecutive || p.name}</span>
-                  <span> - {p.client || 'Sin cliente'}</span>
+                  <span> - {p.client || 'Sin cliente'} - {p.name || p.consecutive || 'Sin nombre'}</span>
                   <span className="disenador-expand">{isExpanded ? '▼' : '▶'}</span>
                 </button>
                 {isExpanded && (

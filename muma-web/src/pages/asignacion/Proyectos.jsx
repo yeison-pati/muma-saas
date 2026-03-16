@@ -137,7 +137,7 @@ export default function AsignacionProyectos() {
                   onClick={() => setExpandedId(isExpanded ? null : p.id)}
                 >
                   <span className="asignacion-consecutivo">{p.consecutive || p.name}</span>
-                  <span> — {p.name || 'Sin nombre'}</span>
+                  <span> — {p.client || 'Sin cliente'} - {p.name || p.consecutive || 'Sin nombre'}</span>
                   <span className="asignacion-badge">{variants.length} producto{variants.length !== 1 ? 's' : ''}</span>
                 </button>
                 {isExpanded && (

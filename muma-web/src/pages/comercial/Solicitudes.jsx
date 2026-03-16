@@ -91,7 +91,7 @@ function SolicitudesList({
                 onClick={() => setExpandedId(isExpanded ? null : p.id)}
               >
                 <span className="solicitudes-consecutivo">{p.consecutive || p.name}</span>
-                <span className="solicitudes-name"> - {p.name || 'Sin nombre'}</span>
+                <span> - {p.client || 'Sin cliente'} - {p.name || p.consecutive || 'Sin nombre'}</span>
                 {isCotizadas && p.effective && <span className="solicitudes-effective-tag"> (Efectivo)</span>}
               </button>
               {isCotizadas && (

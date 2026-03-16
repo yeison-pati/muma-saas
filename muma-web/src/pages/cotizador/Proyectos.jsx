@@ -69,7 +69,7 @@ function CotizadorList({
               onClick={() => setExpandedId(isExpanded ? null : p.id)}
             >
               <span className="cotizador-consecutivo">{p.consecutive || p.name}</span>
-              <span> - {p.name || 'Sin name'}</span>
+              <span> - {p.client || 'Sin cliente'} - {p.name || p.consecutive || 'Sin nombre'}</span>
               {p.quoted && !p.reopen && <span className="cotizador-tag"> ✓ Cotizado</span>}
               {p.effective && <span className="cotizador-effective-tag"> (Efectivo)</span>}
             </button>
@@ -107,9 +107,6 @@ function CotizadorList({
                     onRefresh={refreshProjects}
                     onToggleP3P5={onToggleP3P5}
                   />
-                )}
-                {activeTab === 'proceso' && variants.every((v) => v.price != null && v.price > 0) && (
-                  <p className="cotizador-all-quoted">Todos los productos cotizados. El comercial puede marcar como cotizado.</p>
                 )}
               </div>
             )}

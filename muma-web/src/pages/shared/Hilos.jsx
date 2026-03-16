@@ -157,12 +157,18 @@ export default function Hilos() {
 
   useEffect(() => {
     if (!chatOpen?.threadId) return;
-    setLoadingMessages(true);
-    threadsApiRef.current
-      .getThreadMessages(chatOpen.threadId)
-      .then((data) => setMessages(data || []))
-      .catch(() => setMessages([]))
-      .finally(() => setLoadingMessages(false));
+    const threadId = chatOpen.threadId;
+    const fetchMessages = (isInitial = false) => {
+      if (isInitial) setLoadingMessages(true);
+      threadsApiRef.current
+        .getThreadMessages(threadId)
+        .then((data) => setMessages(data || []))
+        .catch(() => {})
+        .finally(() => { if (isInitial) setLoadingMessages(false); });
+    };
+    fetchMessages(true);
+    const interval = setInterval(() => fetchMessages(false), 4000);
+    return () => clearInterval(interval);
   }, [chatOpen?.threadId]);
 
   useEffect(() => {
@@ -307,9 +313,11 @@ export default function Hilos() {
                   className="hilos-item-btn"
                   onClick={() => handleExpand(p.id)}
                 >
-                  <span className="hilos-consecutivo">{p.consecutive || p.name}</span>
-                  <span> — {p.client || p.name || 'Sin cliente'}</span>
-                  <span className="hilos-badge">{variants.length} producto{variants.length !== 1 ? 's' : ''}</span>
+                  <span className="hilos-item-label">
+                    <span className="hilos-consecutivo">{p.consecutive || p.name}</span>
+                    <span> - {p.client || 'Sin cliente'} - {p.name || p.consecutive || 'Sin nombre'}</span>
+                    <span className="hilos-badge">{variants.length} producto{variants.length !== 1 ? 's' : ''}</span>
+                  </span>
                   <span className="hilos-expand">{isExpanded ? '▼' : '▶'}</span>
                 </button>
                 {isExpanded && (
