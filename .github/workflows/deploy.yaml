@@ -46,7 +46,7 @@ jobs:
           printf "%s\n" "$TF_VAR_ssh_private_key" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
-          env | grep -E '^(IDENTITY_|CATALOG_|PRODUCTS_|THREADS_|RABBITMQ_|MINIO_|JWT_|ADMIN_|METABASE_|REDIS_|DOCUMENT_|IMAGES_|DOCKER_REGISTRY|SERVER_IP)' | sort -u > .env.remote
+          env | grep -E '^(IDENTITY_|CATALOG_|PRODUCTS_|THREADS_|RABBITMQ_|MINIO_|JWT_|ADMIN_|METABASE_|REDIS_|DOCUMENT_|IMAGES_|MUMA_|DOCKER_REGISTRY|SERVER_IP)' | sort -u > .env.remote
           # DOCKER_REGISTRY viene de GitHub Secrets (no de Infisical)
           echo "DOCKER_REGISTRY=${{ secrets.DOCKERHUB_USERNAME }}/" >> .env.remote
 

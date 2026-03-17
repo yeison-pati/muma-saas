@@ -146,6 +146,8 @@ services:
     build:
       context: ./identity
       dockerfile: Dockerfile
+      x-bake:
+        platforms: [linux/amd64, linux/arm64]
     image: ${DOCKER_REGISTRY:-}identity:latest
     container_name: identity
     restart: on-failure
@@ -178,6 +180,8 @@ services:
     build:
       context: ./catalog
       dockerfile: Dockerfile
+      x-bake:
+        platforms: [linux/amd64, linux/arm64]
     image: ${DOCKER_REGISTRY:-}catalog:latest
     container_name: catalog
     restart: on-failure
@@ -216,6 +220,8 @@ services:
     build:
       context: ./products
       dockerfile: Dockerfile
+      x-bake:
+        platforms: [linux/amd64, linux/arm64]
     image: ${DOCKER_REGISTRY:-}products:latest
     container_name: products
     restart: on-failure
@@ -241,6 +247,8 @@ services:
     build:
       context: ./threads
       dockerfile: Dockerfile
+      x-bake:
+        platforms: [linux/amd64, linux/arm64]
     image: ${DOCKER_REGISTRY:-}threads:latest
     container_name: threads
     restart: on-failure
@@ -266,6 +274,8 @@ services:
     build:
       context: ./document
       dockerfile: Dockerfile
+      x-bake:
+        platforms: [linux/amd64, linux/arm64]
     image: ${DOCKER_REGISTRY:-}document:latest
     container_name: document
     restart: on-failure
@@ -311,6 +321,8 @@ services:
     build:
       context: ./muma-web
       dockerfile: Dockerfile
+      x-bake:
+        platforms: [linux/amd64, linux/arm64]
     image: ${DOCKER_REGISTRY:-}muma:latest
     ports:
       - "${MUMA_PORT}:8081"
