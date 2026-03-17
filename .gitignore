@@ -1,9 +1,5 @@
 # Environment files (keep templates)
-.env.local
-.env.prod
-.env.zrok
-.env.base
-
+.env
 # Build outputs
 dist/
 build/
@@ -66,3 +62,20 @@ otel-collector_data/
 metabase_data/
 doc/
 docs/
+
+
+app.js
+text.txt
+# Ignorar carpeta de binarios
+.terraform/
+
+# Ignorar archivos de estado local (si no usas backend remoto)
+*.tfstate
+*.tfstate.*
+
+# Ignorar variables y secretos
+*.tfvars
+*.tfvars.json
+.env
+backend.conf
+*.pem

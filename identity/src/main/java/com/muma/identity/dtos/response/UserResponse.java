@@ -25,7 +25,7 @@ public record UserResponse(
                 user.getName(),
                 user.getEmail(),
                 user.getPhone(),
-                user.getRole(),
+                user.getRole() != null ? user.getRole() : "",
                 user.getRegion(),
                 user.getJobTitle(),
                 user.getIsLeader(),

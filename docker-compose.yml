@@ -433,16 +433,27 @@ services:
 
 volumes:
   identity_data:
+    name: identity_data
   catalog_data:
+    name: catalog_data
   products_data:
+    name: products_data
   threads_data:
+    name: threads_data
   redis_data:
+    name: redis_data
   rabbitmq_data:
+    name: rabbitmq_data
   rabbitmq_logs:
+    name: rabbitmq_logs
   minio_data:
+    name: minio_data
   caddy_data:
+    name: caddy_data
   caddy_config:
+    name: caddy_config
   metabase_data:
+    name: metabase_data
 
 networks:
   system:

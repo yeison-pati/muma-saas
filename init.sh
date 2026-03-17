@@ -2,20 +2,16 @@
 
 echo "Cargando variables de entorno..."
 set -a
-source .env.base
-source .env.local
+# si infisical.sh existe, usarlo para cargar variables de entorno,
+# si no existe, usar .env
+if [ -f "vars.sh" ]; then
+  source ./vars.sh
+else
+  source .env
+fi
 set +a
 
-echo "variables de entorno cargadas: $TEST_VARS"
 echo "user identity: $IDENTITY_DB_USER"
-
-
-if [ "$TEST_VARS" = "true" ]; then
-  echo "variables de entorno correctas"
-else
-  echo "variables de entorno incorrectas"
-  exit 1
-fi
 
 echo "Iniciando servicios..."
 

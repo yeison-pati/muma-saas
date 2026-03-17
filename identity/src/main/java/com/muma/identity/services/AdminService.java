@@ -51,13 +51,14 @@ public class AdminService {
     public UserResponse updateUser(UUID userId, UserUpdate userUpdate) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setEmail(userUpdate.email());
-        user.setName(userUpdate.name());
-        user.setPhone(userUpdate.phone());
-        user.setPassword(passwordEncoder.encode(userUpdate.password()));
-        user.setRole(userUpdate.role());
-        user.setRegion(userUpdate.region());
-        user.setJobTitle(userUpdate.jobTitle());
+        if (userUpdate.name() != null) user.setName(userUpdate.name());
+        if (userUpdate.email() != null) user.setEmail(userUpdate.email());
+        if (userUpdate.phone() != null) user.setPhone(userUpdate.phone());
+        if (userUpdate.password() != null && !userUpdate.password().isBlank())
+            user.setPassword(passwordEncoder.encode(userUpdate.password()));
+        if (userUpdate.role() != null) user.setRole(userUpdate.role());
+        if (userUpdate.region() != null) user.setRegion(userUpdate.region());
+        if (userUpdate.jobTitle() != null) user.setJobTitle(userUpdate.jobTitle());
         if (userUpdate.isLeader() != null) user.setIsLeader(userUpdate.isLeader());
         user.setUpdatedAt(LocalDateTime.now());
         return new UserResponse(userRepository.save(user));
@@ -142,13 +143,14 @@ public class AdminService {
     public Boolean editUser(UUID userId, UserUpdate userUpdate) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setEmail(userUpdate.email());
-        user.setName(userUpdate.name());
-        user.setPhone(userUpdate.phone());
-        user.setPassword(passwordEncoder.encode(userUpdate.password()));
-        user.setRole(userUpdate.role());
-        user.setRegion(userUpdate.region());
-        user.setJobTitle(userUpdate.jobTitle());
+        if (userUpdate.name() != null) user.setName(userUpdate.name());
+        if (userUpdate.email() != null) user.setEmail(userUpdate.email());
+        if (userUpdate.phone() != null) user.setPhone(userUpdate.phone());
+        if (userUpdate.password() != null && !userUpdate.password().isBlank())
+            user.setPassword(passwordEncoder.encode(userUpdate.password()));
+        if (userUpdate.role() != null) user.setRole(userUpdate.role());
+        if (userUpdate.region() != null) user.setRegion(userUpdate.region());
+        if (userUpdate.jobTitle() != null) user.setJobTitle(userUpdate.jobTitle());
         if (userUpdate.isLeader() != null) user.setIsLeader(userUpdate.isLeader());
         userRepository.save(user);
         return true;
