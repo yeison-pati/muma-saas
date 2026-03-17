@@ -1,0 +1,76 @@
+name: Deploy to VM
+
+on:
+  workflow_run:
+    workflows: ["CI/CD Build and Push to Docker Hub"]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Infisical CLI
+        run: |
+          curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo -E bash
+          sudo apt-get update && sudo apt-get install -y infisical
+
+      - name: Get secrets and create .env for VM
+        env:
+          INFISICAL_CLIENT_ID: ${{ secrets.INFISICAL_CLIENT_ID }}
+          INFISICAL_CLIENT_SECRET: ${{ secrets.INFISICAL_CLIENT_SECRET }}
+          INFISICAL_PROJECT_ID: ${{ secrets.INFISICAL_PROJECT_ID }}
+          INFISICAL_ENV: prod
+        run: |
+          if [ -z "$INFISICAL_CLIENT_ID" ] || [ -z "$INFISICAL_CLIENT_SECRET" ]; then
+            echo "::error::Faltan secrets: INFISICAL_CLIENT_ID e INFISICAL_CLIENT_SECRET"
+            exit 1
+          fi
+          export INFISICAL_TOKEN=$(infisical login --method=universal-auth --client-id="$INFISICAL_CLIENT_ID" --client-secret="$INFISICAL_CLIENT_SECRET" --silent --plain)
+          source ./vars.sh
+          if [ -z "$SERVER_IP" ]; then
+            echo "::error::SERVER_IP no encontrado en Infisical. Ejecuta infra.sh primero."
+            exit 1
+          fi
+          if [ -z "$TF_VAR_ssh_private_key" ]; then
+            echo "::error::TF_VAR_ssh_private_key no encontrado en Infisical."
+            exit 1
+          fi
+          echo "SERVER_IP=$SERVER_IP" >> $GITHUB_ENV
+          mkdir -p ~/.ssh
+          printf "%s\n" "$TF_VAR_ssh_private_key" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          env | grep -E '^(IDENTITY_|CATALOG_|PRODUCTS_|THREADS_|RABBITMQ_|MINIO_|JWT_|ADMIN_|METABASE_|REDIS_|DOCUMENT_|IMAGES_|DOCKER_REGISTRY|SERVER_IP)' | sort -u > .env.remote
+          # DOCKER_REGISTRY viene de GitHub Secrets (no de Infisical)
+          echo "DOCKER_REGISTRY=${{ secrets.DOCKERHUB_USERNAME }}/" >> .env.remote
+
+      - name: Setup SSH
+        run: |
+          ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Ensure Docker on VM
+        env:
+          SERVER_IP: ${{ env.SERVER_IP }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no deployer@$SERVER_IP 'command -v docker >/dev/null 2>&1 || sudo curl -fsSL https://get.docker.com | sudo sh && sudo usermod -aG docker deployer'
+
+      - name: Deploy to VM
+        env:
+          SERVER_IP: ${{ env.SERVER_IP }}
+        run: |
+          REMOTE_DIR="muma"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no deployer@$SERVER_IP "mkdir -p ~/$REMOTE_DIR"
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no .env.remote deployer@$SERVER_IP:~/$REMOTE_DIR/.env
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no docker-compose.yml deployer@$SERVER_IP:~/$REMOTE_DIR/
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no Caddyfile deployer@$SERVER_IP:~/$REMOTE_DIR/ 2>/dev/null || true
+
+          scp -i ~/.ssh/deploy_key -r -o StrictHostKeyChecking=no ./metabase deployer@$SERVER_IP:~/$REMOTE_DIR/ 2>/dev/null || true
+          # Login Docker Hub (necesario si las imágenes son privadas)
+          ssh -i ~/.ssh/deploy_key deployer@$SERVER_IP "echo '${{ secrets.DOCKERHUB_TOKEN }}' | sudo docker login -u '${{ secrets.DOCKERHUB_USERNAME }}' --password-stdin"
+          ssh -i ~/.ssh/deploy_key deployer@$SERVER_IP "cd ~/$REMOTE_DIR && sudo docker compose pull && sudo docker compose up --no-build -d"

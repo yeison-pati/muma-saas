@@ -1,0 +1,54 @@
+name: CI/CD Build and Push to Docker Hub
+
+on:
+  push:
+    branches:
+      - master # Cambiado a master según tu repositorio
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 1. Instalar la CLI de Infisical
+      - name: Install Infisical CLI
+        run: |
+          curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo -E bash
+          sudo apt-get update && sudo apt-get install -y infisical
+
+      # 2. Login Infisical (Universal Auth) y exportar variables
+      - name: Get variables from Infisical
+        env:
+          INFISICAL_CLIENT_ID: ${{ secrets.INFISICAL_CLIENT_ID }}
+          INFISICAL_CLIENT_SECRET: ${{ secrets.INFISICAL_CLIENT_SECRET }}
+          INFISICAL_PROJECT_ID: ${{ secrets.INFISICAL_PROJECT_ID }}
+        run: |
+          if [ -z "$INFISICAL_CLIENT_ID" ] || [ -z "$INFISICAL_CLIENT_SECRET" ]; then
+            echo "::error::Faltan secrets: INFISICAL_CLIENT_ID e INFISICAL_CLIENT_SECRET (GitHub Settings > Secrets)"
+            exit 1
+          fi
+          export INFISICAL_TOKEN=$(infisical login --method=universal-auth --client-id="$INFISICAL_CLIENT_ID" --client-secret="$INFISICAL_CLIENT_SECRET" --silent --plain)
+          source ./vars.sh
+          # Solo vars que docker-compose build necesita (GITHUB_ENV no soporta multiline como PEM)
+          env | grep -E '^(IDENTITY_|CATALOG_|PRODUCTS_|THREADS_|RABBITMQ_|MINIO_|JWT_|REDIS_|DOCUMENT_|IMAGES_|ADMIN_|METABASE_)' | sort -u >> $GITHUB_ENV
+
+      # 3. Autenticación en Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 4. Registry para push (miusuario/identity:latest, etc.)
+      - name: Set Docker registry
+        run: echo "DOCKER_REGISTRY=${{ secrets.DOCKERHUB_USERNAME }}/" >> $GITHUB_ENV
+
+      # 5. Construir las imágenes usando tu docker-compose.yml
+      - name: Build Docker images
+        run: docker compose build
+
+      # 6. Subir todas las imágenes a Docker Hub
+      - name: Push Docker images
+        run: docker compose push

@@ -137,12 +137,8 @@ services:
       sleep 5 &&
       mc alias set local http://minio:9000 ${MINIO_USER} ${MINIO_PASS} &&
       mc mb -p local/${MINIO_BUCKET_IMAGES} || true &&
-      mc mb -p local/${MINIO_BUCKET_MODELS} || true &&
-      mc cp --recursive /seed/images/* local/${MINIO_BUCKET_IMAGES}/ || true &&
-      mc cp --recursive /seed/models/* local/${MINIO_BUCKET_MODELS}/ || true
+      mc mb -p local/${MINIO_BUCKET_MODELS} || true
       "
-    volumes:
-      - ./minio:/seed
     networks:
       - system
   
@@ -150,6 +146,7 @@ services:
     build:
       context: ./identity
       dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY:-}identity:latest
     container_name: identity
     restart: on-failure
     ports:
@@ -181,6 +178,7 @@ services:
     build:
       context: ./catalog
       dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY:-}catalog:latest
     container_name: catalog
     restart: on-failure
     ports:
@@ -218,6 +216,7 @@ services:
     build:
       context: ./products
       dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY:-}products:latest
     container_name: products
     restart: on-failure
     ports:
@@ -242,6 +241,7 @@ services:
     build:
       context: ./threads
       dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY:-}threads:latest
     container_name: threads
     restart: on-failure
     ports:
@@ -266,6 +266,7 @@ services:
     build:
       context: ./document
       dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY:-}document:latest
     container_name: document
     restart: on-failure
     ports:
@@ -310,6 +311,7 @@ services:
     build:
       context: ./muma-web
       dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY:-}muma:latest
     ports:
       - "${MUMA_PORT}:8081"
     container_name: muma
