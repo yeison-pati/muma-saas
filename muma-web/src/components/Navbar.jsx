@@ -1,4 +1,5 @@
 import { useLocation } from 'react-router-dom';
+import { useSidebar } from '../context/SidebarContext';
 import logo from '../assets/logo.png';
 import './Navbar.css';
 
@@ -17,6 +18,7 @@ const PAGE_TITLES = {
 
 export default function Navbar() {
   const { pathname } = useLocation();
+  const { toggle } = useSidebar();
   const pageTitle = PAGE_TITLES[pathname];
 
   return (
@@ -25,6 +27,16 @@ export default function Navbar() {
         <img src={logo} alt="MUMA" className="navbar-logo" />
       </div>
       {pageTitle && <div className="navbar-title">{pageTitle}</div>}
+      <button
+        type="button"
+        className="navbar-hamburger"
+        onClick={toggle}
+        aria-label="Abrir menú"
+      >
+        <span className="navbar-hamburger-bar" />
+        <span className="navbar-hamburger-bar" />
+        <span className="navbar-hamburger-bar" />
+      </button>
     </nav>
   );
 }

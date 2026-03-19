@@ -1,0 +1,212 @@
+.crear-variant-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1400;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+
+@media (min-width: 600px) {
+  .crear-variant-modal-overlay {
+    align-items: center;
+    padding: 24px;
+  }
+}
+
+.crear-variant-modal {
+  background: var(--color-bg-white);
+  width: 100%;
+  max-width: 560px;
+  max-height: 92vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -4px 24px var(--color-shadow-xl);
+}
+
+@media (min-width: 600px) {
+  .crear-variant-modal {
+    border-radius: 12px;
+    max-height: 88vh;
+  }
+}
+
+.crear-variant-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.crear-variant-modal-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.crear-variant-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.crear-variant-modal-close:hover {
+  color: var(--color-text);
+}
+
+.crear-variant-modal-body {
+  padding: 16px 18px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.crear-variant-modal-sap label,
+.crear-variant-modal-media label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.crear-variant-modal-sap span,
+.crear-variant-modal-media span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.crear-variant-modal-sap input {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.crear-variant-modal-media {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: var(--color-bg);
+  border-radius: 8px;
+}
+
+.crear-variant-modal-components {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.crear-variant-modal-comp-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+/* Misma fila ya no usa .crear-component-row del form principal: forzar tamaños legibles */
+.crear-variant-modal-comp-row .autocomplete-input {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.crear-variant-modal-comp-row .autocomplete-input input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.crear-variant-modal-comp-row > input[type='text'] {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.crear-variant-modal-comp-row .autocomplete-list {
+  z-index: 50;
+  max-height: 180px;
+}
+
+.crear-variant-modal-comp-row button[type='button'] {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-white);
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.crear-variant-modal-comp-row button[type='button']:hover:not(:disabled) {
+  background: var(--color-danger-modal);
+  color: white;
+  border-color: var(--color-danger-modal);
+}
+
+.crear-variant-modal-actions {
+  display: flex;
+  gap: 12px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.crear-variant-modal-cancel {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.crear-variant-modal-save {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-primary);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.crear-variant-modal-save:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.crear-variant-modal-save:disabled,
+.crear-variant-modal-cancel:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}

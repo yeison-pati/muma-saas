@@ -120,7 +120,10 @@ export default function AdminProyectos() {
             const isExpanded = expandedId === p.id;
 
             return (
-              <div key={p.id} className="admin-project-card">
+              <div
+                key={p.id}
+                className={`admin-project-card ${isExpanded ? 'admin-project-card--expanded' : ''}`}
+              >
                 <button
                   type="button"
                   className="admin-project-header"
@@ -128,7 +131,10 @@ export default function AdminProyectos() {
                 >
                   <span className="admin-item-label">
                     <span className="admin-consecutivo">{p.consecutive || p.name}</span>
-                    <span> - {p.client || 'Sin cliente'} - {p.name || p.consecutive || 'Sin nombre'}</span>
+                    <span className="admin-item-rest">
+                      {' '}
+                      — {p.client || 'Sin cliente'} — {p.name || p.consecutive || 'Sin nombre'}
+                    </span>
                   </span>
                   <span className="admin-badge admin-badge-quoted">
                     {p.quoted ? 'Cotizado' : 'Pendiente'}
@@ -140,17 +146,21 @@ export default function AdminProyectos() {
                 </button>
                 {isExpanded && (
                   <div className="admin-project-detail">
-                    <div className="admin-meta">
-                      <p>Cliente: {p.client}</p>
-                      <p>Región: {p.region}</p>
-                      <p>Total: ${(p.totalCost ?? 0).toLocaleString()}</p>
+                    <div className="admin-project-detail-static">
+                      <div className="admin-meta">
+                        <p>Cliente: {p.client}</p>
+                        <p>Región: {p.region}</p>
+                        <p>Total: ${(p.totalCost ?? 0).toLocaleString()}</p>
+                      </div>
+                      <div className="admin-badges-row">
+                        <span className="badge badge-products">{variants.length} productos</span>
+                        <span className="badge badge-version">v{p.version ?? 1}</span>
+                        <span className="badge badge-estado">Estado: {p.state ?? 0}%</span>
+                      </div>
                     </div>
-                    <div className="admin-badges-row">
-                      <span className="badge badge-products">{variants.length} productos</span>
-                      <span className="badge badge-version">v{p.version ?? 1}</span>
-                      <span className="badge badge-estado">Estado: {p.state ?? 0}%</span>
+                    <div className="admin-project-table-scroll">
+                      <ProjectProductsTable variants={variants} projectId={p.id} />
                     </div>
-                    <ProjectProductsTable variants={variants} projectId={p.id} />
                   </div>
                 )}
               </div>

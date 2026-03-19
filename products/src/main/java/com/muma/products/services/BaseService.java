@@ -35,8 +35,6 @@ public class BaseService {
                         .id(UUID.randomUUID())
                         .code(input.code())
                         .name(input.name())
-                        .image(input.image())
-                        .model(input.model())
                         .category(input.category())
                         .subcategory(input.subcategory())
                         .space(input.space())
@@ -48,21 +46,26 @@ public class BaseService {
                         .build());
 
         List<CreateBaseInitialVariantInput> initialVariants = input.initialVariants();
-        if (initialVariants != null && !initialVariants.isEmpty()) {
-            for (int i = 0; i < initialVariants.size(); i++) {
-                createInitialVariant(base, initialVariants.get(i), i + 1);
-            }
-        } else {
-            createInitialVariant(base, new CreateBaseInitialVariantInput(null, List.of()), 1);
+        if (initialVariants == null || initialVariants.isEmpty()) {
+            throw new IllegalArgumentException("Debe incluir al menos una variante con imagen, modelo y componentes");
+        }
+        for (int i = 0; i < initialVariants.size(); i++) {
+            createInitialVariant(base, initialVariants.get(i), i + 1);
         }
         return base;
     }
 
     private void createInitialVariant(Base base, CreateBaseInitialVariantInput iv, int variantIndex) {
+        if (iv.image() == null || iv.image().isBlank()) {
+            throw new IllegalArgumentException("Cada variante requiere imagen");
+        }
+        if (iv.model() == null || iv.model().isBlank()) {
+            throw new IllegalArgumentException("Cada variante requiere modelo");
+        }
         String sapRef = iv.sapRef() != null && !iv.sapRef().isBlank()
                 ? iv.sapRef()
                 : base.getCode() + "-V" + variantIndex;
-        Variant variant = variantService.create(base, sapRef);
+        Variant variant = variantService.create(base, sapRef, iv.image().trim(), iv.model().trim());
         List<CreateBaseInitialComponentInput> components = iv.components();
         if (components != null && !components.isEmpty()) {
             List<Component> comps = new ArrayList<>();
@@ -109,8 +112,6 @@ public class BaseService {
         Base base = baseRepository.findById(input.id())
                 .orElseThrow(() -> new IllegalStateException("Base not found"));
         if (input.name() != null) base.setName(input.name());
-        if (input.image() != null) base.setImage(input.image());
-        if (input.model() != null) base.setModel(input.model());
         if (input.category() != null) base.setCategory(input.category());
         if (input.subcategory() != null) base.setSubcategory(input.subcategory());
         if (input.space() != null) base.setSpace(input.space());

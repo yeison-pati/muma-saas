@@ -225,50 +225,62 @@ export default function CotizadorProyectos() {
       )}
 
       {editingVariant && (
-        <div className="cotizador-quote-modal">
-          <h3>Cotizar variante</h3>
-          <label htmlFor="quote-price">Precio</label>
-          <input
-            type="number"
-            id="quote-price"
-            placeholder="0"
-            defaultValue={editingVariant.price}
-          />
-          <label htmlFor="quote-time">Tiempo elaboración (días)</label>
-          <input
-            type="number"
-            id="quote-time"
-            placeholder="0"
-            defaultValue={editingVariant.elaborationTime}
-          />
-          <label htmlFor="quote-critical-material">Material crítico</label>
-          <input
-            type="text"
-            id="quote-critical-material"
-            placeholder="Opcional"
-            defaultValue={editingVariant.criticalMaterial}
-          />
-          <div className="cotizador-quote-actions">
-            <button type="button" onClick={() => dispatch({ type: 'SET_EDITING_VARIANT', payload: null })}>
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const price = document.getElementById('quote-price')?.value;
-                const time = document.getElementById('quote-time')?.value;
-                const criticalMaterial = document.getElementById('quote-critical-material')?.value;
-                handleQuoteVariant(
-                  editingVariant.projectId,
-                  editingVariant.id,
-                  price,
-                  time,
-                  criticalMaterial
-                );
-              }}
-            >
-              Guardar
-            </button>
+        <div
+          className="cotizador-quote-shell"
+          role="presentation"
+          onClick={() => dispatch({ type: 'SET_EDITING_VARIANT', payload: null })}
+        >
+          <div
+            className="cotizador-quote-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cotizador-quote-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="cotizador-quote-title">Cotizar variante</h3>
+            <label htmlFor="quote-price">Precio</label>
+            <input
+              type="number"
+              id="quote-price"
+              placeholder="0"
+              defaultValue={editingVariant.price}
+            />
+            <label htmlFor="quote-time">Tiempo elaboración (días)</label>
+            <input
+              type="number"
+              id="quote-time"
+              placeholder="0"
+              defaultValue={editingVariant.elaborationTime}
+            />
+            <label htmlFor="quote-critical-material">Material crítico</label>
+            <input
+              type="text"
+              id="quote-critical-material"
+              placeholder="Opcional"
+              defaultValue={editingVariant.criticalMaterial}
+            />
+            <div className="cotizador-quote-actions">
+              <button type="button" onClick={() => dispatch({ type: 'SET_EDITING_VARIANT', payload: null })}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const price = document.getElementById('quote-price')?.value;
+                  const time = document.getElementById('quote-time')?.value;
+                  const criticalMaterial = document.getElementById('quote-critical-material')?.value;
+                  handleQuoteVariant(
+                    editingVariant.projectId,
+                    editingVariant.id,
+                    price,
+                    time,
+                    criticalMaterial
+                  );
+                }}
+              >
+                Guardar
+              </button>
+            </div>
           </div>
         </div>
       )}

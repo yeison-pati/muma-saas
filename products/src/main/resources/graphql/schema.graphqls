@@ -14,8 +14,6 @@ type Product {
   id: ID!
   code: String!
   name: String!
-  image: String
-  model: String
   category: String
   subcategory: String
   space: String
@@ -49,8 +47,6 @@ type Base {
   id: ID!
   code: String!
   name: String!
-  image: String
-  model: String
   category: String
   subcategory: String
   space: String
@@ -63,6 +59,8 @@ type Variant {
   sapRef: String
   sapCode: String
   status: String
+  image: String
+  model: String
   components: [Component!]!
 }
 
@@ -94,6 +92,9 @@ input CreateBaseInput {
 
 input CreateBaseInitialVariantInput {
   sapRef: String
+  "Claves S3 u otro identificador de archivo ya subido (misma convención que createVariant)"
+  image: String!
+  model: String!
   components: [CreateBaseInitialComponentInput!]!
 }
 
@@ -108,8 +109,6 @@ input CreateBaseInitialComponentInput {
 input UpdateBaseInput {
   id: ID!
   name: String
-  image: String
-  model: String
   category: String
   subcategory: String
   space: String
@@ -120,12 +119,16 @@ input UpdateBaseInput {
 input CreateVariantInput {
   baseId: ID!
   sapRef: String
+  image: String!
+  model: String!
   components: [CreateBaseInitialComponentInput!]
 }
 
 input UpdateVariantInput {
   id: ID!
   sapRef: String
+  image: String
+  model: String
   components: [CreateBaseInitialComponentInput!]
 }
 

@@ -177,6 +177,22 @@
   border-radius: 6px;
 }
 
+.crear-variant-media {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 12px;
+  background: var(--color-bg, #f5f5f5);
+  border-radius: 8px;
+}
+
+.crear-variant-media label span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
 /* Componentes */
 .crear-components-label {
   font-size: 0.8rem;
@@ -304,9 +320,29 @@
 }
 
 .crear-message {
-  color: var(--color-primary);
   margin: 0;
   font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.crear-message--error {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--color-danger-bg, #fef2f2);
+  border: 1px solid var(--color-danger-border, #fecaca);
+  color: var(--color-danger-text, #991b1b) !important;
+}
+
+.crear-message--success {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--color-success-bg, #ecfdf5);
+  border: 1px solid var(--color-success-border, #a7f3d0);
+  color: var(--color-success-text, #065f46) !important;
 }
 
 .crear-form button[type="submit"] {
@@ -331,6 +367,17 @@
 }
 
 @media (max-width: 768px) {
+  .crear-page {
+    padding: 16px;
+    overflow-x: clip;
+  }
+
+  .crear-form {
+    padding: 18px 16px;
+    gap: 20px;
+    border-radius: 10px;
+  }
+
   .crear-form-fields {
     grid-template-columns: 1fr;
   }
@@ -339,7 +386,55 @@
     grid-template-columns: 1fr;
   }
 
+  .crear-variant-section {
+    padding: 14px 12px;
+  }
+
+  .crear-variant-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .crear-remove-variant {
+    align-self: flex-end;
+  }
+
+  /* Componentes: una columna legible, targets táctiles */
   .crear-component-row {
-    grid-template-columns: 1fr 1fr 1fr auto;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+    background: var(--color-bg);
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+  }
+
+  .crear-component-row button[type='button'] {
+    width: 100%;
+    min-height: 44px;
+    order: 10;
+  }
+
+  .crear-file-wrap input[type='file'] {
+    max-width: 100%;
+  }
+
+  .crear-submit-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .crear-form button[type='submit'] {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .crear-add-variant {
+    width: 100%;
+    box-sizing: border-box;
   }
 }

@@ -23,15 +23,29 @@ export const ProductsProvider = ({ children }) => {
         setProducts([]);
         return;
       }
-      const keys = bases.map((b) => b.image).filter(Boolean);
+      const imageKeys = [
+        ...new Set(
+          bases.flatMap((b) =>
+            (b.variants || []).map((v) => v.image).filter(Boolean)
+          )
+        ),
+      ];
       const urlMap =
-        keys.length > 0
-          ? (await getMediaUrls(keys, 'image')).data || {}
-          : {};
-      const final = bases.map((b) => ({
-        ...b,
-        fullUrl: urlMap[b.image] || null,
-      }));
+        imageKeys.length > 0 ? (await getMediaUrls(imageKeys, 'image')).data || {} : {};
+
+      const final = bases.map((b) => {
+        const variants = (b.variants || []).map((v) => ({
+          ...v,
+          fullUrl: v.image ? urlMap[v.image] || null : null,
+        }));
+        const fullUrl =
+          variants[0]?.fullUrl || variants.find((v) => v.fullUrl)?.fullUrl || null;
+        return {
+          ...b,
+          variants,
+          fullUrl,
+        };
+      });
       setProducts(final);
     } catch (e) {
       console.error('Products load', e);

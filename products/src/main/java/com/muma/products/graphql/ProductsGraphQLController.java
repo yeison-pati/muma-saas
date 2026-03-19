@@ -42,8 +42,6 @@ public class ProductsGraphQLController {
                             base.getId(),
                             base.getCode(),
                             base.getName(),
-                            base.getImage(),
-                            base.getModel(),
                             base.getCategory(),
                             base.getSubcategory(),
                             base.getSpace(),
@@ -116,8 +114,6 @@ public class ProductsGraphQLController {
     public record CreateBaseGraphQLInput(
             String code,
             String name,
-            String image,
-            String model,
             String category,
             String subcategory,
             String space,
@@ -130,6 +126,8 @@ public class ProductsGraphQLController {
 
     public record CreateBaseInitialVariantGraphQLInput(
             String sapRef,
+            String image,
+            String model,
             List<CreateBaseInitialComponentGraphQLInput> components) {
     }
 
@@ -144,8 +142,6 @@ public class ProductsGraphQLController {
     public record UpdateBaseGraphQLInput(
             String id,
             String name,
-            String image,
-            String model,
             String category,
             String subcategory,
             String space,
@@ -156,12 +152,16 @@ public class ProductsGraphQLController {
     public record CreateVariantGraphQLInput(
             String baseId,
             String sapRef,
+            String image,
+            String model,
             List<CreateBaseInitialComponentGraphQLInput> components) {
     }
 
     public record UpdateVariantGraphQLInput(
             String id,
             String sapRef,
+            String image,
+            String model,
             List<CreateBaseInitialComponentGraphQLInput> components) {
     }
 
@@ -186,8 +186,6 @@ public class ProductsGraphQLController {
             java.util.UUID id,
             String code,
             String name,
-            String image,
-            String model,
             String category,
             String subcategory,
             String space,
@@ -209,8 +207,6 @@ public class ProductsGraphQLController {
             return new com.muma.products.dtos.CreateBaseInput(
                     input.code(),
                     input.name(),
-                    input.image(),
-                    input.model(),
                     input.category(),
                     input.subcategory(),
                     input.space(),
@@ -230,7 +226,8 @@ public class ProductsGraphQLController {
                                     .map(InputMapper::toCreateBaseInitialComponentInput)
                                     .filter(Objects::nonNull)
                                     .collect(Collectors.toList());
-            return new com.muma.products.dtos.CreateBaseInitialVariantInput(in.sapRef(), components);
+            return new com.muma.products.dtos.CreateBaseInitialVariantInput(
+                    in.sapRef(), in.image(), in.model(), components);
         }
 
         static com.muma.products.dtos.CreateBaseInitialComponentInput toCreateBaseInitialComponentInput(
@@ -249,8 +246,6 @@ public class ProductsGraphQLController {
             return new com.muma.products.dtos.UpdateBaseInput(
                     UUID.fromString(input.id()),
                     input.name(),
-                    input.image(),
-                    input.model(),
                     input.category(),
                     input.subcategory(),
                     input.space(),
@@ -269,6 +264,8 @@ public class ProductsGraphQLController {
             return new com.muma.products.dtos.CreateVariantInput(
                     UUID.fromString(input.baseId()),
                     input.sapRef(),
+                    input.image(),
+                    input.model(),
                     components);
         }
 
@@ -283,6 +280,8 @@ public class ProductsGraphQLController {
             return new com.muma.products.dtos.UpdateVariantInput(
                     UUID.fromString(input.id()),
                     input.sapRef(),
+                    input.image(),
+                    input.model(),
                     components);
         }
 

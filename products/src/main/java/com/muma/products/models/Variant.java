@@ -48,6 +48,12 @@ public class Variant {
 
     private String status;
 
+    /** Clave MinIO de imagen de esta variante (color / acabado). */
+    private String image;
+
+    /** Clave MinIO de modelo 3D/CAD (GLB, GLTF, DWG, etc.). */
+    private String model;
+
     @OneToMany(mappedBy = "variant", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @BatchSize(size = 32)
     @Builder.Default

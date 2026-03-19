@@ -1,11 +1,31 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useProductsService } from '../../hooks/useProductsService';
 import { useUser } from '../../context/UserContext';
 import { useProducts } from '../../context/ProductsContext';
 import { uploadFile } from '../../api/documentService';
+import { toUpperFormValue } from '../../utils/formText';
+import { graphqlErrorUserMessage } from '../../utils/graphqlErrorUserMessage';
 import CrearFormFields from './CrearFormFields';
 import CrearVariantsSection from './CrearVariantsSection';
+import CrearVariantModal from './CrearVariantModal';
 import './Crear.css';
+
+const emptyComponent = () => ({
+  componentId: null,
+  componentName: '',
+  componentSapRef: '',
+  componentSapCode: '',
+  componentValue: '',
+});
+
+const emptyVariant = () => ({
+  sapRef: '',
+  imageFile: null,
+  modelFile: null,
+  components: [emptyComponent()],
+});
+
+const UPPER_FORM = new Set(['code', 'name', 'category', 'subcategory', 'space', 'line', 'baseMaterial']);
 
 export default function DisenadorCrear() {
   const productsService = useProductsService();
@@ -20,15 +40,13 @@ export default function DisenadorCrear() {
     line: '',
     baseMaterial: '',
   });
-  const [imageFile, setImageFile] = useState(null);
-  const [modelFile, setModelFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [initialVariants, setInitialVariants] = useState([
-    { sapRef: '', components: [{ componentId: null, componentName: '', componentSapRef: '', componentSapCode: '', componentValue: '' }] },
-  ]);
+  const [initialVariants, setInitialVariants] = useState([]);
+  const [variantModal, setVariantModal] = useState(null);
+  const [variantDraft, setVariantDraft] = useState(null);
 
-  const { componentOptions, componentValuesByRef, allComponentValues } = (() => {
+  const { componentOptions, componentValuesByRef, allComponentValues } = useMemo(() => {
     const byId = new Map();
     const valuesByRef = {};
     const allValues = new Set();
@@ -36,7 +54,12 @@ export default function DisenadorCrear() {
       for (const v of p.variants || []) {
         for (const c of v.components || []) {
           if (c?.id) {
-            byId.set(c.id, { id: c.id, label: c.name || c.sapRef || c.id, sapRef: c.sapRef, sapCode: c.sapCode });
+            byId.set(c.id, {
+              id: c.id,
+              label: c.name || c.sapRef || c.id,
+              sapRef: c.sapRef,
+              sapCode: c.sapCode,
+            });
             const ref = c.sapRef || c.id;
             if (!valuesByRef[ref]) valuesByRef[ref] = new Set();
             if (c.value != null && String(c.value).trim()) {
@@ -55,7 +78,7 @@ export default function DisenadorCrear() {
       ),
       allComponentValues: [...allValues].sort(),
     };
-  })();
+  }, [products]);
 
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))].sort();
   const subcategories = form.category
@@ -71,111 +94,67 @@ export default function DisenadorCrear() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const v = UPPER_FORM.has(name) ? toUpperFormValue(value) : value;
+    setForm((prev) => ({ ...prev, [name]: v }));
   };
 
-  const handleVariantChange = (variantIdx, field, value) => {
-    setInitialVariants((prev) =>
-      prev.map((v, i) => (i === variantIdx ? { ...v, [field]: value } : v))
+  const openVariantNew = () => {
+    setMessage('');
+    setVariantDraft(emptyVariant());
+    setVariantModal({ mode: 'new' });
+  };
+
+  const openVariantEdit = (index) => {
+    setMessage('');
+    const v = initialVariants[index];
+    if (!v) return;
+    setVariantDraft({
+      ...v,
+      components: (v.components || []).map((c) => ({ ...c })),
+    });
+    setVariantModal({ mode: 'edit', index });
+  };
+
+  const closeVariantModal = () => {
+    setVariantModal(null);
+    setVariantDraft(null);
+  };
+
+  const confirmVariantModal = () => {
+    const d = variantDraft;
+    if (!d || !variantModal) return;
+
+    const componentsFiltered = d.components.filter(
+      (c) => c.componentId || c.componentSapRef?.trim() || c.componentSapCode?.trim()
     );
-  };
-
-  const handleComponentChange = (variantIdx, compIdx, field, value) => {
-    setInitialVariants((prev) =>
-      prev.map((v, i) =>
-        i === variantIdx
-          ? {
-              ...v,
-              components: v.components.map((c, j) =>
-                j === compIdx ? { ...c, [field]: value } : c
-              ),
-            }
-          : v
-      )
-    );
-  };
-
-  const handleComponentSapChange = (variantIdx, compIdx, value) => {
-    setInitialVariants((prev) =>
-      prev.map((v, i) =>
-        i === variantIdx
-          ? {
-              ...v,
-              components: v.components.map((c, j) =>
-                j === compIdx ? { ...c, componentSapRef: value, componentSapCode: value } : c
-              ),
-            }
-          : v
-      )
-    );
-  };
-
-  const handleComponentSelect = (variantIdx, compIdx, val) => {
-    const found = componentOptions.find((o) => o.label === val);
-    if (found) {
-      setInitialVariants((prev) =>
-        prev.map((v, i) =>
-          i === variantIdx
-            ? {
-                ...v,
-                components: v.components.map((c, j) =>
-                  j === compIdx
-                    ? {
-                        ...c,
-                        componentId: found.id,
-                        componentName: '',
-                        componentSapRef: found.sapRef ?? '',
-                        componentSapCode: found.sapCode ?? found.sapRef ?? '',
-                      }
-                    : c
-                ),
-              }
-            : v
-        )
-      );
-    } else {
-      setInitialVariants((prev) =>
-        prev.map((v, i) =>
-          i === variantIdx
-            ? {
-                ...v,
-                components: v.components.map((c, j) =>
-                  j === compIdx
-                    ? { ...c, componentId: null, componentName: (val || '').trim(), componentSapRef: '', componentSapCode: '' }
-                    : c
-                ),
-              }
-            : v
-        )
-      );
+    if (componentsFiltered.length === 0) {
+      setMessage('La variante debe tener al menos un componente con SAP o existente.');
+      return;
     }
-  };
 
-  const addComponent = (variantIdx) => {
-    setInitialVariants((prev) =>
-      prev.map((v, i) =>
-        i === variantIdx
-          ? { ...v, components: [...v.components, { componentId: null, componentName: '', componentSapRef: '', componentSapCode: '', componentValue: '' }] }
-          : v
-      )
+    const withNameNoSap = d.components.some(
+      (c) =>
+        !c.componentId &&
+        c.componentName?.trim() &&
+        !(c.componentSapRef?.trim() || c.componentSapCode?.trim())
     );
-  };
+    if (withNameNoSap) {
+      setMessage('Los componentes nuevos requieren Código SAP (nombre e SAP son independientes).');
+      return;
+    }
 
-  const removeComponent = (variantIdx, compIdx) => {
-    setInitialVariants((prev) =>
-      prev.map((v, i) =>
-        i === variantIdx
-          ? { ...v, components: v.components.filter((_, j) => j !== compIdx) }
-          : v
-      )
-    );
-  };
+    if (!d.imageFile || !d.modelFile) {
+      setMessage('Imagen y modelo son obligatorios para cada variante.');
+      return;
+    }
 
-  const addVariant = () => {
-    setInitialVariants((prev) => [
-      ...prev,
-      { sapRef: '', components: [{ componentId: null, componentName: '', componentSapRef: '', componentSapCode: '', componentValue: '' }] },
-    ]);
+    if (variantModal.mode === 'new') {
+      setInitialVariants((prev) => [...prev, d]);
+    } else {
+      const idx = variantModal.index;
+      setInitialVariants((prev) => prev.map((v, i) => (i === idx ? d : v)));
+    }
+    closeVariantModal();
   };
 
   const removeVariant = (variantIdx) => {
@@ -187,21 +166,32 @@ export default function DisenadorCrear() {
     setMessage('');
     setSaving(true);
     try {
-      let imageKey = null;
-      let modelKey = null;
-
-      if (imageFile) {
-        const res = await uploadFile(imageFile, 'image');
-        imageKey = res.key;
+      const baseFieldsOk =
+        form.code?.trim() &&
+        form.name?.trim() &&
+        form.category?.trim() &&
+        form.subcategory?.trim() &&
+        form.space?.trim() &&
+        form.line?.trim() &&
+        form.baseMaterial?.trim();
+      if (!baseFieldsOk) {
+        setMessage('Complete todos los campos de la base (incl. categoría, espacio, línea, materia).');
+        setSaving(false);
+        return;
       }
-      if (modelFile) {
-        const res = await uploadFile(modelFile, 'model');
-        modelKey = res.key;
+
+      if (initialVariants.length === 0) {
+        setMessage('Agregá al menos una variante (botón «Crear variante»).');
+        setSaving(false);
+        return;
       }
 
       const withNameNoSap = initialVariants.some((v) =>
         v.components.some(
-          (c) => !c.componentId && (c.componentName?.trim()) && !(c.componentSapRef?.trim() || c.componentSapCode?.trim())
+          (c) =>
+            !c.componentId &&
+            c.componentName?.trim() &&
+            !(c.componentSapRef?.trim() || c.componentSapCode?.trim())
         )
       );
       if (withNameNoSap) {
@@ -210,51 +200,71 @@ export default function DisenadorCrear() {
         return;
       }
 
-      const variantsToSend = initialVariants
-        .map((v) => {
-          const components = v.components.filter(
-            (c) => c.componentId || c.componentSapRef?.trim() || c.componentSapCode?.trim()
-          );
-          if (components.length === 0) return null;
-          return {
-            sapRef: v.sapRef?.trim() || null,
-            components: components.map((c) => ({
-              componentId: c.componentId || null,
-              componentName: c.componentName?.trim() || null,
-              componentSapRef: c.componentSapRef?.trim() || null,
-              componentSapCode: c.componentSapCode?.trim() || null,
-              componentValue: c.componentValue?.trim() || null,
-            })),
-          };
-        })
-        .filter(Boolean);
+      for (let i = 0; i < initialVariants.length; i++) {
+        const v = initialVariants[i];
+        if (!v.imageFile || !v.modelFile) {
+          setMessage(`Variante ${i + 1}: suba imagen y modelo obligatorios.`);
+          setSaving(false);
+          return;
+        }
+      }
 
-      if (variantsToSend.length === 0) {
-        setMessage('Debe agregar al menos una variante con un componente');
-        setSaving(false);
-        return;
+      const variantsToSend = [];
+      for (const v of initialVariants) {
+        const components = v.components.filter(
+          (c) => c.componentId || c.componentSapRef?.trim() || c.componentSapCode?.trim()
+        );
+        if (components.length === 0) {
+          setMessage('Cada variante debe tener al menos un componente.');
+          setSaving(false);
+          return;
+        }
+        const imgRes = await uploadFile(v.imageFile, 'image');
+        const modRes = await uploadFile(v.modelFile, 'model');
+        variantsToSend.push({
+          sapRef: v.sapRef?.trim() || null,
+          image: imgRes.key,
+          model: modRes.key,
+          components: components.map((c) => ({
+            componentId: c.componentId || null,
+            componentName: c.componentName?.trim() || null,
+            componentSapRef: c.componentSapRef?.trim() || null,
+            componentSapCode: c.componentSapCode?.trim() || null,
+            componentValue: c.componentValue?.trim() || null,
+          })),
+        });
       }
 
       await productsService.createBase({
         ...form,
-        image: imageKey,
-        model: modelKey,
         creatorId: user?.id,
         creatorName: user?.name,
         initialVariants: variantsToSend,
       });
       setMessage('Base creada correctamente');
-      setForm({ code: '', name: '', category: '', subcategory: '', space: '', line: '', baseMaterial: '' });
-      setInitialVariants([{ sapRef: '', components: [{ componentId: null, componentName: '', componentSapRef: '', componentSapCode: '', componentValue: '' }] }]);
-      setImageFile(null);
-      setModelFile(null);
+      setForm({
+        code: '',
+        name: '',
+        category: '',
+        subcategory: '',
+        space: '',
+        line: '',
+        baseMaterial: '',
+      });
+      setInitialVariants([]);
       reload();
     } catch (err) {
-      setMessage(err?.message || 'Error al crear');
+      const { short } = graphqlErrorUserMessage(err);
+      setMessage(short || 'Error al crear');
     } finally {
       setSaving(false);
     }
   };
+
+  const variantModalTitle =
+    variantModal?.mode === 'edit'
+      ? `Editar variante ${(variantModal.index ?? 0) + 1}`
+      : 'Nueva variante';
 
   return (
     <div className="crear-page">
@@ -262,8 +272,6 @@ export default function DisenadorCrear() {
         <CrearFormFields
           form={form}
           handleChange={handleChange}
-          setImageFile={setImageFile}
-          setModelFile={setModelFile}
           categories={categories}
           subcategories={subcategories}
           spaces={spaces}
@@ -273,26 +281,40 @@ export default function DisenadorCrear() {
 
         <CrearVariantsSection
           initialVariants={initialVariants}
-          componentOptions={componentOptions}
-          componentValuesByRef={componentValuesByRef}
-          allComponentValues={allComponentValues}
-          handleVariantChange={handleVariantChange}
-          handleComponentChange={handleComponentChange}
-          handleComponentSapChange={handleComponentSapChange}
-          handleComponentSelect={handleComponentSelect}
-          addComponent={addComponent}
-          removeComponent={removeComponent}
-          addVariant={addVariant}
-          removeVariant={removeVariant}
+          onOpenNew={openVariantNew}
+          onOpenEdit={openVariantEdit}
+          onRemoveVariant={removeVariant}
         />
 
         <div className="crear-submit-row">
-          {message && <p className="crear-message">{message}</p>}
+          {message && (
+            <p
+              className={`crear-message ${
+                message.includes('correctamente') ? 'crear-message--success' : 'crear-message--error'
+              }`}
+            >
+              {message}
+            </p>
+          )}
           <button type="submit" disabled={saving}>
             {saving ? 'Guardando...' : 'Crear base'}
           </button>
         </div>
       </form>
+
+      <CrearVariantModal
+        open={Boolean(variantModal && variantDraft)}
+        title={variantModalTitle}
+        draft={variantDraft}
+        setDraft={setVariantDraft}
+        onClose={closeVariantModal}
+        onConfirm={confirmVariantModal}
+        saving={saving}
+        confirmLabel="Guardar variante"
+        componentOptions={componentOptions}
+        componentValuesByRef={componentValuesByRef}
+        allComponentValues={allComponentValues}
+      />
     </div>
   );
 }

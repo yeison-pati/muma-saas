@@ -30,4 +30,57 @@
   transform: translateX(-50%);
   font-weight: 600;
   font-size: 1rem;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Móvil: logo izquierda, título centro, hamburguesa derecha */
+.navbar-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: white;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.navbar-hamburger:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.navbar-hamburger-bar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+@media (max-width: 767px) {
+  .navbar-hamburger {
+    display: flex;
+  }
+
+  .navbar {
+    padding: 0 12px;
+  }
+
+  .navbar-title {
+    font-size: 0.9rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .navbar-hamburger {
+    display: none;
+  }
 }

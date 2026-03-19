@@ -1,108 +1,58 @@
-import AutocompleteInput from '../../components/AutocompleteInput';
+import './CrearVariantsSection.css';
 
 export default function CrearVariantsSection({
   initialVariants,
-  componentOptions,
-  componentValuesByRef,
-  allComponentValues,
-  handleVariantChange,
-  handleComponentChange,
-  handleComponentSapChange,
-  handleComponentSelect,
-  addComponent,
-  removeComponent,
-  addVariant,
-  removeVariant,
+  onOpenNew,
+  onOpenEdit,
+  onRemoveVariant,
 }) {
   return (
     <fieldset className="crear-variant-section">
-      <legend>Variantes (mínimo 1 variante con 1 componente)</legend>
-      <div className="crear-variants-grid">
-        {initialVariants.map((variant, vIdx) => (
-          <div key={vIdx} className="crear-variant-block">
-            <div className="crear-variant-header">
-              <span className="crear-variant-label">Variante {vIdx + 1}</span>
-              <button
-                type="button"
-                onClick={() => removeVariant(vIdx)}
-                disabled={initialVariants.length <= 1}
-                className="crear-remove-variant"
-                title="Quitar variante"
-              >
-                Eliminar
-              </button>
-            </div>
-            <div className="crear-variant-sap">
-              <label>
-                <span>SAP Ref (opcional)</span>
-                <input
-                  value={variant.sapRef}
-                  onChange={(e) => handleVariantChange(vIdx, 'sapRef', e.target.value)}
-                  placeholder="Ej: BASE-V1"
-                />
-              </label>
-            </div>
-            <div>
-              <div className="crear-components-label">Componentes</div>
-              {variant.components.map((comp, cIdx) => {
-                const compLabel = comp.componentId
-                  ? (componentOptions.find((o) => o.id === comp.componentId)?.label ?? '')
-                  : (comp.componentName ?? comp.componentSapRef ?? '');
-                const handleCompSelect = (val) => handleComponentSelect(vIdx, cIdx, val);
-                const refForValues = comp.componentId || comp.componentSapRef || comp.componentName;
-                return (
-                  <div key={cIdx} className="crear-component-row">
-                    <AutocompleteInput
-                      className="crear-component-autocomplete"
-                      value={compLabel}
-                      onChange={(e) => handleCompSelect(e.target.value)}
-                      options={componentOptions.map((o) => o.label)}
-                      placeholder="Nombre (seleccione existente o escriba nuevo)"
-                    />
-                    <input
-                      type="text"
-                      className="crear-component-sap"
-                      value={comp.componentSapCode ?? comp.componentSapRef ?? ''}
-                      onChange={(e) => handleComponentSapChange(vIdx, cIdx, e.target.value)}
-                      placeholder="Código SAP (independiente)"
-                      title="Código SAP, independiente del nombre"
-                    />
-                    <AutocompleteInput
-                      className="crear-component-autocomplete"
-                      value={comp.componentValue ?? ''}
-                      onChange={(e) => handleComponentChange(vIdx, cIdx, 'componentValue', e.target.value)}
-                      options={
-                        refForValues
-                          ? (componentValuesByRef[refForValues] || allComponentValues)
-                          : allComponentValues
-                      }
-                      placeholder="Valor (ej: Rojo)"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeComponent(vIdx, cIdx)}
-                      disabled={variant.components.length <= 1}
-                      title="Quitar componente"
-                    >
-                      −
-                    </button>
-                  </div>
-                );
-              })}
-              <button
-                type="button"
-                onClick={() => addComponent(vIdx)}
-                className="crear-add-component"
-              >
-                + Agregar componente
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-      <button type="button" onClick={addVariant} className="crear-add-variant">
-        + Agregar variante
-      </button>
+      <legend>Variantes</legend>
+      {initialVariants.length === 0 ? (
+        <div className="crear-variants-empty">
+          <p>No hay variantes todavía. Creá la primera para esta base.</p>
+          <button type="button" className="crear-variants-primary" onClick={onOpenNew}>
+            + Crear variante
+          </button>
+        </div>
+      ) : (
+        <>
+          <ul className="crear-variant-list">
+            {initialVariants.map((variant, vIdx) => (
+              <li key={vIdx} className="crear-variant-list-item">
+                <div className="crear-variant-list-main">
+                  <strong className="crear-variant-list-title">Variante {vIdx + 1}</strong>
+                  <span className="crear-variant-list-meta">
+                    {variant.sapRef?.trim() ? `SAP: ${variant.sapRef}` : 'Sin SAP'}
+                  </span>
+                  <span className="crear-variant-list-meta">
+                    {(variant.components || []).filter(
+                      (c) => c.componentId || c.componentSapRef?.trim() || c.componentSapCode?.trim()
+                    ).length}{' '}
+                    componente(s)
+                  </span>
+                </div>
+                <div className="crear-variant-list-actions">
+                  <button type="button" onClick={() => onOpenEdit(vIdx)}>
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className="crear-variant-list-remove"
+                    onClick={() => onRemoveVariant(vIdx)}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <button type="button" className="crear-add-variant" onClick={onOpenNew}>
+            + Agregar variante
+          </button>
+        </>
+      )}
     </fieldset>
   );
 }

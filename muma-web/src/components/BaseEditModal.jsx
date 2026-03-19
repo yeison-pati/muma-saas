@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useProductsService } from '../hooks/useProductsService';
 import { useProducts } from '../context/ProductsContext';
 import { uploadFile } from '../api/documentService';
+import { toUpperFormValue } from '../utils/formText';
 import AutocompleteInput from './AutocompleteInput';
 import './BaseEditModal.css';
 
@@ -18,13 +19,15 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
     line: product?.line ?? '',
     baseMaterial: product?.baseMaterial ?? '',
   });
-  const [imageFile, setImageFile] = useState(null);
-  const [modelFile, setModelFile] = useState(null);
   const [variants, setVariants] = useState(
     () =>
       product?.variants?.map((v) => ({
         id: v.id,
         sapRef: v.sapRef ?? '',
+        image: v.image ?? '',
+        model: v.model ?? '',
+        imageFile: null,
+        modelFile: null,
         components: (v.components || []).map((c) => ({
           id: c.id,
           name: c.name ?? '',
@@ -41,6 +44,10 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
         product.variants.map((v) => ({
           id: v.id,
           sapRef: v.sapRef ?? '',
+          image: v.image ?? '',
+          model: v.model ?? '',
+          imageFile: null,
+          modelFile: null,
           components: (v.components || []).map((c) => ({
             id: c.id,
             name: c.name ?? '',
@@ -52,12 +59,8 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
       );
     }
   }, [product?.id, product?.variants]);
-  const [editingVariantIdx, setEditingVariantIdx] = useState(null);
-  const [addingVariant, setAddingVariant] = useState(false);
-  const [newVariant, setNewVariant] = useState({
-    sapRef: '',
-    components: [{ componentId: null, componentName: '', componentSapRef: '', componentSapCode: '', componentValue: '' }],
-  });
+  const [variantDialog, setVariantDialog] = useState(null);
+  const [variantDraft, setVariantDraft] = useState(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -73,30 +76,27 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
     : [...new Set(products.map((p) => p.line).filter(Boolean))].sort();
   const baseMaterials = [...new Set(products.map((p) => p.baseMaterial).filter(Boolean))].sort();
 
+  const UPPER_FORM = new Set(['name', 'category', 'subcategory', 'space', 'line', 'baseMaterial']);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const v = UPPER_FORM.has(name) ? toUpperFormValue(value) : value;
+    setForm((prev) => ({ ...prev, [name]: v }));
+  };
+
+  const handleVariantMedia = (vIdx, field, file) => {
+    setVariants((prev) =>
+      prev.map((x, i) => (i === vIdx ? { ...x, [field]: file } : x))
+    );
   };
 
   const handleSaveBase = async () => {
     setMessage('');
     setSaving(true);
     try {
-      let imageKey = product?.image;
-      let modelKey = product?.model;
-      if (imageFile) {
-        const res = await uploadFile(imageFile, 'image');
-        imageKey = res.key;
-      }
-      if (modelFile) {
-        const res = await uploadFile(modelFile, 'model');
-        modelKey = res.key;
-      }
       await productsService.updateBase({
         id: product.id,
         name: form.name,
-        image: imageKey,
-        model: modelKey,
         category: form.category || null,
         subcategory: form.subcategory || null,
         space: form.space || null,
@@ -127,20 +127,80 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
     }
   };
 
-  const handleAddVariant = () => {
-    const comps = newVariant.components.filter(
-      (c) => c.componentId || (c.componentName ?? '').trim() || (c.componentSapRef ?? '').trim() || (c.componentSapCode ?? '').trim()
+  const closeVariantDialog = () => {
+    setVariantDialog(null);
+    setVariantDraft(null);
+  };
+
+  const openVariantDialogNew = () => {
+    setMessage('');
+    setVariantDraft({
+      sapRef: '',
+      imageFile: null,
+      modelFile: null,
+      components: [
+        {
+          componentId: null,
+          componentName: '',
+          componentSapRef: '',
+          componentSapCode: '',
+          componentValue: '',
+        },
+      ],
+    });
+    setVariantDialog({ mode: 'new' });
+  };
+
+  const openVariantDialogEdit = (idx) => {
+    setMessage('');
+    const v = variants[idx];
+    if (!v) return;
+    setVariantDraft({
+      id: v.id,
+      sapRef: v.sapRef ?? '',
+      image: v.image ?? '',
+      model: v.model ?? '',
+      imageFile: null,
+      modelFile: null,
+      components: (v.components || []).map((c) => ({
+        id: c.id,
+        name: c.name ?? '',
+        value: c.value ?? '',
+        sapRef: c.sapRef ?? '',
+        sapCode: c.sapCode ?? '',
+      })),
+    });
+    setVariantDialog({ mode: 'edit', idx });
+  };
+
+  const saveNewVariantFromModal = async () => {
+    const d = variantDraft;
+    if (!d || variantDialog?.mode !== 'new') return;
+    const comps = d.components.filter(
+      (c) =>
+        c.componentId ||
+        (c.componentName ?? '').trim() ||
+        (c.componentSapRef ?? '').trim() ||
+        (c.componentSapCode ?? '').trim()
     );
     if (comps.length === 0) {
       setMessage('La variante debe tener al menos un componente');
       return;
     }
+    if (!d.imageFile || !d.modelFile) {
+      setMessage('La nueva variante requiere imagen y modelo');
+      return;
+    }
     setSaving(true);
     setMessage('');
-    productsService
-      .addVariantToBase({
+    try {
+      const imgRes = await uploadFile(d.imageFile, 'image');
+      const modRes = await uploadFile(d.modelFile, 'model');
+      const v = await productsService.addVariantToBase({
         baseId: product.id,
-        sapRef: newVariant.sapRef?.trim() || null,
+        sapRef: d.sapRef?.trim() || null,
+        image: imgRes.key,
+        model: modRes.key,
         components: comps.map((c) => ({
           componentId: c.componentId || null,
           componentName: c.componentName?.trim() || null,
@@ -148,28 +208,41 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
           componentSapCode: c.componentSapCode?.trim() || null,
           componentValue: c.componentValue?.trim() || null,
         })),
-      })
-      .then((v) => {
-        setVariants((prev) => [
-          ...prev,
-          {
-            id: v.id,
-            sapRef: v.sapRef ?? '',
-            components: (v.components || []).map((c) => ({ id: c.id, name: c.name, value: c.value })),
-          },
-        ]);
-        setAddingVariant(false);
-        setNewVariant({ sapRef: '', components: [{ componentId: null, componentName: '', componentSapRef: '', componentSapCode: '', componentValue: '' }] });
-        reload();
-      })
-      .catch((err) => setMessage(err?.message || 'Error al agregar variante'))
-      .finally(() => setSaving(false));
+      });
+      setVariants((prev) => [
+        ...prev,
+        {
+          id: v.id,
+          sapRef: v.sapRef ?? '',
+          image: v.image ?? '',
+          model: v.model ?? '',
+          imageFile: null,
+          modelFile: null,
+          components: (v.components || []).map((c) => ({
+            id: c.id,
+            name: c.name,
+            value: c.value,
+            sapRef: c.sapRef,
+            sapCode: c.sapCode,
+          })),
+        },
+      ]);
+      closeVariantDialog();
+      reload();
+    } catch (err) {
+      setMessage(err?.message || 'Error al agregar variante');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleUpdateVariant = async (vIdx) => {
-    const v = variants[vIdx];
-    const comps = v.components.filter(
-      (c) => c.id || (c.name ?? '').trim() || (c.sapCode ?? c.sapRef ?? '').trim() || (c.value ?? '').trim()
+  const saveEditVariantFromModal = async () => {
+    if (variantDialog?.mode !== 'edit') return;
+    const d = variantDraft;
+    if (!d?.id) return;
+    const comps = d.components.filter(
+      (c) =>
+        c.id || (c.name ?? '').trim() || (c.sapCode ?? c.sapRef ?? '').trim() || (c.value ?? '').trim()
     );
     if (comps.length === 0) {
       setMessage('La variante debe tener al menos un componente');
@@ -182,12 +255,28 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
       setMessage('Cada componente nuevo debe tener Título o Código SAP');
       return;
     }
+    let imageKey = d.image;
+    let modelKey = d.model;
+    if (d.imageFile) {
+      const res = await uploadFile(d.imageFile, 'image');
+      imageKey = res.key;
+    }
+    if (d.modelFile) {
+      const res = await uploadFile(d.modelFile, 'model');
+      modelKey = res.key;
+    }
+    if (!imageKey?.trim() || !modelKey?.trim()) {
+      setMessage('Cada variante debe tener imagen y modelo en sistema. Suba archivos nuevos si faltan.');
+      return;
+    }
     setSaving(true);
     setMessage('');
-    productsService
-      .updateVariant({
-        id: v.id,
-        sapRef: v.sapRef || null,
+    try {
+      await productsService.updateVariant({
+        id: d.id,
+        sapRef: d.sapRef || null,
+        image: imageKey,
+        model: modelKey,
         components: comps.map((c) => ({
           componentId: c.id || null,
           componentName: (c.name ?? c.componentName ?? '').trim() || null,
@@ -195,113 +284,193 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
           componentSapCode: (c.sapCode ?? c.componentSapCode ?? '').trim() || null,
           componentValue: (c.value ?? c.componentValue ?? '').trim() || null,
         })),
-      })
-      .then(() => {
-        setEditingVariantIdx(null);
-        reload();
-      })
-      .catch((err) => setMessage(err?.message || 'Error al actualizar'))
-      .finally(() => setSaving(false));
+      });
+      closeVariantDialog();
+      reload();
+    } catch (err) {
+      setMessage(err?.message || 'Error al actualizar');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDeleteVariant = async (vIdx) => {
     const v = variants[vIdx];
     if (!confirm(`¿Eliminar variante ${v.sapRef || v.baseCode || '—'}?`)) return;
+    if (variantDialog?.mode === 'edit' && variantDialog.idx === vIdx) {
+      closeVariantDialog();
+    }
     setSaving(true);
     setMessage('');
     productsService
       .deleteVariant(v.id)
       .then(() => {
         setVariants((prev) => prev.filter((_, i) => i !== vIdx));
-        setEditingVariantIdx(null);
         reload();
       })
       .catch((err) => setMessage(err?.message || 'Error al eliminar'))
       .finally(() => setSaving(false));
   };
 
-  const handleVariantChange = (vIdx, field, value) => {
-    setVariants((prev) =>
-      prev.map((v, i) => (i === vIdx ? { ...v, [field]: value } : v))
-    );
+  const patchEditDraft = (fn) => {
+    setVariantDraft((prev) => (prev && prev.id ? fn(prev) : prev));
   };
 
-  const handleVariantComponentChange = (vIdx, cIdx, field, value) => {
-    setVariants((prev) =>
-      prev.map((v, i) =>
-        i === vIdx
-          ? {
-              ...v,
-              components: v.components.map((c, j) =>
-                j === cIdx ? { ...c, [field]: value } : c
-              ),
-            }
-          : v
-      )
-    );
+  const editDraftSetSap = (value) => {
+    patchEditDraft((p) => ({ ...p, sapRef: toUpperFormValue(value) }));
   };
 
-  const handleVariantComponentSapChange = (vIdx, cIdx, value) => {
-    setVariants((prev) =>
-      prev.map((v, i) =>
-        i === vIdx
-          ? {
-              ...v,
-              components: v.components.map((c, j) =>
-                j === cIdx ? { ...c, sapRef: value, sapCode: value } : c
-              ),
-            }
-          : v
-      )
-    );
+  const editDraftSetFile = (field, file) => {
+    patchEditDraft((p) => ({ ...p, [field]: file }));
   };
 
-  const handleVariantComponentNameBlur = (vIdx, cIdx) => {
-    const c = variants[vIdx]?.components[cIdx];
-    if (!c?.name?.trim()) return;
+  const editDraftPatchComp = (cIdx, patch) => {
+    patchEditDraft((p) => ({
+      ...p,
+      components: p.components.map((c, i) => (i === cIdx ? { ...c, ...patch } : c)),
+    }));
+  };
+
+  const editDraftSapChange = (cIdx, value) => {
+    const u = toUpperFormValue(value);
+    patchEditDraft((p) => ({
+      ...p,
+      components: p.components.map((c, i) =>
+        i === cIdx ? { ...c, sapRef: u, sapCode: u } : c
+      ),
+    }));
+  };
+
+  const editDraftPatchCompNameValue = (cIdx, field, raw) => {
+    const v = field === 'name' || field === 'value' ? toUpperFormValue(raw) : raw;
+    editDraftPatchComp(cIdx, { [field]: v });
+  };
+
+  const blurEditDraftComponentName = (cIdx) => {
+    setVariantDraft((d) => {
+      if (!d?.id) return d;
+      const c = d.components[cIdx];
+      if (!(c?.name ?? '').trim()) return d;
+      const found = componentOptions.find(
+        (o) =>
+          (o.label || '').trim() === (c.name || '').trim() ||
+          (o.sapRef || '').trim() === (c.name || '').trim()
+      );
+      if (found && !c.id) {
+        return {
+          ...d,
+          components: d.components.map((comp, j) =>
+            j === cIdx
+              ? {
+                  ...comp,
+                  id: found.id,
+                  sapRef: found.sapRef ?? found.sapCode,
+                  sapCode: found.sapCode ?? found.sapRef,
+                }
+              : comp
+          ),
+        };
+      }
+      return d;
+    });
+  };
+
+  const editDraftAddComp = () => {
+    patchEditDraft((p) => ({
+      ...p,
+      components: [...p.components, { id: null, name: '', value: '', sapRef: '', sapCode: '' }],
+    }));
+  };
+
+  const editDraftRemoveComp = (cIdx) => {
+    patchEditDraft((p) => ({
+      ...p,
+      components: p.components.filter((_, j) => j !== cIdx),
+    }));
+  };
+
+  const patchNewDraft = (fn) => {
+    setVariantDraft((prev) => (prev && !prev.id ? fn(prev) : prev));
+  };
+
+  const newDraftSetSap = (value) => {
+    patchNewDraft((p) => ({ ...p, sapRef: toUpperFormValue(value) }));
+  };
+
+  const newDraftSetFile = (field, file) => {
+    patchNewDraft((p) => ({ ...p, [field]: file }));
+  };
+
+  const newDraftPatchComp = (cIdx, field, value) => {
+    const upperFields = new Set(['componentName', 'componentSapRef', 'componentSapCode', 'componentValue']);
+    const v = upperFields.has(field) ? toUpperFormValue(value) : value;
+    patchNewDraft((p) => ({
+      ...p,
+      components: p.components.map((c, i) => (i === cIdx ? { ...c, [field]: v } : c)),
+    }));
+  };
+
+  const newDraftSapChange = (cIdx, value) => {
+    const u = toUpperFormValue(value);
+    patchNewDraft((p) => ({
+      ...p,
+      components: p.components.map((c, i) =>
+        i === cIdx ? { ...c, componentSapRef: u, componentSapCode: u } : c
+      ),
+    }));
+  };
+
+  const newDraftComponentSelect = (cIdx, val) => {
     const found = componentOptions.find(
       (o) =>
-        (o.label || '').trim() === (c.name || '').trim() ||
-        (o.sapRef || '').trim() === (c.name || '').trim()
+        String(o.label || '').toLocaleUpperCase('es-419') ===
+        String(val || '').trim().toLocaleUpperCase('es-419')
     );
-    if (found && !c.id) {
-      setVariants((prev) =>
-        prev.map((v, i) =>
-          i === vIdx
-            ? {
-                ...v,
-                components: v.components.map((comp, j) =>
-                  j === cIdx
-                    ? { ...comp, id: found.id, sapRef: found.sapRef ?? found.sapCode, sapCode: found.sapCode ?? found.sapRef }
-                    : comp
-                ),
-              }
-            : v
-        )
-      );
-    }
+    patchNewDraft((p) => ({
+      ...p,
+      components: p.components.map((c, i) => {
+        if (i !== cIdx) return c;
+        if (found) {
+          return {
+            ...c,
+            componentId: found.id,
+            componentName: '',
+            componentSapRef: found.sapRef ?? '',
+            componentSapCode: found.sapCode ?? found.sapRef ?? '',
+          };
+        }
+        return {
+          ...c,
+          componentId: null,
+          componentName: toUpperFormValue(val || '').trim(),
+          componentSapRef: '',
+          componentSapCode: '',
+        };
+      }),
+    }));
   };
 
-  const addComponentToVariant = (vIdx) => {
-    setVariants((prev) =>
-      prev.map((v, i) =>
-        i === vIdx
-          ? { ...v, components: [...v.components, { id: null, name: '', value: '', sapRef: '', sapCode: '' }] }
-          : v
-      )
-    );
+  const newDraftAddComp = () => {
+    patchNewDraft((p) => ({
+      ...p,
+      components: [
+        ...p.components,
+        {
+          componentId: null,
+          componentName: '',
+          componentSapRef: '',
+          componentSapCode: '',
+          componentValue: '',
+        },
+      ],
+    }));
   };
 
-  const removeComponentFromVariant = (vIdx, cIdx) => {
-    setVariants((prev) =>
-      prev.map((v, i) =>
-        i === vIdx ? { ...v, components: v.components.filter((_, j) => j !== cIdx) } : v
-      )
-    );
-  };
-
-  const handleNewVariantChange = (field, value) => {
-    setNewVariant((prev) => ({ ...prev, [field]: value }));
+  const newDraftRemoveComp = (cIdx) => {
+    patchNewDraft((p) => ({
+      ...p,
+      components: p.components.filter((_, i) => i !== cIdx),
+    }));
   };
 
   const componentOptions = useMemo(() => {
@@ -316,72 +485,44 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
     return [...byId.values()].sort((a, b) => (a.label || '').localeCompare(b.label || ''));
   }, [products]);
 
-  const handleNewVariantComponentChange = (cIdx, field, value) => {
-    setNewVariant((prev) => ({
-      ...prev,
-      components: prev.components.map((c, i) =>
-        i === cIdx ? { ...c, [field]: value } : c
+  const { componentValuesByRef, allComponentValues } = useMemo(() => {
+    const valuesByRef = {};
+    const allValues = new Set();
+    products.forEach((p) => {
+      p.variants?.forEach((v) => {
+        v.components?.forEach((c) => {
+          const ref = c.sapRef || c.id;
+          if (ref) {
+            if (!valuesByRef[ref]) valuesByRef[ref] = new Set();
+            if (c.value != null && String(c.value).trim()) {
+              valuesByRef[ref].add(String(c.value).trim());
+              allValues.add(String(c.value).trim());
+            }
+          }
+        });
+      });
+    });
+    return {
+      componentValuesByRef: Object.fromEntries(
+        Object.entries(valuesByRef).map(([k, v]) => [k, [...v].sort()])
       ),
-    }));
-  };
-
-  const handleNewVariantComponentSapChange = (cIdx, value) => {
-    setNewVariant((prev) => ({
-      ...prev,
-      components: prev.components.map((c, i) =>
-        i === cIdx ? { ...c, componentSapRef: value, componentSapCode: value } : c
-      ),
-    }));
-  };
-
-  const handleNewVariantComponentSelect = (cIdx, val) => {
-    const found = componentOptions.find((o) => o.label === val);
-    if (found) {
-      setNewVariant((prev) => ({
-        ...prev,
-        components: prev.components.map((c, i) =>
-          i === cIdx
-            ? {
-                ...c,
-                componentId: found.id,
-                componentName: '',
-                componentSapRef: found.sapRef ?? '',
-                componentSapCode: found.sapCode ?? found.sapRef ?? '',
-              }
-            : c
-        ),
-      }));
-    } else {
-      setNewVariant((prev) => ({
-        ...prev,
-        components: prev.components.map((c, i) =>
-          i === cIdx
-            ? { ...c, componentId: null, componentName: (val || '').trim(), componentSapRef: '', componentSapCode: '' }
-            : c
-        ),
-      }));
-    }
-  };
-
-  const addNewVariantComponent = () => {
-    setNewVariant((prev) => ({
-      ...prev,
-      components: [...prev.components, { componentId: null, componentName: '', componentSapRef: '', componentSapCode: '', componentValue: '' }],
-    }));
-  };
-
-  const removeNewVariantComponent = (cIdx) => {
-    setNewVariant((prev) => ({
-      ...prev,
-      components: prev.components.filter((_, i) => i !== cIdx),
-    }));
-  };
+      allComponentValues: [...allValues].sort(),
+    };
+  }, [products]);
 
   return (
     <div
       className="base-edit-overlay"
       onClick={onClose}
-      onKeyDown={(e) => e.key === 'Escape' && onClose?.()}
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape') return;
+        if (variantDialog) {
+          e.preventDefault();
+          closeVariantDialog();
+        } else {
+          onClose?.();
+        }
+      }}
       role="button"
       tabIndex={0}
       aria-label="Cerrar"
@@ -432,7 +573,6 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
                   value={form.category}
                   onChange={handleChange}
                   options={categories}
-                  placeholder="Escribir o elegir..."
                 />
               </label>
               <label htmlFor="base-edit-subcategory">
@@ -443,7 +583,6 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
                   value={form.subcategory}
                   onChange={handleChange}
                   options={subcategories}
-                  placeholder="Escribir o elegir..."
                 />
               </label>
               <label htmlFor="base-edit-space">
@@ -454,7 +593,6 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
                   value={form.space}
                   onChange={handleChange}
                   options={spaces}
-                  placeholder="Escribir o elegir..."
                 />
               </label>
               <label htmlFor="base-edit-line">
@@ -465,7 +603,6 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
                   value={form.line}
                   onChange={handleChange}
                   options={lines}
-                  placeholder="Escribir o elegir..."
                 />
               </label>
               <label htmlFor="base-edit-baseMaterial">
@@ -476,25 +613,6 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
                   value={form.baseMaterial}
                   onChange={handleChange}
                   options={baseMaterials}
-                  placeholder="Escribir o elegir..."
-                />
-              </label>
-              <label htmlFor="base-edit-imagen">
-                Imagen (nueva)
-                <input
-                  id="base-edit-imagen"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                />
-              </label>
-              <label htmlFor="base-edit-modelo">
-                Modelo 3D (nuevo)
-                <input
-                  id="base-edit-modelo"
-                  type="file"
-                  accept=".glb,.gltf"
-                  onChange={(e) => setModelFile(e.target.files?.[0] || null)}
                 />
               </label>
             </div>
@@ -502,38 +620,23 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
 
           <section className="base-edit-section">
             <h3>Variantes ({variants.length})</h3>
+            <p className="base-edit-variants-hint">
+              Editá o agregá variantes en un modal; la lista queda compacta.
+            </p>
             {variants.map((v, vIdx) => (
-              <div key={v.id} className="base-edit-variant-block">
+              <div key={v.id} className="base-edit-variant-block base-edit-variant-summary">
                 <div className="base-edit-variant-header">
                   <span>
-                    Variante {vIdx + 1}: {v.sapRef || v.baseCode || '—'}
+                    Variante {vIdx + 1}: <strong>{v.sapRef || v.baseCode || '—'}</strong>
                   </span>
                   <div>
-                    {editingVariantIdx === vIdx ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateVariant(vIdx)}
-                          disabled={saving}
-                        >
-                          Guardar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingVariantIdx(null)}
-                          disabled={saving}
-                        >
-                          Cancelar
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setEditingVariantIdx(vIdx)}
-                      >
-                        Editar
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => openVariantDialogEdit(vIdx)}
+                      disabled={saving}
+                    >
+                      Editar
+                    </button>
                     <button
                       type="button"
                       className="base-edit-variant-delete"
@@ -544,176 +647,240 @@ export default function BaseEditModal({ product: productProp, onClose, onSaved }
                     </button>
                   </div>
                 </div>
-                {editingVariantIdx === vIdx ? (
-                  <div className="base-edit-variant-form">
-                    <label>
-                      SAP Ref
-                      <input
-                        value={v.sapRef}
-                        onChange={(e) =>
-                          handleVariantChange(vIdx, 'sapRef', e.target.value)
-                        }
-                      />
-                    </label>
-                    {v.components.map((c, cIdx) => (
-                      <div key={c.id || `new-${vIdx}-${cIdx}`} className="base-edit-component-row">
-                        <input
-                          placeholder="Título (o buscar existente)"
-                          value={c.name}
-                          onChange={(e) =>
-                            handleVariantComponentChange(
-                              vIdx,
-                              cIdx,
-                              'name',
-                              e.target.value
-                            )
-                          }
-                          onBlur={() => handleVariantComponentNameBlur(vIdx, cIdx)}
-                          list={`comp-options-edit-${vIdx}`}
-                          title="Escribe para buscar o selecciona un componente existente"
-                        />
-                        <datalist id={`comp-options-edit-${vIdx}`}>
+                <div className="base-edit-variant-preview">
+                  {v.components.map((c) => (
+                    <span key={c.id || `${vIdx}-${c.name}`} className="base-edit-chip">
+                      {c.name || c.sapCode || '—'}: {c.value || '—'}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              className="base-edit-add-variant"
+              onClick={openVariantDialogNew}
+              disabled={saving}
+            >
+              + Agregar variante
+            </button>
+
+            {variantDialog && variantDraft && (
+              <div
+                className="base-edit-variant-modal-overlay"
+                onClick={closeVariantDialog}
+                role="presentation"
+              >
+                <div
+                  className="base-edit-variant-modal"
+                  onClick={(e) => e.stopPropagation()}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="base-edit-variant-modal-title"
+                >
+                  <div className="base-edit-variant-modal-header">
+                    <h2 id="base-edit-variant-modal-title">
+                      {variantDialog.mode === 'new'
+                        ? 'Nueva variante'
+                        : `Editar variante ${variantDialog.idx + 1}`}
+                    </h2>
+                    <button
+                      type="button"
+                      className="base-edit-close"
+                      onClick={closeVariantDialog}
+                      aria-label="Cerrar"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="base-edit-variant-modal-body">
+                    {variantDialog.mode === 'edit' && variantDraft.id ? (
+                      <>
+                        <label className="base-edit-variant-modal-field">
+                          SAP Ref
+                          <input
+                            value={variantDraft.sapRef}
+                            onChange={(e) => editDraftSetSap(e.target.value)}
+                          />
+                        </label>
+                        <p className="base-edit-hint">
+                          Media actual — imagen: {variantDraft.image || '—'} · modelo:{' '}
+                          {variantDraft.model || '—'}
+                        </p>
+                        <label className="base-edit-variant-modal-field">
+                          Reemplazar imagen
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) =>
+                              editDraftSetFile('imageFile', e.target.files?.[0] || null)
+                            }
+                          />
+                        </label>
+                        <label className="base-edit-variant-modal-field">
+                          Reemplazar modelo (GLB, GLTF, DWG…)
+                          <input
+                            type="file"
+                            accept=".glb,.gltf,.dwg,.step,.stp"
+                            onChange={(e) =>
+                              editDraftSetFile('modelFile', e.target.files?.[0] || null)
+                            }
+                          />
+                        </label>
+                        {variantDraft.components.map((c, cIdx) => {
+                          const refForValues = c.id || c.sapRef || c.name;
+                          return (
+                            <div key={c.id || `e-${cIdx}`} className="base-edit-variant-modal-comp-columns">
+                              <input
+                                placeholder="Título (o buscar existente)"
+                                value={c.name}
+                                onChange={(e) =>
+                                  editDraftPatchCompNameValue(cIdx, 'name', e.target.value)
+                                }
+                                onBlur={() => blurEditDraftComponentName(cIdx)}
+                                list="base-edit-comp-options-modal"
+                                title="Escribe para buscar o selecciona un componente existente"
+                              />
+                              <input
+                                placeholder="Código SAP"
+                                value={c.sapCode ?? c.sapRef ?? ''}
+                                onChange={(e) => editDraftSapChange(cIdx, e.target.value)}
+                                title="Código SAP (REF se rellena igual internamente)"
+                              />
+                              <AutocompleteInput
+                                className="base-edit-autocomplete-full"
+                                value={c.value ?? ''}
+                                onChange={(e) =>
+                                  editDraftPatchCompNameValue(cIdx, 'value', e.target.value)
+                                }
+                                options={
+                                  refForValues
+                                    ? componentValuesByRef[refForValues] || allComponentValues
+                                    : allComponentValues
+                                }
+                                placeholder="Valor"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => editDraftRemoveComp(cIdx)}
+                                disabled={variantDraft.components.length <= 1}
+                              >
+                                −
+                              </button>
+                            </div>
+                          );
+                        })}
+                        <datalist id="base-edit-comp-options-modal">
                           {componentOptions.map((o) => (
                             <option key={o.id} value={o.label || o.sapRef || o.id} />
                           ))}
                         </datalist>
-                        <input
-                          placeholder="Código SAP"
-                          value={c.sapCode ?? c.sapRef ?? ''}
-                          onChange={(e) => handleVariantComponentSapChange(vIdx, cIdx, e.target.value)}
-                          title="Código SAP (REF se rellena igual internamente)"
-                        />
-                        <input
-                          placeholder="Valor"
-                          value={c.value}
-                          onChange={(e) =>
-                            handleVariantComponentChange(
-                              vIdx,
-                              cIdx,
-                              'value',
-                              e.target.value
-                            )
-                          }
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeComponentFromVariant(vIdx, cIdx)}
-                          disabled={v.components.length <= 1}
-                        >
-                          −
+                        <button type="button" className="base-edit-add-comp" onClick={editDraftAddComp}>
+                          + Componente
                         </button>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      className="base-edit-add-comp"
-                      onClick={() => addComponentToVariant(vIdx)}
-                    >
-                      + Componente
-                    </button>
+                      </>
+                    ) : (
+                      <>
+                        <label className="base-edit-variant-modal-field">
+                          SAP Ref
+                          <input
+                            value={variantDraft.sapRef}
+                            onChange={(e) => newDraftSetSap(e.target.value)}
+                          />
+                        </label>
+                        <label className="base-edit-variant-modal-field">
+                          Imagen *
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) =>
+                              newDraftSetFile('imageFile', e.target.files?.[0] || null)
+                            }
+                          />
+                        </label>
+                        <label className="base-edit-variant-modal-field">
+                          Modelo *
+                          <input
+                            type="file"
+                            accept=".glb,.gltf,.dwg,.step,.stp"
+                            onChange={(e) =>
+                              newDraftSetFile('modelFile', e.target.files?.[0] || null)
+                            }
+                          />
+                        </label>
+                        {variantDraft.components.map((c, cIdx) => {
+                          const compLabel = c.componentId
+                            ? componentOptions.find((o) => o.id === c.componentId)?.label ?? ''
+                            : c.componentName ?? c.componentSapRef ?? '';
+                          const refForValues = c.componentId || c.componentSapRef || c.componentName;
+                          return (
+                            <div key={cIdx} className="base-edit-variant-modal-comp-columns">
+                              <AutocompleteInput
+                                value={compLabel}
+                                onChange={(e) => newDraftComponentSelect(cIdx, e.target.value)}
+                                options={componentOptions.map((o) => o.label)}
+                                placeholder="Componente (existente o nuevo)"
+                              />
+                              <input
+                                value={c.componentSapCode ?? c.componentSapRef ?? ''}
+                                onChange={(e) => newDraftSapChange(cIdx, e.target.value)}
+                                placeholder="Código SAP"
+                                title="Código SAP (REF se rellena igual internamente)"
+                              />
+                              <AutocompleteInput
+                                value={c.componentValue ?? ''}
+                                onChange={(e) =>
+                                  newDraftPatchComp(cIdx, 'componentValue', e.target.value)
+                                }
+                                options={
+                                  refForValues
+                                    ? componentValuesByRef[refForValues] || allComponentValues
+                                    : allComponentValues
+                                }
+                                placeholder="Valor"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => newDraftRemoveComp(cIdx)}
+                                disabled={variantDraft.components.length <= 1}
+                              >
+                                −
+                              </button>
+                            </div>
+                          );
+                        })}
+                        <button type="button" className="base-edit-add-comp" onClick={newDraftAddComp}>
+                          + Componente
+                        </button>
+                      </>
+                    )}
                   </div>
-                ) : (
-                  <div className="base-edit-variant-preview">
-                    {v.components.map((c) => (
-                      <span key={c.id} className="base-edit-chip">
-                        {c.name}: {c.value}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
 
-            {addingVariant ? (
-              <div className="base-edit-variant-block base-edit-new-variant">
-                <h4>Nueva variante</h4>
-                <label>
-                  SAP Ref
-                  <input
-                    value={newVariant.sapRef}
-                    onChange={(e) =>
-                      handleNewVariantChange('sapRef', e.target.value)
-                    }
-                  />
-                </label>
-                {newVariant.components.map((c, cIdx) => {
-                  const compLabel = c.componentId
-                    ? (componentOptions.find((o) => o.id === c.componentId)?.label ?? '')
-                    : (c.componentName ?? c.componentSapRef ?? '');
-                  return (
-                  <div key={cIdx} className="base-edit-component-row">
-                    <AutocompleteInput
-                      placeholder="Componente (seleccione o ref)"
-                      value={compLabel}
-                      onChange={(e) => handleNewVariantComponentSelect(cIdx, e.target.value)}
-                      options={componentOptions.map((o) => o.label)}
-                    />
-                    <input
-                      placeholder="Código SAP"
-                      value={c.componentSapCode ?? c.componentSapRef ?? ''}
-                      onChange={(e) => handleNewVariantComponentSapChange(cIdx, e.target.value)}
-                      title="Código SAP (REF se rellena igual internamente)"
-                    />
-                    <input
-                      placeholder="Valor"
-                      value={c.componentValue}
-                      onChange={(e) =>
-                        handleNewVariantComponentChange(
-                          cIdx,
-                          'componentValue',
-                          e.target.value
-                        )
-                      }
-                    />
+                  <div className="base-edit-variant-modal-footer">
+                    <button type="button" onClick={closeVariantDialog} disabled={saving}>
+                      Cancelar
+                    </button>
                     <button
                       type="button"
-                      onClick={() => removeNewVariantComponent(cIdx)}
-                      disabled={newVariant.components.length <= 1}
+                      className="base-edit-variant-modal-save"
+                      onClick={() =>
+                        variantDialog.mode === 'new'
+                          ? saveNewVariantFromModal()
+                          : saveEditVariantFromModal()
+                      }
+                      disabled={saving}
                     >
-                      −
+                      {saving
+                        ? 'Guardando…'
+                        : variantDialog.mode === 'new'
+                          ? 'Agregar variante'
+                          : 'Guardar variante'}
                     </button>
                   </div>
-                  );
-                })}
-                <button
-                  type="button"
-                  className="base-edit-add-comp"
-                  onClick={addNewVariantComponent}
-                >
-                  + Componente
-                </button>
-                <div className="base-edit-new-variant-actions">
-                  <button
-                    type="button"
-                    onClick={handleAddVariant}
-                    disabled={saving}
-                  >
-                    Agregar variante
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAddingVariant(false);
-                      setNewVariant({
-                        sapRef: '',
-                        components: [
-                          { componentId: null, componentSapRef: '', componentSapCode: '', componentValue: '' },
-                        ],
-                      });
-                    }}
-                  >
-                    Cancelar
-                  </button>
                 </div>
               </div>
-            ) : (
-              <button
-                type="button"
-                className="base-edit-add-variant"
-                onClick={() => setAddingVariant(true)}
-              >
-                + Agregar variante
-              </button>
             )}
           </section>
         </div>

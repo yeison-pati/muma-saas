@@ -96,18 +96,9 @@ export default function AsignacionProyectos() {
     [developers, developerCounts]
   );
 
-  const descByRole = role === 'cotizador'
-    ? 'Asigne cotizadores de su región a cada producto. Solo cotizadores de la misma región del proyecto.'
-    : role === 'disenador'
-      ? 'Asigne diseñadores de la región del proyecto a productos ya cotizados.'
-      : role === 'desarrollo'
-        ? 'Asigne desarrollo de la región del proyecto a productos ya diseñados.'
-        : 'Asigne cotizador, diseñador y desarrollo a cada producto.';
-
   return (
     <div className="asignacion-page">
       <h1>Asignación de productos</h1>
-      <p className="asignacion-desc">{descByRole}</p>
 
       <div className="asignacion-search">
         <input

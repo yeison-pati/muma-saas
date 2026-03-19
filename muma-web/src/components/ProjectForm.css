@@ -76,3 +76,16 @@
   color: var(--color-text-muted-dark);
   margin-top: 4px;
 }
+
+@media (max-width: 767px) {
+  .project-form {
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  .project-form-map {
+    min-height: 220px;
+    max-height: 300px;
+  }
+}

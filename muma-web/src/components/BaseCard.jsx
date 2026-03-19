@@ -2,6 +2,9 @@ import ImageWithModal from './ImageWithModal';
 import './BaseCard.css';
 
 export default function BaseCard({ product, onClick }) {
+  const coverUrl =
+    product?.variants?.[0]?.fullUrl || product?.fullUrl || null;
+
   return (
     <button
       type="button"
@@ -15,9 +18,9 @@ export default function BaseCard({ product, onClick }) {
         role="button"
         tabIndex={0}
       >
-        {product.fullUrl ? (
-          <ImageWithModal src={product.fullUrl} alt={product.name}>
-            <img src={product.fullUrl} alt={product.name} />
+        {coverUrl ? (
+          <ImageWithModal src={coverUrl} alt={product.name}>
+            <img src={coverUrl} alt={product.name} />
           </ImageWithModal>
         ) : (
           <div className="base-card-placeholder">Sin imagen</div>

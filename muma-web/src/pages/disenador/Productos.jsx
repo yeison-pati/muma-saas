@@ -14,6 +14,7 @@ export default function DisenadorProductos() {
   const productsService = useProductsService();
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const handleProductClick = (product) => setSelectedProduct(product);
 
@@ -44,10 +45,35 @@ export default function DisenadorProductos() {
 
   return (
     <div className="productos-page">
+      <button
+        type="button"
+        className="productos-filters-toggle"
+        onClick={() => setFiltersOpen(true)}
+        aria-label="Abrir filtros"
+      >
+        Filtros
+      </button>
       <div className="productos-layout">
-        <aside className="productos-filters">
+        <aside className={`productos-filters ${filtersOpen ? 'productos-filters-open' : ''}`}>
+          <div className="productos-filters-header">
+            <span>Filtros</span>
+            <button
+              type="button"
+              className="productos-filters-close"
+              onClick={() => setFiltersOpen(false)}
+              aria-label="Cerrar filtros"
+            >
+              ✕
+            </button>
+          </div>
           <DynamicFilterPanel />
         </aside>
+        <button
+          type="button"
+          className="productos-filters-backdrop"
+          aria-hidden={!filtersOpen}
+          onClick={() => setFiltersOpen(false)}
+        />
         <section className="productos-content">
           {Object.entries(productsByCategory || {}).map(([cat, items]) => (
             <BaseList

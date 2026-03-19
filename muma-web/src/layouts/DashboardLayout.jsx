@@ -8,6 +8,7 @@ import { ProjectProvider } from '../context/ProjectContext';
 import { SidebarProvider } from '../context/SidebarContext';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
+import './DashboardLayout.css';
 
 const RUTAS = {
   comercial: [
@@ -50,15 +51,12 @@ function LayoutContent({ role }) {
 
   return (
     <div
+      className="dashboard-layout"
       style={{
-        display: 'flex',
-        minHeight: '100vh',
-        alignItems: 'stretch',
-        paddingRight: sidebarWidth,
-        transition: 'padding-right 0.2s ease',
+        '--sidebar-width': `${sidebarWidth}px`,
       }}
     >
-      <main style={{ flex: 1, paddingTop: 56, overflow: 'auto', minWidth: 0 }}>
+      <main>
         <Outlet />
       </main>
       <Sidebar routes={routes} />
@@ -67,11 +65,7 @@ function LayoutContent({ role }) {
 }
 
 export default function DashboardLayout({ role }) {
-  const content = (
-    <SidebarProvider initialOpen>
-      <LayoutContent role={role} />
-    </SidebarProvider>
-  );
+  const content = <LayoutContent role={role} />;
 
   const withProviders =
     role === 'comercial' || role === 'disenador' ? (
@@ -87,9 +81,9 @@ export default function DashboardLayout({ role }) {
     );
 
   return (
-    <>
+    <SidebarProvider>
       <Navbar />
       {withProviders}
-    </>
+    </SidebarProvider>
   );
 }

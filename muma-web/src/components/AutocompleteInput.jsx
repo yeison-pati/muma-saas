@@ -15,6 +15,7 @@ export default function AutocompleteInput({
   name,
   id,
   className = '',
+  required: requiredProp = false,
 }) {
   const [internalValue, setInternalValue] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -91,6 +92,7 @@ export default function AutocompleteInput({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         autoComplete="off"
+        required={requiredProp}
       />
       {isOpen && (
         <ul className="autocomplete-list" role="listbox">

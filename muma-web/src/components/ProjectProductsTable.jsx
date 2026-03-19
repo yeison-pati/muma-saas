@@ -1,4 +1,21 @@
 import { useState, useEffect, useMemo } from 'react';
+
+const MOBILE_BREAKPOINT_PX = 768;
+
+function useIsMobile(breakpoint = MOBILE_BREAKPOINT_PX) {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia(`(max-width: ${breakpoint}px)`).matches
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    const onChange = () => setIsMobile(mq.matches);
+    mq.addEventListener('change', onChange);
+    setIsMobile(mq.matches);
+    return () => mq.removeEventListener('change', onChange);
+  }, [breakpoint]);
+  return isMobile;
+}
 import { getMediaUrls } from '../api/documentService';
 import { useProducts } from '../context/ProductsContext';
 import { calculateTipologia } from '../utils/calculateTipologia';
@@ -23,7 +40,7 @@ function enrichVariantsWithProducts(variants, products) {
           sapCode: v.sapCode ?? pv.sapCode,
           baseCode: v.baseCode ?? p.code,
           baseName: v.baseName ?? p.name,
-          baseImage: v.baseImage ?? p.image,
+          baseImage: v.baseImage ?? pv.image,
           category: v.category ?? p.category,
           subcategory: v.subcategory ?? p.subcategory,
           line: v.line ?? p.line,
@@ -36,7 +53,15 @@ function enrichVariantsWithProducts(variants, products) {
   });
 }
 
-function DescripcionEstructurada({ variant, typeVal, compsArr, commentsVal, caractExpanded, onToggleCaract }) {
+function DescripcionEstructurada({
+  variant,
+  typeVal,
+  compsArr,
+  commentsVal,
+  caractExpanded,
+  onToggleCaract,
+  listSummaryOnly = false,
+}) {
   return (
     <div className="descripcion-estructurada">
       {variant.category && <div className="descripcion-category">{variant.category}</div>}
@@ -45,37 +70,43 @@ function DescripcionEstructurada({ variant, typeVal, compsArr, commentsVal, cara
       {variant.space && <div className="descripcion-detail">Espacio: {variant.space}</div>}
       {typeVal && <div className="descripcion-detail">Tipología: {typeVal}</div>}
       {compsArr.length > 0 && (
-        <div className="descripcion-caracteristicas">
-          <button
-            type="button"
-            className="descripcion-caract-toggle"
-            onClick={onToggleCaract}
-          >
-            {caractExpanded ? '▼' : '▶'} Características ({compsArr.length})
-            
-          </button>
-          {caractExpanded && (
-            <div className="descripcion-chips">
-              {compsArr.map((c) => (
-                <span key={c.name} className={c.codes ? 'descripcion-chip descripcion-chip-with-codes' : 'descripcion-chip'}>
-                  <span className="descripcion-chip-label">{c.name}: {c.val}</span>
-                  {c.codes && (
-                    <div className="codigo-stack codigo-stack-fixed">
-                      {c.codes.secondary ? (
-                        <span className="codigo-sap">{c.codes.secondary}</span>
-                      ) : (
-                        <span className="codigo-sap codigo-placeholder" aria-hidden> </span>
-                      )}
-                      <span className={c.codes.secondary ? 'codigo-ref' : 'codigo-ref codigo-ref-only'}>{c.codes.primary}</span>
-                    </div>
-                  )}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
+        listSummaryOnly ? (
+          <div className="descripcion-detail descripcion-mobile-summary-hint">
+            Características ({compsArr.length}) — toca para ver el detalle
+          </div>
+        ) : (
+          <div className="descripcion-caracteristicas">
+            <button
+              type="button"
+              className="descripcion-caract-toggle"
+              onClick={onToggleCaract}
+            >
+              {caractExpanded ? '▼' : '▶'} Características ({compsArr.length})
+
+            </button>
+            {caractExpanded && (
+              <div className="descripcion-chips">
+                {compsArr.map((c) => (
+                  <span key={c.name} className={c.codes ? 'descripcion-chip descripcion-chip-with-codes' : 'descripcion-chip'}>
+                    <span className="descripcion-chip-label">{c.name}: {c.val}</span>
+                    {c.codes && (
+                      <div className="codigo-stack codigo-stack-fixed">
+                        {c.codes.secondary ? (
+                          <span className="codigo-sap">{c.codes.secondary}</span>
+                        ) : (
+                          <span className="codigo-sap codigo-placeholder" aria-hidden> </span>
+                        )}
+                        <span className={c.codes.secondary ? 'codigo-ref' : 'codigo-ref codigo-ref-only'}>{c.codes.primary}</span>
+                      </div>
+                    )}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )
       )}
-      <div className="descripcion-comentarios">
+      <div className={`descripcion-comentarios${listSummaryOnly ? ' descripcion-comentarios--clamp' : ''}`}>
         <span className="descripcion-comentarios-label">Comentarios:</span>
         <span className="descripcion-comentarios-text">{commentsVal || 'Sin comentarios'}</span>
       </div>
@@ -137,8 +168,34 @@ export default function ProjectProductsTable({
   const [expandedDesc, setExpandedDesc] = useState(null);
   const [expandedCaract, setExpandedCaract] = useState({}); // variantId -> bool
   const [localMods, setLocalMods] = useState({}); // variantId -> { quantity?, comments?, components?, editedComponentIds?: Record<string, true> }
+  const isMobile = useIsMobile(MOBILE_BREAKPOINT_PX);
+  const [mobileDetailId, setMobileDetailId] = useState(null);
 
   const displayVariants = enrichedVariants;
+
+  useEffect(() => {
+    if (!isMobile) setMobileDetailId(null);
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (mobileDetailId && !displayVariants.some((r) => r.id === mobileDetailId)) {
+      setMobileDetailId(null);
+    }
+  }, [displayVariants, mobileDetailId]);
+
+  useEffect(() => {
+    if (!mobileDetailId) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e) => {
+      if (e.key === 'Escape') setMobileDetailId(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [mobileDetailId]);
 
   // Sincronizar con modificaciones del padre al montar/re-expandir (no sobrescribir ediciones locales)
   useEffect(() => {
@@ -289,6 +346,367 @@ export default function ProjectProductsTable({
     };
   };
 
+  /** Cantidad, precios, asignaciones, acciones (escritorio y modal apilado). */
+  const renderRowTail = (v) => {
+    const qty = getEffectiveQty(v);
+    const price = v.price ?? 0;
+    const lineTotal = price * qty;
+    const time = v.elaborationTime ?? 0;
+    const isEditing = editingQty === v.id;
+    const canEdit = allowEditableComponents && onProductUpdate;
+    return (
+      <>
+        <div className="col-cantidad">
+          {(cotizadas && (onUpdateQuantity || canEdit)) ? (
+            isEditing ? (
+              <span className="qty-edit">
+                <input
+                  type="number"
+                  min={1}
+                  value={qtyValue}
+                  onChange={(e) => setQtyValue(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveQty(v.id)}
+                />
+                <button
+                  type="button"
+                  className="btn-save-qty"
+                  onClick={() => handleSaveQty(v.id)}
+                  disabled={loading === v.id}
+                >
+                  ✓
+                </button>
+                <button
+                  type="button"
+                  className="btn-cancel-qty"
+                  onClick={() => { setEditingQty(null); setQtyValue(''); }}
+                >
+                  ✕
+                </button>
+              </span>
+            ) : (
+              <button
+                type="button"
+                className="btn-edit-qty"
+                onClick={() => {
+                  setEditingQty(v.id);
+                  setQtyValue(String(getEffectiveQty(v)));
+                }}
+                title="Editar cantidad"
+              >
+                {qty}
+              </button>
+            )
+          ) : (
+            qty
+          )}
+        </div>
+        <div className="col-valor">
+          {price ? `$ ${price.toLocaleString()} COP` : '-'}
+        </div>
+        <div className="col-valor-total">
+          ${lineTotal.toLocaleString()} COP
+        </div>
+        <div className="col-tiempo">
+          {time ? `${time} días` : '-'}
+        </div>
+        <div className="col-material">
+          {v.criticalMaterial || '-'}
+        </div>
+        {assignOnly && (
+          <>
+            {(!assignRoleFilter || assignRoleFilter === 'QUOTER') && (
+              <div className="col-asignar" data-mobile-label="Cotizador">
+                <select
+                  className="btn-assign-select"
+                  value={pendingAssign?.variantId === v.id ? pendingAssign.assigneeId : (v.assignedQuoterId || '')}
+                  onChange={(e) => {
+                    const assigneeId = e.target.value;
+                    if (!assigneeId) return;
+                    const item = quotersForProject.find((q) => (getUser(q)?.id || q.id) === assigneeId);
+                    const u = getUser(item);
+                    setPendingAssign({
+                      variantId: v.id,
+                      roleType: 'QUOTER',
+                      assigneeId,
+                      assigneeName: u?.name || u?.email || '—',
+                      count: item?.projects ?? null,
+                    });
+                  }}
+                  disabled={!!v.assignedQuoterId}
+                  title={v.assignedQuoterId ? 'Ya asignado (no se puede cambiar)' : 'Asignar cotizador (solo de la región del proyecto)'}
+                >
+                  <option value="">—</option>
+                  {quotersForProject.map((item) => {
+                    const u = getUser(item);
+                    const cnt = item?.projects ?? 0;
+                    const label = cnt != null ? `${u?.name || u?.email || '—'} (${cnt})` : (u?.name || u?.email || '—');
+                    return (
+                      <option key={u?.id || item.id} value={u?.id || item.id}>{label}</option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
+            {(!assignRoleFilter || assignRoleFilter === 'DESIGNER') && (
+              <div className="col-asignar" data-mobile-label="Diseñador">
+                <select
+                  className="btn-assign-select"
+                  value={pendingAssign?.variantId === v.id ? pendingAssign.assigneeId : (v.assignedDesignerId || '')}
+                  onChange={(e) => {
+                    const assigneeId = e.target.value;
+                    if (!assigneeId) return;
+                    const item = designersForProject.find((d) => (getUser(d)?.id || d.id) === assigneeId);
+                    const u = getUser(item);
+                    setPendingAssign({
+                      variantId: v.id,
+                      roleType: 'DESIGNER',
+                      assigneeId,
+                      assigneeName: u?.name || u?.email || '—',
+                      count: item?.created ?? item?.edited ?? null,
+                    });
+                  }}
+                  disabled={!!v.assignedDesignerId}
+                  title={v.assignedDesignerId ? 'Ya asignado (no se puede cambiar)' : 'Asignar diseñador (solo de la región del proyecto)'}
+                >
+                  <option value="">—</option>
+                  {designersForProject.map((item) => {
+                    const u = getUser(item);
+                    const cnt = item?.created ?? item?.edited ?? 0;
+                    const label = cnt != null ? `${u?.name || u?.email || '—'} (${cnt})` : (u?.name || u?.email || '—');
+                    return (
+                      <option key={u?.id || item.id} value={u?.id || item.id}>{label}</option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
+            {(!assignRoleFilter || assignRoleFilter === 'DEVELOPMENT') && (
+              <div className="col-asignar" data-mobile-label="Desarrollo">
+                <select
+                  className="btn-assign-select"
+                  value={pendingAssign?.variantId === v.id ? pendingAssign.assigneeId : (v.assignedDevelopmentUserId || '')}
+                  onChange={(e) => {
+                    const assigneeId = e.target.value;
+                    if (!assigneeId) return;
+                    const item = developersForProject.find((d) => (getUser(d)?.id || d.id) === assigneeId);
+                    const u = getUser(item);
+                    setPendingAssign({
+                      variantId: v.id,
+                      roleType: 'DEVELOPMENT',
+                      assigneeId,
+                      assigneeName: u?.name || u?.email || '—',
+                      count: null,
+                    });
+                  }}
+                  disabled={!!v.assignedDevelopmentUserId}
+                  title={v.assignedDevelopmentUserId ? 'Ya asignado (no se puede cambiar)' : 'Asignar desarrollo (solo de la región del proyecto)'}
+                >
+                  <option value="">—</option>
+                  {developersForProject.map((item) => {
+                    const u = getUser(item);
+                    return (
+                      <option key={u?.id || item.id} value={u?.id || item.id}>{u?.name || u?.email || '—'}</option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
+          </>
+        )}
+        {(cotizadas || proceso || onMarkAsDesigned || onMarkAsDeveloped) && !assignOnly && (
+          <div className="col-acciones">
+            {proceso && onQuoteClick && (reopen || v.price == null) ? (
+              <button
+                type="button"
+                className="btn-quote"
+                onClick={() => onQuoteClick(v)}
+                title="Cotizar"
+              >
+                Cotizar
+              </button>
+            ) : cotizadas && projectEffective && onMakeVariantEffective ? (
+              <button
+                type="button"
+                className={v.effective ? 'btn-effective-on' : 'btn-effective-off'}
+                onClick={() => onMakeVariantEffective(projectId, v.id, !v.effective)}
+                disabled={loading === v.id}
+                title={v.effective ? 'Marcado efectivo' : 'Marcar efectivo'}
+              >
+                {v.effective ? '✓ Efectivo' : 'Marcar efectivo'}
+              </button>
+            ) : cotizadas && onRemoveVariant ? (
+              <button
+                type="button"
+                className="btn-remove"
+                onClick={() => handleRemove(v.id)}
+                disabled={loading === v.id}
+                title="Quitar del proyecto"
+              >
+                Quitar
+              </button>
+            ) : null}
+            {onToggleP3P5 && (v.type === 'p3' || v.type === 'p5') && (
+              <button
+                type="button"
+                className="btn-toggle-p3p5"
+                onClick={() => onToggleP3P5(projectId, v.id)}
+                disabled={loading === v.id}
+                title="Alternar P3 ↔ P5"
+              >
+                P3↔P5
+              </button>
+            )}
+            {onMarkAsDesigned && v.quotedAt && !v.designedAt && (
+              <button
+                type="button"
+                className="btn-mark-designed"
+                onClick={() => onMarkAsDesigned(projectId, v.id)}
+                disabled={loading === v.id}
+                title="Marcar como diseñado"
+              >
+                Marcar diseñado
+              </button>
+            )}
+            {onMarkAsDeveloped && v.designedAt && !v.developedAt && (
+              <button
+                type="button"
+                className="btn-mark-developed"
+                onClick={() => onMarkAsDeveloped(projectId, v.id)}
+                disabled={loading === v.id}
+                title="Marcar como desarrollado"
+              >
+                Marcar desarrollado
+              </button>
+            )}
+            {onMarkAsDeveloped && v.developedAt && (
+              <span className="desarrollo-done">✓ Desarrollado</span>
+            )}
+            {isLeader && assignRoleType && assignees.length > 0 && onAssignVariant && (
+              <select
+                className="btn-assign-select"
+                value={
+                  assignRoleType === 'QUOTER' ? (v.assignedQuoterId || '') :
+                  assignRoleType === 'DESIGNER' ? (v.assignedDesignerId || '') :
+                  (v.assignedDevelopmentUserId || '')
+                }
+                onChange={(e) => {
+                  const assigneeId = e.target.value;
+                  if (assigneeId) onAssignVariant(projectId, v.id, assigneeId, assignRoleType);
+                }}
+                title={`Asignar ${assignRoleType === 'QUOTER' ? 'cotizador' : assignRoleType === 'DESIGNER' ? 'diseñador' : 'desarrollo'}`}
+              >
+                <option value="">Asignar...</option>
+                {assignees.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name || a.email}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+      </>
+    );
+  };
+
+  const renderCodigoBlock = (v, canEdit) => (
+    <div className="col-codigo">
+      {(() => {
+        const codes = getVariantCodes(v, canEdit);
+        if (!codes) return <span className="codigo-empty">—</span>;
+        const { primary, secondary } = codes;
+        return (
+          <div className="codigo-stack codigo-stack-fixed">
+            {secondary ? (
+              <span className="codigo-sap">{secondary}</span>
+            ) : (
+              <span className="codigo-sap codigo-placeholder" aria-hidden> </span>
+            )}
+            <span className={secondary ? 'codigo-ref' : 'codigo-ref codigo-ref-only'}>{primary}</span>
+          </div>
+        );
+      })()}
+    </div>
+  );
+
+  const renderImagenBlock = (v, imgUrl) => (
+    <div className="col-imagen">
+      {imgUrl ? (
+        <img src={imgUrl} alt="" className="product-thumb" />
+      ) : (
+        <div className="product-thumb-placeholder">Sin imagen</div>
+      )}
+    </div>
+  );
+
+  const renderDescripcionBlock = (v, listSummaryOnly) => {
+    const isDescExpanded = expandedDesc === v.id;
+    const canEdit = allowEditableComponents && onProductUpdate;
+    return (
+      <div className="col-descripcion">
+        {canEdit && !listSummaryOnly ? (
+          <>
+            <DescripcionEstructurada {...buildDescripcionProps(v, true)} />
+            <button
+              type="button"
+              className="descripcion-edit-toggle"
+              onClick={() => setExpandedDesc(isDescExpanded ? null : v.id)}
+            >
+              {isDescExpanded ? '▼' : '▶'} Editar características y comentarios
+            </button>
+            {isDescExpanded && (
+              <div className="descripcion-edit">
+                {(v.components || []).map((c) => {
+                  const label = c.name || c.id;
+                  return (
+                    <div key={c.id} className="descripcion-edit-row">
+                      <label htmlFor={`comp-${v.id}-${c.id}`}>{label}:</label>
+                      <input
+                        id={`comp-${v.id}-${c.id}`}
+                        type="text"
+                        value={getEffectiveComponents(v)[c.id] ?? ''}
+                        placeholder={c.catalogOriginalValue ?? c.originalValue ?? label}
+                        onChange={(e) => {
+                          const updated = { ...getEffectiveComponents(v), [c.id]: e.target.value };
+                          const originalByKey = Object.fromEntries(
+                            (v.components || []).map((x) => [x?.name || x.id, x?.catalogOriginalValue ?? x?.originalValue ?? x?.value ?? ''])
+                          );
+                          const updatedByKey = Object.fromEntries(
+                            Object.entries(updated).map(([id, val]) => {
+                              const comp = (v.components || []).find((x) => String(x.id) === String(id));
+                              return [comp?.name || id, val ?? ''];
+                            })
+                          );
+                          const calcType = calculateTipologia(originalByKey, updatedByKey);
+                          const newType = v.type === 'p3' ? 'p3' : (calcType !== '' ? calcType : null);
+                          notifyProductUpdate(v.id, { components: updated, type: newType });
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+                <div className="descripcion-edit-row">
+                  <label htmlFor={`comments-${v.id}`}>Comentarios:</label>
+                  <textarea
+                    id={`comments-${v.id}`}
+                    value={getEffectiveComments(v)}
+                    onChange={(e) => notifyProductUpdate(v.id, { comments: e.target.value })}
+                    placeholder="Comentarios..."
+                    rows={2}
+                  />
+                </div>
+              </div>
+            )}
+          </>
+        ) : canEdit && listSummaryOnly ? (
+          <DescripcionEstructurada {...buildDescripcionProps(v, true)} listSummaryOnly />
+        ) : (
+          <DescripcionEstructurada {...buildDescripcionProps(v)} listSummaryOnly={listSummaryOnly} />
+        )}
+      </div>
+    );
+  };
+
   if (rows.length === 0) {
     return (
       <div className="project-products-empty">
@@ -297,376 +715,108 @@ export default function ProjectProductsTable({
     );
   }
 
+  const mobileDetailVariant = mobileDetailId ? rows.find((r) => r.id === mobileDetailId) : null;
+
   return (
-    <div className="project-products-table-wrap">
+    <div className="project-products-table-wrap" role="region" aria-label="Productos del proyecto">
       <div className="project-products-header">
         <span className="col-codigo">Código</span>
         <span className="col-imagen">Imagen</span>
         <span className="col-descripcion">Descripción</span>
-        <span className="col-cantidad">Cantidad</span>
-        <span className="col-valor">Valor</span>
-        <span className="col-valor-total">Valor Total</span>
-        <span className="col-tiempo">Tiempo</span>
-        <span className="col-material">Material crítico</span>
+        <span className="project-products-header-desktop-only col-cantidad">Cantidad</span>
+        <span className="project-products-header-desktop-only col-valor">Valor</span>
+        <span className="project-products-header-desktop-only col-valor-total">Valor Total</span>
+        <span className="project-products-header-desktop-only col-tiempo">Tiempo</span>
+        <span className="project-products-header-desktop-only col-material">Material crítico</span>
         {assignOnly && (
           <>
-            {(!assignRoleFilter || assignRoleFilter === 'QUOTER') && <span className="col-asignar">Cotizador</span>}
-            {(!assignRoleFilter || assignRoleFilter === 'DESIGNER') && <span className="col-asignar">Diseñador</span>}
-            {(!assignRoleFilter || assignRoleFilter === 'DEVELOPMENT') && <span className="col-asignar">Desarrollo</span>}
+            {(!assignRoleFilter || assignRoleFilter === 'QUOTER') && <span className="project-products-header-desktop-only col-asignar">Cotizador</span>}
+            {(!assignRoleFilter || assignRoleFilter === 'DESIGNER') && <span className="project-products-header-desktop-only col-asignar">Diseñador</span>}
+            {(!assignRoleFilter || assignRoleFilter === 'DEVELOPMENT') && <span className="project-products-header-desktop-only col-asignar">Desarrollo</span>}
           </>
         )}
-        {(cotizadas || proceso || onMarkAsDesigned || onMarkAsDeveloped) && !assignOnly && <span className="col-acciones">Acciones</span>}
+        {(cotizadas || proceso || onMarkAsDesigned || onMarkAsDeveloped) && !assignOnly && <span className="project-products-header-desktop-only col-acciones">Acciones</span>}
       </div>
       <div className="project-products-body">
         {rows.map((v) => {
-          const qty = getEffectiveQty(v);
-          const price = v.price ?? 0;
-          const lineTotal = price * qty;
-          const time = v.elaborationTime ?? 0;
-          const isEditing = editingQty === v.id;
           const imgUrl = v.baseImage ? imageUrls[v.baseImage] : null;
-          const isDescExpanded = expandedDesc === v.id;
           const canEdit = allowEditableComponents && onProductUpdate;
 
           return (
-            <div key={v.id} className="project-products-row">
-              <div className="col-codigo">
-                {(() => {
-                  const codes = getVariantCodes(v, canEdit);
-                  if (!codes) return <span className="codigo-empty">—</span>;
-                  const { primary, secondary } = codes;
-                  return (
-                    <div className="codigo-stack codigo-stack-fixed">
-                      {secondary ? (
-                        <span className="codigo-sap">{secondary}</span>
-                      ) : (
-                        <span className="codigo-sap codigo-placeholder" aria-hidden> </span>
-                      )}
-                      <span className={secondary ? 'codigo-ref' : 'codigo-ref codigo-ref-only'}>{primary}</span>
-                    </div>
-                  );
-                })()}
-              </div>
-              <div className="col-imagen">
-                {imgUrl ? (
-                  <img src={imgUrl} alt="" className="product-thumb" />
-                ) : (
-                  <div className="product-thumb-placeholder">Sin imagen</div>
-                )}
-              </div>
-              <div className="col-descripcion">
-                {canEdit ? (
-                  <>
-                    <DescripcionEstructurada {...buildDescripcionProps(v, true)} />
-                    <button
-                      type="button"
-                      className="descripcion-edit-toggle"
-                      onClick={() => setExpandedDesc(isDescExpanded ? null : v.id)}
-                    >
-                      {isDescExpanded ? '▼' : '▶'} Editar características y comentarios
-                    </button>
-                    {isDescExpanded && (
-                      <div className="descripcion-edit">
-                        {(v.components || []).map((c) => {
-                          const label = c.name || c.id;
-                          return (
-                            <div key={c.id} className="descripcion-edit-row">
-                              <label htmlFor={`comp-${v.id}-${c.id}`}>{label}:</label>
-                              <input
-                                id={`comp-${v.id}-${c.id}`}
-                                type="text"
-                                value={getEffectiveComponents(v)[c.id] ?? ''}
-                                placeholder={c.catalogOriginalValue ?? c.originalValue ?? label}
-                                onChange={(e) => {
-                                  const updated = { ...getEffectiveComponents(v), [c.id]: e.target.value };
-                                  const originalByKey = Object.fromEntries(
-                                    (v.components || []).map((x) => [x?.name || x.id, x?.catalogOriginalValue ?? x?.originalValue ?? x?.value ?? ''])
-                                  );
-                                  const updatedByKey = Object.fromEntries(
-                                    Object.entries(updated).map(([id, val]) => {
-                                      const comp = (v.components || []).find((x) => String(x.id) === String(id));
-                                      return [comp?.name || id, val ?? ''];
-                                    })
-                                  );
-                                  const calcType = calculateTipologia(originalByKey, updatedByKey);
-                                  const newType = v.type === 'p3' ? 'p3' : (calcType !== '' ? calcType : null);
-                                  notifyProductUpdate(v.id, { components: updated, type: newType });
-                                }}
-                              />
-                            </div>
-                          );
-                        })}
-                        <div className="descripcion-edit-row">
-                          <label htmlFor={`comments-${v.id}`}>Comentarios:</label>
-                          <textarea
-                            id={`comments-${v.id}`}
-                            value={getEffectiveComments(v)}
-                            onChange={(e) => notifyProductUpdate(v.id, { comments: e.target.value })}
-                            placeholder="Comentarios..."
-                            rows={2}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <DescripcionEstructurada {...buildDescripcionProps(v)} />
-                )}
-              </div>
-              <div className="col-cantidad">
-                {(cotizadas && (onUpdateQuantity || canEdit)) ? (
-                  isEditing ? (
-                    <span className="qty-edit">
-                      <input
-                        type="number"
-                        min={1}
-                        value={qtyValue}
-                        onChange={(e) => setQtyValue(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSaveQty(v.id)}
-
-                      />
-                      <button
-                        type="button"
-                        className="btn-save-qty"
-                        onClick={() => handleSaveQty(v.id)}
-                        disabled={loading === v.id}
-                      >
-                        ✓
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-cancel-qty"
-                        onClick={() => { setEditingQty(null); setQtyValue(''); }}
-                      >
-                        ✕
-                      </button>
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn-edit-qty"
-                      onClick={() => {
-                        setEditingQty(v.id);
-                        setQtyValue(String(getEffectiveQty(v)));
-                      }}
-                      title="Editar cantidad"
-                    >
-                      {qty}
-                    </button>
-                  )
-                ) : (
-                  qty
-                )}
-              </div>
-              <div className="col-valor">
-                {price ? `$ ${price.toLocaleString()} COP` : '-'}
-              </div>
-              <div className="col-valor-total">
-                ${lineTotal.toLocaleString()} COP
-              </div>
-              <div className="col-tiempo">
-                {time ? `${time} días` : '-'}
-              </div>
-              <div className="col-material">
-                {v.criticalMaterial || '-'}
-              </div>
-              {assignOnly && (
-                <>
-                  {(!assignRoleFilter || assignRoleFilter === 'QUOTER') && (
-                    <div className="col-asignar">
-                      <select
-                        className="btn-assign-select"
-                        value={pendingAssign?.variantId === v.id ? pendingAssign.assigneeId : (v.assignedQuoterId || '')}
-                        onChange={(e) => {
-                          const assigneeId = e.target.value;
-                          if (!assigneeId) return;
-                          const item = quotersForProject.find((q) => (getUser(q)?.id || q.id) === assigneeId);
-                          const u = getUser(item);
-                          setPendingAssign({
-                            variantId: v.id,
-                            roleType: 'QUOTER',
-                            assigneeId,
-                            assigneeName: u?.name || u?.email || '—',
-                            count: item?.projects ?? null,
-                          });
-                        }}
-                        disabled={!!v.assignedQuoterId}
-                        title={v.assignedQuoterId ? 'Ya asignado (no se puede cambiar)' : 'Asignar cotizador (solo de la región del proyecto)'}
-                      >
-                        <option value="">—</option>
-                        {quotersForProject.map((item) => {
-                          const u = getUser(item);
-                          const cnt = item?.projects ?? 0;
-                          const label = cnt != null ? `${u?.name || u?.email || '—'} (${cnt})` : (u?.name || u?.email || '—');
-                          return (
-                            <option key={u?.id || item.id} value={u?.id || item.id}>{label}</option>
-                          );
-                        })}
-                      </select>
-                    </div>
-                  )}
-                  {(!assignRoleFilter || assignRoleFilter === 'DESIGNER') && (
-                    <div className="col-asignar">
-                      <select
-                        className="btn-assign-select"
-                        value={pendingAssign?.variantId === v.id ? pendingAssign.assigneeId : (v.assignedDesignerId || '')}
-                        onChange={(e) => {
-                          const assigneeId = e.target.value;
-                          if (!assigneeId) return;
-                          const item = designersForProject.find((d) => (getUser(d)?.id || d.id) === assigneeId);
-                          const u = getUser(item);
-                          setPendingAssign({
-                            variantId: v.id,
-                            roleType: 'DESIGNER',
-                            assigneeId,
-                            assigneeName: u?.name || u?.email || '—',
-                            count: item?.created ?? item?.edited ?? null,
-                          });
-                        }}
-                        disabled={!!v.assignedDesignerId}
-                        title={v.assignedDesignerId ? 'Ya asignado (no se puede cambiar)' : 'Asignar diseñador (solo de la región del proyecto)'}
-                      >
-                        <option value="">—</option>
-                        {designersForProject.map((item) => {
-                          const u = getUser(item);
-                          const cnt = item?.created ?? item?.edited ?? 0;
-                          const label = cnt != null ? `${u?.name || u?.email || '—'} (${cnt})` : (u?.name || u?.email || '—');
-                          return (
-                            <option key={u?.id || item.id} value={u?.id || item.id}>{label}</option>
-                          );
-                        })}
-                      </select>
-                    </div>
-                  )}
-                  {(!assignRoleFilter || assignRoleFilter === 'DEVELOPMENT') && (
-                    <div className="col-asignar">
-                      <select
-                        className="btn-assign-select"
-                        value={pendingAssign?.variantId === v.id ? pendingAssign.assigneeId : (v.assignedDevelopmentUserId || '')}
-                        onChange={(e) => {
-                          const assigneeId = e.target.value;
-                          if (!assigneeId) return;
-                          const item = developersForProject.find((d) => (getUser(d)?.id || d.id) === assigneeId);
-                          const u = getUser(item);
-                          setPendingAssign({
-                            variantId: v.id,
-                            roleType: 'DEVELOPMENT',
-                            assigneeId,
-                            assigneeName: u?.name || u?.email || '—',
-                            count: null,
-                          });
-                        }}
-                        disabled={!!v.assignedDevelopmentUserId}
-                        title={v.assignedDevelopmentUserId ? 'Ya asignado (no se puede cambiar)' : 'Asignar desarrollo (solo de la región del proyecto)'}
-                      >
-                        <option value="">—</option>
-                        {developersForProject.map((item) => {
-                          const u = getUser(item);
-                          return (
-                            <option key={u?.id || item.id} value={u?.id || item.id}>{u?.name || u?.email || '—'}</option>
-                          );
-                        })}
-                      </select>
-                    </div>
-                  )}
-                </>
-              )}
-              {(cotizadas || proceso || onMarkAsDesigned || onMarkAsDeveloped) && !assignOnly && (
-                <div className="col-acciones">
-                  {proceso && onQuoteClick && (reopen || v.price == null) ? (
-                      <button
-                        type="button"
-                        className="btn-quote"
-                        onClick={() => onQuoteClick(v)}
-                        title="Cotizar"
-                      >
-                        Cotizar
-                      </button>
-                    ) : cotizadas && projectEffective && onMakeVariantEffective ? (
-                      <button
-                        type="button"
-                        className={v.effective ? 'btn-effective-on' : 'btn-effective-off'}
-                        onClick={() => onMakeVariantEffective(projectId, v.id, !v.effective)}
-                        disabled={loading === v.id}
-                        title={v.effective ? 'Marcado efectivo' : 'Marcar efectivo'}
-                      >
-                        {v.effective ? '✓ Efectivo' : 'Marcar efectivo'}
-                      </button>
-                    ) : cotizadas && onRemoveVariant ? (
-                      <button
-                        type="button"
-                        className="btn-remove"
-                        onClick={() => handleRemove(v.id)}
-                        disabled={loading === v.id}
-                        title="Quitar del proyecto"
-                      >
-                        Quitar
-                      </button>
-                    ) : null}
-                  {onToggleP3P5 && (v.type === 'p3' || v.type === 'p5') && (
-                    <button
-                      type="button"
-                      className="btn-toggle-p3p5"
-                      onClick={() => onToggleP3P5(projectId, v.id)}
-                      disabled={loading === v.id}
-                      title="Alternar P3 ↔ P5"
-                    >
-                      P3↔P5
-                    </button>
-                  )}
-                  {onMarkAsDesigned && v.quotedAt && !v.designedAt && (
-                    <button
-                      type="button"
-                      className="btn-mark-designed"
-                      onClick={() => onMarkAsDesigned(projectId, v.id)}
-                      disabled={loading === v.id}
-                      title="Marcar como diseñado"
-                    >
-                      Marcar diseñado
-                    </button>
-                  )}
-                  {onMarkAsDeveloped && v.designedAt && !v.developedAt && (
-                    <button
-                      type="button"
-                      className="btn-mark-developed"
-                      onClick={() => onMarkAsDeveloped(projectId, v.id)}
-                      disabled={loading === v.id}
-                      title="Marcar como desarrollado"
-                    >
-                      Marcar desarrollado
-                    </button>
-                  )}
-                  {onMarkAsDeveloped && v.developedAt && (
-                    <span className="desarrollo-done">✓ Desarrollado</span>
-                  )}
-                  {isLeader && assignRoleType && assignees.length > 0 && onAssignVariant && (
-                    <select
-                      className="btn-assign-select"
-                      value={
-                        assignRoleType === 'QUOTER' ? (v.assignedQuoterId || '') :
-                        assignRoleType === 'DESIGNER' ? (v.assignedDesignerId || '') :
-                        (v.assignedDevelopmentUserId || '')
-                      }
-                      onChange={(e) => {
-                        const assigneeId = e.target.value;
-                        if (assigneeId) onAssignVariant(projectId, v.id, assigneeId, assignRoleType);
-                      }}
-                      title={`Asignar ${assignRoleType === 'QUOTER' ? 'cotizador' : assignRoleType === 'DESIGNER' ? 'diseñador' : 'desarrollo'}`}
-                    >
-                      <option value="">Asignar...</option>
-                      {assignees.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.name || a.email}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+            <div key={v.id} className={`project-products-row${isMobile ? ' project-products-row--mobile' : ''}`}>
+              {isMobile ? (
+                <div
+                  className="project-products-mobile-hit"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setMobileDetailId(v.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setMobileDetailId(v.id);
+                    }
+                  }}
+                  aria-label="Ver detalle del producto"
+                >
+                  {renderCodigoBlock(v, canEdit)}
+                  {renderImagenBlock(v, imgUrl)}
+                  {renderDescripcionBlock(v, true)}
+                  <span className="project-products-mobile-hit-chevron" aria-hidden>›</span>
                 </div>
+              ) : (
+                <>
+                  {renderCodigoBlock(v, canEdit)}
+                  {renderImagenBlock(v, imgUrl)}
+                  {renderDescripcionBlock(v, false)}
+                  {renderRowTail(v)}
+                </>
               )}
             </div>
           );
         })}
       </div>
+      {isMobile && mobileDetailVariant && (
+        <div
+          className="project-product-mobile-modal-backdrop"
+          role="presentation"
+          onClick={() => setMobileDetailId(null)}
+        >
+          <div
+            className="project-product-mobile-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="project-product-mobile-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="project-product-mobile-modal-header">
+              <h2 id="project-product-mobile-modal-title" className="project-product-mobile-modal-title">
+                Detalle del producto
+              </h2>
+              <button
+                type="button"
+                className="project-product-mobile-modal-close"
+                onClick={() => setMobileDetailId(null)}
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </div>
+            <div className="project-product-mobile-modal-scroll">
+              <div className="ppm-modal-hero">
+                {renderImagenBlock(
+                  mobileDetailVariant,
+                  mobileDetailVariant.baseImage ? imageUrls[mobileDetailVariant.baseImage] : null
+                )}
+                {renderCodigoBlock(mobileDetailVariant, allowEditableComponents && !!onProductUpdate)}
+              </div>
+              {renderDescripcionBlock(mobileDetailVariant, false)}
+              <div className="ppm-modal-stack">
+                {renderRowTail(mobileDetailVariant)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {assignOnly && (
         <AssignConfirmModal
           visible={!!pendingAssign}

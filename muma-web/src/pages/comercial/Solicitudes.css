@@ -262,3 +262,60 @@
   background: var(--color-success-bg);
   color: var(--color-success-dark);
 }
+
+@media (max-width: 767px) {
+  .solicitudes-page {
+    padding: 16px;
+    max-width: 100%;
+    overflow-x: clip;
+    box-sizing: border-box;
+  }
+
+  .solicitudes-page h1 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+  }
+
+  .solicitudes-filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .solicitudes-filters input {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .solicitudes-region-select {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .solicitudes-clear-btn {
+    width: 100%;
+  }
+
+  .solicitudes-tabs {
+    width: 100%;
+  }
+
+  .solicitudes-tabs button {
+    flex: 1;
+    padding: 12px 10px;
+    font-size: 0.82rem;
+  }
+
+  .solicitudes-item-header {
+    flex-wrap: wrap;
+  }
+
+  .solicitudes-item-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}

@@ -1,0 +1,20 @@
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  align-items: stretch;
+  padding-right: var(--sidebar-width, 72px);
+  transition: padding-right 0.2s ease;
+}
+
+.dashboard-layout > main {
+  flex: 1;
+  padding-top: 56px;
+  overflow: auto;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .dashboard-layout {
+    padding-right: 0;
+  }
+}

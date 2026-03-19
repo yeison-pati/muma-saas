@@ -14,6 +14,7 @@ export default function ComercialP3() {
   const { addCustomProduct } = useCart();
 
   const [formOpen, setFormOpen] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({ categoria: null, subcategoria: null, espacio: null, linea: null });
   const [cart, setCart] = useState([]);
   const [newCompName, setNewCompName] = useState('');
@@ -167,15 +168,31 @@ export default function ComercialP3() {
 
   return (
     <div className="p3-page">
-      <p className="p3-desc">
-        Filtra, marca componentes y añádelos al carrito. Los filtros se mantienen; usa Limpiar cuando
-        quieras buscar otros componentes. Comentario + añadir al proyecto.
-      </p>
+      <button
+        type="button"
+        className="p3-filters-toggle"
+        onClick={() => setFiltersOpen(true)}
+        aria-label="Abrir filtros"
+      >
+        Filtros
+        {hasFilters ? <span className="p3-filters-toggle-badge" aria-hidden /> : null}
+      </button>
 
       <div className="p3-layout">
-        <aside className="p3-filters">
+        <aside className={`p3-filters ${filtersOpen ? 'p3-filters-open' : ''}`}>
+          <div className="p3-filters-header">
+            <span>Filtros</span>
+            <button
+              type="button"
+              className="p3-filters-close"
+              onClick={() => setFiltersOpen(false)}
+              aria-label="Cerrar filtros"
+            >
+              ✕
+            </button>
+          </div>
           <div className="p3-filter-panel">
-            <h3>Filtros</h3>
+            <h3 className="p3-filters-heading-desktop">Filtros</h3>
             <button type="button" className="p3-filter-clear" onClick={clearFilters}>
               Limpiar
             </button>
@@ -205,6 +222,12 @@ export default function ComercialP3() {
             })}
           </div>
         </aside>
+        <button
+          type="button"
+          className="p3-filters-backdrop"
+          aria-hidden={!filtersOpen}
+          onClick={() => setFiltersOpen(false)}
+        />
 
         <main className="p3-main">
           <div className="p3-card">
@@ -213,7 +236,7 @@ export default function ComercialP3() {
             </div>
 
             {!filters.categoria ? (
-              <p className="p3-hint">Selecciona categoría en los filtros (izquierda) para filtrar.</p>
+              <p className="p3-hint">Pulsa <strong>Filtros</strong> y elige categoría para ver componentes aquí.</p>
             ) : !filters.subcategoria ? (
               <p className="p3-hint">Selecciona subcategoría.</p>
             ) : !filters.espacio ? (

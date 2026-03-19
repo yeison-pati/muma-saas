@@ -48,10 +48,55 @@
   gap: 12px;
 }
 
-.p3-filter-panel h3 {
+.p3-filter-panel h3,
+.p3-filters-heading-desktop {
   margin: 0 0 4px;
   font-size: 1rem;
   font-weight: 600;
+}
+
+/* Igual que Productos: botón abre filtros en móvil; escritorio panel fijo a la izquierda */
+.p3-filters-toggle {
+  display: none;
+  position: relative;
+  width: 100%;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.p3-filters-toggle:hover {
+  background: var(--color-primary-dark);
+}
+
+.p3-filters-toggle-badge {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.p3-filters-header {
+  display: none;
+}
+
+.p3-filters-close {
+  display: none;
+}
+
+.p3-filters-backdrop {
+  display: none;
 }
 
 .p3-filter-clear {
@@ -379,12 +424,142 @@
   font-size: 0.9rem;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 767px) {
+  .p3-page {
+    padding: 16px;
+    max-width: 100%;
+    overflow-x: clip;
+    box-sizing: border-box;
+  }
+
+  .p3-filters-toggle {
+    display: block;
+  }
+
+  .p3-filters-heading-desktop {
+    display: none;
+  }
+
+  .p3-layout {
+    flex-direction: column;
+    min-height: auto;
+    gap: 0;
+  }
+
+  /* Panel de filtros fuera del flujo: mismo patrón que comercial/Productos */
+  .p3-filters {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(320px, 88vw);
+    min-width: unset;
+    max-height: none;
+    z-index: 1100;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 4px 0 16px var(--color-shadow);
+    border-right: none;
+    border-bottom: none;
+    padding-top: env(safe-area-inset-top, 12px);
+    box-sizing: border-box;
+  }
+
+  .p3-filters-open {
+    transform: translateX(0);
+  }
+
+  .p3-filters-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .p3-filters-header span {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .p3-filters-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    border-radius: 8px;
+  }
+
+  .p3-filters-close:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text);
+  }
+
+  .p3-filters-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1099;
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .p3-filters-backdrop[aria-hidden='false'] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .p3-main {
+    padding: 16px 0;
+    min-width: 0;
+  }
+
+  .p3-left {
+    width: 100%;
+    min-width: 0;
+    max-height: none;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    padding-top: 20px;
+    margin-top: 8px;
+  }
+
+  .p3-desc {
+    font-size: 0.85rem;
+    line-height: 1.45;
+  }
+
+  .p3-actions {
+    flex-direction: column;
+  }
+
+  .p3-cancel,
+  .p3-add {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
   .p3-row {
     grid-template-columns: 1fr;
   }
 
   .p3-new-comp-row {
     grid-template-columns: 1fr;
+  }
+
+  .p3-add-comp-btn {
+    width: 100%;
   }
 }

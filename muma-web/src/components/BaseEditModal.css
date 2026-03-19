@@ -231,3 +231,172 @@
   color: var(--color-primary);
   font-size: 0.9rem;
 }
+
+.base-edit-hint {
+  margin: 8px 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  word-break: break-all;
+}
+
+.base-edit-variants-hint {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.base-edit-variant-summary {
+  margin-bottom: 12px;
+}
+
+.base-edit-variant-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .base-edit-variant-modal-overlay {
+    align-items: center;
+    padding: 24px;
+  }
+}
+
+.base-edit-variant-modal {
+  background: var(--color-bg-white, #fff);
+  width: 100%;
+  max-width: 540px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -4px 24px var(--color-shadow-xl);
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .base-edit-variant-modal {
+    border-radius: 12px;
+    max-height: 88vh;
+  }
+}
+
+.base-edit-variant-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.base-edit-variant-modal-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.base-edit-variant-modal-body {
+  padding: 16px 18px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.base-edit-variant-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.base-edit-variant-modal-field input[type='text'],
+.base-edit-variant-modal-field input:not([type='file']) {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.base-edit-variant-modal-comp-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg, #f5f5f5);
+}
+
+.base-edit-variant-modal-comp-columns > input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.base-edit-variant-modal-comp-columns button[type='button'] {
+  min-height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-white);
+  cursor: pointer;
+}
+
+.base-edit-variant-modal-comp-columns button[type='button']:hover:not(:disabled) {
+  background: var(--color-danger-modal);
+  color: #fff;
+  border-color: var(--color-danger-modal);
+}
+
+.base-edit-autocomplete-full {
+  width: 100%;
+}
+
+.base-edit-variant-modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.base-edit-variant-modal-footer > button:first-child {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.base-edit-variant-modal-save {
+  flex: 1;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.base-edit-variant-modal-save:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.base-edit-variant-modal-save:disabled,
+.base-edit-variant-modal-footer > button:first-child:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}

@@ -28,7 +28,7 @@ public class VariantService {
     private final ComponentService componentService;
 
     @Transactional
-    public Variant create(Base base, String sapRef) {
+    public Variant create(Base base, String sapRef, String image, String model) {
         return variantRepository.save(
                 Variant.builder()
                         .id(UUID.randomUUID())
@@ -36,18 +36,26 @@ public class VariantService {
                         .sapRef(sapRef)
                         .sapCode((sapRef != null && !sapRef.isBlank()) ? sapRef : null)
                         .status("DRAFT")
+                        .image(image)
+                        .model(model)
                         .build());
     }
 
     @Transactional
     public Variant create(CreateVariantInput input) {
+        if (input.image() == null || input.image().isBlank()) {
+            throw new IllegalArgumentException("La variante requiere imagen");
+        }
+        if (input.model() == null || input.model().isBlank()) {
+            throw new IllegalArgumentException("La variante requiere modelo");
+        }
         Base base = baseRepository.findById(input.baseId())
                 .orElseThrow(() -> new IllegalStateException("Base not found"));
         long count = variantRepository.countByBaseId(base.getId());
         String sapRef = input.sapRef() != null && !input.sapRef().isBlank()
                 ? input.sapRef()
                 : base.getCode() + "-V" + (count + 1);
-        Variant variant = create(base, sapRef);
+        Variant variant = create(base, sapRef, input.image().trim(), input.model().trim());
         List<CreateBaseInitialComponentInput> components = input.components();
         if (components != null && !components.isEmpty()) {
             List<Component> comps = new ArrayList<>();
@@ -86,6 +94,12 @@ public class VariantService {
             String ref = input.sapRef().isBlank() ? null : input.sapRef().trim();
             variant.setSapRef(ref);
             variant.setSapCode(ref);
+        }
+        if (input.image() != null) {
+            variant.setImage(input.image().isBlank() ? null : input.image().trim());
+        }
+        if (input.model() != null) {
+            variant.setModel(input.model().isBlank() ? null : input.model().trim());
         }
         if (input.components() != null) {
             variant.getComponents().clear();

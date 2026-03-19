@@ -348,8 +348,8 @@ public class CatalogService {
                 if (sapCode != null && sapCode.isBlank()) sapCode = null;
                 log.info("[toProjectResponse] catalog variant agregado variantId={} type={}", variant.getId(), quote.getType());
                 variants.add(new ProjectVariantResponse(
-                        variant.getId(),
-                        variant.getSapRef(),
+                                                                                                variant.getId(),
+                                                                                                variant.getSapRef(),
                         sapCode,
                         quote,
                         components,

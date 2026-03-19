@@ -2,7 +2,7 @@ import { createContext, useContext, useState } from 'react';
 
 const SidebarContext = createContext(null);
 
-export const SidebarProvider = ({ children, initialOpen = true }) => {
+export const SidebarProvider = ({ children, initialOpen = false }) => {
   const [userOverride, setUserOverride] = useState(null);
   const isOpen = userOverride !== null ? userOverride : initialOpen;
 

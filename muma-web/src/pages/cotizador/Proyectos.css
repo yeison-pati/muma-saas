@@ -231,17 +231,36 @@
   cursor: pointer;
 }
 
-.cotizador-quote-modal {
+/* Por encima del detalle de producto móvil (10050); por debajo de AssignConfirmModal (10100) */
+.cotizador-quote-shell {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  z-index: 10080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.55);
+  box-sizing: border-box;
+  min-height: 100dvh;
+}
+
+.cotizador-quote-modal {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
   background: white;
   padding: 24px;
   border-radius: 12px;
-  box-shadow: 0 4px 24px var(--color-shadow-xl);
-  z-index: 1500;
-  min-width: 320px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 420px;
+  min-width: 0;
+  box-sizing: border-box;
+  max-height: min(90vh, 640px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .cotizador-quote-modal h3 {
@@ -278,4 +297,20 @@
   background: var(--color-primary);
   color: white;
   border: none;
+}
+
+@media (max-width: 768px) {
+  .cotizador-quote-shell {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .cotizador-quote-modal {
+    flex: 1 1 auto;
+    align-self: stretch;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    min-height: 0;
+  }
 }

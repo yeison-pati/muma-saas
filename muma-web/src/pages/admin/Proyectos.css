@@ -1,5 +1,8 @@
 .admin-proyectos-page {
   padding: 24px;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: clip;
 }
 
 .admin-proyectos-page h1 {
@@ -12,6 +15,7 @@
   flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 20px;
+  align-items: stretch;
 }
 
 .admin-filters input,
@@ -19,6 +23,13 @@
   padding: 8px 12px;
   border: 1px solid var(--color-border);
   border-radius: 6px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.admin-filters .autocomplete-input {
+  flex: 1 1 200px;
+  min-width: 0;
 }
 
 .admin-loading {
@@ -41,6 +52,7 @@
 .admin-project-header {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   width: 100%;
   padding: 12px 16px;
@@ -49,6 +61,7 @@
   border: none;
   cursor: pointer;
   font-size: 0.95rem;
+  box-sizing: border-box;
 }
 
 .admin-project-header:hover {
@@ -56,7 +69,16 @@
 }
 
 .admin-item-label {
+  flex: 1 1 auto;
   min-width: 0;
+  text-align: left;
+  line-height: 1.35;
+}
+
+.admin-item-rest {
+  font-weight: 400;
+  color: var(--color-text-input);
+  word-break: break-word;
 }
 
 .admin-consecutivo {
@@ -83,14 +105,36 @@
 
 .admin-expand {
   margin-left: auto;
+  flex-shrink: 0;
   color: var(--color-primary);
   font-weight: bold;
 }
 
+.admin-project-card--expanded .admin-project-header {
+  position: sticky;
+  top: 56px;
+  z-index: 8;
+  background: var(--color-bg-white);
+  box-shadow: 0 2px 8px var(--color-shadow-sm);
+  border-bottom: 1px solid var(--color-border-hover);
+}
+
 .admin-project-detail {
-  padding: 16px;
+  padding: 0;
   background: var(--color-bg);
   border-top: 1px solid var(--color-border-hover);
+}
+
+.admin-project-detail-static {
+  padding: 16px 16px 12px;
+}
+
+.admin-project-table-scroll {
+  max-height: min(65vh, 560px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 16px 16px;
+  border-top: 1px solid transparent;
 }
 
 .admin-meta {
@@ -127,4 +171,44 @@
 .admin-badges-row .badge-estado {
   background: var(--color-success-bg);
   color: var(--color-success-dark);
+}
+
+@media (max-width: 767px) {
+  .admin-proyectos-page {
+    padding: 16px;
+  }
+
+  .admin-filters {
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+
+  .admin-filters > input,
+  .admin-filters > select,
+  .admin-filters > .autocomplete-input {
+    width: 100%;
+    flex: none;
+  }
+
+  .admin-project-header {
+    align-items: flex-start;
+  }
+
+  .admin-item-label {
+    flex: 1 1 100%;
+    order: -1;
+  }
+
+  .admin-expand {
+    margin-left: 0;
+  }
+
+  .admin-project-header .admin-badge {
+    font-size: 0.72rem;
+    padding: 4px 8px;
+  }
+
+  .admin-badges-row {
+    flex-wrap: wrap;
+  }
 }

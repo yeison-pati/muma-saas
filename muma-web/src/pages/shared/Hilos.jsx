@@ -27,7 +27,7 @@ function enrichVariantsWithProducts(variants, products) {
           sapCode: v.sapCode ?? pv.sapCode,
           baseCode: v.baseCode ?? p.code,
           baseName: v.baseName ?? p.name,
-          baseImage: v.baseImage ?? p.image,
+          baseImage: v.baseImage ?? pv.image,
         };
       }
     }
@@ -281,9 +281,6 @@ export default function Hilos() {
   return (
     <div className="hilos-page">
       <h1>Hilos</h1>
-      <p className="hilos-desc">
-        Abra un hilo por producto para comunicarse con comercial. La creación se usa para métricas de tiempo.
-      </p>
 
       <div className="hilos-search">
         <input

@@ -12,9 +12,16 @@ export default function Sidebar({ routes = EMPTY_ROUTES }) {
   const navigate = useNavigate();
 
   return (
-    <aside
-      className={`sidebar ${isOpen ? 'sidebar-expanded' : 'sidebar-collapsed'}`}
-    >
+    <>
+      <button
+        type="button"
+        className="sidebar-backdrop"
+        aria-hidden={!isOpen}
+        onClick={toggle}
+      />
+      <aside
+        className={`sidebar ${isOpen ? 'sidebar-expanded' : 'sidebar-collapsed'}`}
+      >
       <button
         type="button"
         className="sidebar-toggle-btn"
@@ -59,5 +66,6 @@ export default function Sidebar({ routes = EMPTY_ROUTES }) {
         </button>
       </div>
     </aside>
+    </>
   );
 }

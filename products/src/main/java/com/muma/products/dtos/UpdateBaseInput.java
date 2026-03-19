@@ -5,8 +5,6 @@ import java.util.UUID;
 public record UpdateBaseInput(
         UUID id,
         String name,
-        String image,
-        String model,
         String category,
         String subcategory,
         String space,

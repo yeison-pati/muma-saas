@@ -4,8 +4,6 @@ export const QUERY_PRODUCTS = `
       id
       code
       name
-      image
-      model
       category
       subcategory
       space
@@ -15,6 +13,8 @@ export const QUERY_PRODUCTS = `
         id
         sapRef
         sapCode
+        image
+        model
         components {
           id
           sapRef
@@ -61,6 +61,8 @@ export const MUTATION_CREATE_VARIANT = `
       id
       sapRef
       sapCode
+      image
+      model
       components {
         id
         sapRef
@@ -80,6 +82,8 @@ export const MUTATION_UPDATE_VARIANT = `
       id
       sapRef
       sapCode
+      image
+      model
       components {
         id
         sapRef
