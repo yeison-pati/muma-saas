@@ -1,48 +1,58 @@
-.colombia-regiones-map {
-  border: 1px solid var(--color-border-hover);
-  border-radius: 8px;
-  padding: 12px;
-  background: var(--color-bg);
-  overflow: auto;
-  height: 100%;
-  min-height: 280px;
-  max-height: 360px;
+.zone-selector-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.colombia-regiones-zoom-hint {
-  font-size: 0.7rem;
-  color: var(--color-text-slate);
-  margin-bottom: 6px;
-}
-
-.colombia-regiones-zoom-wrap {
-  display: block;
-  margin: 0 auto;
-}
-
-.colombia-regiones-svg {
+  margin: 1.5rem 0;
   width: 100%;
-  max-width: 400px;
-  height: auto;
-  display: block;
-  margin: 0 auto;
 }
 
-.colombia-regiones-path {
+.zone-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.zone-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 9999px;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #475569;
   cursor: pointer;
-  transition: fill 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+  backdrop-filter: blur(8px);
 }
 
-.colombia-regiones-path:hover {
-  filter: brightness(0.95);
+.zone-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+  border-color: rgba(0, 0, 0, 0.2);
+  color: #1e293b;
 }
 
-.colombia-regiones-selected {
-  margin: 12px 0 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--color-primary, var(--color-primary));
+.zone-pill.selected {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.25);
+  transform: scale(1.05);
+}
+
+/* Dark mode compatibility if the app uses it */
+@media (prefers-color-scheme: dark) {
+  .zone-pill {
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  }
+  .zone-pill:hover {
+    background: rgba(30, 41, 59, 0.6);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
 }

@@ -44,97 +44,111 @@ export default function DisenadorProyectos() {
           (p.consecutive || p.name || '').toLowerCase().includes(searchText.trim().toLowerCase())
         );
 
+  const selectedProject = projects.find((p) => p.id === expandedId);
+
   return (
-    <div className="disenador-proyectos-page">
-      <p className="disenador-proyectos-desc">
-        Proyectos efectivos asignados a usted. Marque como diseñado cuando termine.
-      </p>
+    <div className={`disenador-page master-detail${expandedId != null ? ' master-detail--detail-open' : ''}`}>
+      <div className="disenador-sidebar">
+        <div className="disenador-sidebar-header">
+          <p className="disenador-desc">Diseños asignados</p>
+          <div className="disenador-search">
+            <input
+              type="text"
+              placeholder="Buscar proyecto..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+          </div>
+          <div className="disenador-tabs">
+            <button
+              type="button"
+              className={activeTab === 'proceso' ? 'active' : ''}
+              onClick={() => setActiveTab('proceso')}
+            >
+              Proceso ({enProceso.length})
+            </button>
+            <button
+              type="button"
+              className={activeTab === 'diseñados' ? 'active' : ''}
+              onClick={() => setActiveTab('diseñados')}
+            >
+              Diseñados ({diseñados.length})
+            </button>
+          </div>
+        </div>
 
-      <div className="disenador-proyectos-search">
-        <input
-          type="text"
-          placeholder="Buscar por consecutivo (ej: 2025...)"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-        />
+        <div className="disenador-sidebar-content">
+          {loading ? (
+            <p className="disenador-loading">Cargando...</p>
+          ) : filtered.length === 0 ? (
+            <p className="disenador-empty">No hay proyectos</p>
+          ) : (
+            <div className="disenador-sidebar-list">
+              {filtered.map((p) => {
+                const isSelected = expandedId === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`disenador-sidebar-item ${isSelected ? 'active' : ''}`}
+                    onClick={() => setExpandedId(p.id)}
+                  >
+                    <span className="disenador-consecutivo">{p.consecutive || 'S/C'}</span>
+                    <span className="disenador-sidebar-client">
+                      {(p.client || 'Sin cliente')} — {(p.name || 'Sin nombre')}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="disenador-proyectos-tabs">
-        <button
-          type="button"
-          className={activeTab === 'proceso' ? 'active' : ''}
-          onClick={() => setActiveTab('proceso')}
-        >
-          En Proceso ({enProceso.length})
-        </button>
-        <button
-          type="button"
-          className={activeTab === 'diseñados' ? 'active' : ''}
-          onClick={() => setActiveTab('diseñados')}
-        >
-          Diseñados ({diseñados.length})
-        </button>
+      <div className="disenador-main">
+        {selectedProject ? (
+          <div className="disenador-detail-view">
+            <div className="disenador-detail-header">
+              <button
+                type="button"
+                className="disenador-back-btn"
+                onClick={() => setExpandedId(null)}
+              >
+                ← Volver
+              </button>
+              <div className="disenador-header-info">
+                <h2>{selectedProject.consecutive} — {selectedProject.name}</h2>
+                <div className="disenador-meta">
+                  <p><strong>Cliente:</strong> {selectedProject.client}</p>
+                </div>
+                <div className="disenador-badges">
+                  <span className="badge badge-version">v{selectedProject.version ?? 1}</span>
+                  <span className="badge badge-estado">Estado: {selectedProject.state ?? 0}%</span>
+                </div>
+              </div>
+            </div>
+
+            <ProjectProductsTable
+              variants={selectedProject.variants || []}
+              projectId={selectedProject.id}
+              onMarkAsDesigned={activeTab === 'proceso' && user?.id ? async (projectId, variantId) => {
+                try {
+                  await catalog.markVariantAsDesigned(projectId, variantId, user.id);
+                  load();
+                } catch (err) {
+                  alert(err?.message || 'Error al marcar diseñado');
+                }
+              } : undefined}
+              onRefresh={load}
+            />
+          </div>
+        ) : (
+          <div className="disenador-no-selection">
+            <span className="selection-icon">🎨</span>
+            <p>Selecciona un proyecto para gestionar diseños</p>
+          </div>
+        )}
       </div>
-
-      {loading ? (
-        <p className="disenador-proyectos-loading">Cargando...</p>
-      ) : filtered.length === 0 ? (
-        <p className="disenador-proyectos-empty">
-          {searchText.trim()
-            ? 'No se encontraron proyectos'
-            : activeTab === 'proceso'
-              ? 'No hay proyectos en proceso'
-              : 'No hay proyectos diseñados'}
-        </p>
-      ) : (
-        <ul className="disenador-proyectos-list">
-          {filtered.map((p) => {
-            const variants = p.variants || [];
-            const isExpanded = expandedId === p.id;
-
-            return (
-              <li key={p.id} className="disenador-proyectos-item">
-                <button
-                  type="button"
-                  className="disenador-proyectos-item-btn"
-                  onClick={() => setExpandedId(isExpanded ? null : p.id)}
-                >
-                  <span className="disenador-consecutivo">{p.consecutive || p.name}</span>
-                  <span> - {p.client || 'Sin cliente'} - {p.name || p.consecutive || 'Sin nombre'}</span>
-                  <span className="disenador-expand">{isExpanded ? '▼' : '▶'}</span>
-                </button>
-                {isExpanded && (
-                  <div className="disenador-proyectos-detail">
-                    <div className="disenador-meta">
-                      <p>Cliente: {p.client}</p>
-                      <p>Región: {p.region}</p>
-                      <p>Total: ${(p.totalCost ?? 0).toLocaleString()}</p>
-                    </div>
-                    <div className="disenador-badges">
-                      <span className="badge badge-products">{variants.length} productos</span>
-                      <span className="badge badge-version">v{p.version ?? 1}</span>
-                      <span className="badge badge-estado">Estado: {p.state ?? 0}%</span>
-                    </div>
-                    <ProjectProductsTable
-                      variants={variants}
-                      projectId={p.id}
-                      onMarkAsDesigned={activeTab === 'proceso' && user?.id ? async (projectId, variantId) => {
-                        try {
-                          await catalog.markVariantAsDesigned(projectId, variantId, user.id);
-                          load();
-                        } catch (err) {
-                          alert(err?.message || 'Error al marcar diseñado');
-                        }
-                      } : undefined}
-                      onRefresh={load}
-                    />
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
     </div>
   );
 }

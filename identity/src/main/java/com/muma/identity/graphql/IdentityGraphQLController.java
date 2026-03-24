@@ -122,7 +122,6 @@ public class IdentityGraphQLController {
                 input.phone(),
                 input.password(),
                 input.role(),
-                input.region(),
                 input.jobTitle(),
                 input.isLeader());
     }
@@ -134,7 +133,6 @@ public class IdentityGraphQLController {
                 input.phone(),
                 input.password(),
                 input.role(),
-                input.region(),
                 input.jobTitle(),
                 input.isLeader(),
                 input.creator());

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 
 const MOBILE_BREAKPOINT_PX = 768;
 
@@ -114,6 +115,58 @@ function DescripcionEstructurada({
   );
 }
 
+/** Solicitudes cotizadas: metadatos + características y comentarios siempre como campos editables (sin segundo desplegable). */
+function DescripcionInlineEditable({
+  variant: v,
+  typeVal,
+  getEffectiveComponents,
+  getEffectiveComments,
+  onComponentChange,
+  onCommentsChange,
+}) {
+  const comps = (v.components || []).filter((c) => c?.id);
+  return (
+    <div className="descripcion-inline-editable">
+      <div className="descripcion-inline-meta">
+        {v.category && <div className="descripcion-inline-title">{v.category}</div>}
+        {v.subcategory && <div className="descripcion-inline-sub">{v.subcategory}</div>}
+        <div className="descripcion-inline-details">
+          {v.line && <span>Línea: {v.line}</span>}
+          {v.space && <span>Espacio: {v.space}</span>}
+          {typeVal != null && typeVal !== '' && <span>Tipología: {typeVal}</span>}
+        </div>
+      </div>
+      {comps.length > 0 && (
+        <div className="descripcion-inline-fields" role="group" aria-label="Características">
+          {comps.map((c) => (
+            <div key={c.id} className="descripcion-inline-field">
+              <label htmlFor={`comp-${v.id}-${c.id}`}>{c.name || c.id}</label>
+              <input
+                id={`comp-${v.id}-${c.id}`}
+                type="text"
+                value={getEffectiveComponents(v)[c.id] ?? ''}
+                placeholder={String(c.catalogOriginalValue ?? c.originalValue ?? c.value ?? '')}
+                onChange={(e) => onComponentChange(v, c, e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="descripcion-inline-field descripcion-inline-field--full">
+        <label htmlFor={`comments-${v.id}`}>Comentarios</label>
+        <textarea
+          id={`comments-${v.id}`}
+          value={getEffectiveComments(v)}
+          onChange={(e) => onCommentsChange(v.id, e.target.value)}
+          placeholder="Sin comentarios"
+          rows={2}
+        />
+      </div>
+    </div>
+  );
+}
+
 /**
  * Tabla de productos de un proyecto, estilo mumaviejo.
  * Muestra: Código (ref+sap según tipología), Imagen, Descripción, Cantidad, Valor, Valor Total, Tiempo.
@@ -144,18 +197,14 @@ export default function ProjectProductsTable({
   onAssignVariant,
   assignOnly = false,
   assignRoleFilter = null,
-  projectRegion = null,
   assigneesQuoter = [],
   assigneesDesigner = [],
   assigneesDevelopment = [],
 }) {
-  const normalizeRegion = (s) => (!s ? '' : String(s).trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, ''));
   const getUser = (item) => item?.user || item;
-  const filterByRegion = (list, region) =>
-    region ? list.filter((item) => normalizeRegion(getUser(item)?.region) === normalizeRegion(region)) : list;
-  const quotersForProject = assignRoleFilter === 'QUOTER' ? filterByRegion(assigneesQuoter, projectRegion) : assigneesQuoter;
-  const designersForProject = assignRoleFilter === 'DESIGNER' ? filterByRegion(assigneesDesigner, projectRegion) : assigneesDesigner;
-  const developersForProject = assignRoleFilter === 'DEVELOPMENT' ? filterByRegion(assigneesDevelopment, projectRegion) : assigneesDevelopment;
+  const quotersForProject = assigneesQuoter;
+  const designersForProject = assigneesDesigner;
+  const developersForProject = assigneesDevelopment;
 
   const { products } = useProducts();
   const enrichedVariants = useMemo(() => enrichVariantsWithProducts(variants, products), [variants, products]);
@@ -165,7 +214,6 @@ export default function ProjectProductsTable({
   const [editingQty, setEditingQty] = useState(null);
   const [qtyValue, setQtyValue] = useState('');
   const [loading, setLoading] = useState(null);
-  const [expandedDesc, setExpandedDesc] = useState(null);
   const [expandedCaract, setExpandedCaract] = useState({}); // variantId -> bool
   const [localMods, setLocalMods] = useState({}); // variantId -> { quantity?, comments?, components?, editedComponentIds?: Record<string, true> }
   const isMobile = useIsMobile(MOBILE_BREAKPOINT_PX);
@@ -286,6 +334,22 @@ export default function ProjectProductsTable({
     } finally {
       setLoading(null);
     }
+  };
+
+  const handleComponentInputChange = (v, c, rawValue) => {
+    const updated = { ...getEffectiveComponents(v), [c.id]: rawValue };
+    const originalByKey = Object.fromEntries(
+      (v.components || []).map((x) => [x?.name || x.id, x?.catalogOriginalValue ?? x?.originalValue ?? x?.value ?? ''])
+    );
+    const updatedByKey = Object.fromEntries(
+      Object.entries(updated).map(([id, val]) => {
+        const comp = (v.components || []).find((x) => String(x.id) === String(id));
+        return [comp?.name || id, val ?? ''];
+      })
+    );
+    const calcType = calculateTipologia(originalByKey, updatedByKey);
+    const newType = v.type === 'p3' ? 'p3' : (calcType !== '' ? calcType : null);
+    notifyProductUpdate(v.id, { components: updated, type: newType });
   };
 
   const handleRemove = async (variantId) => {
@@ -410,7 +474,7 @@ export default function ProjectProductsTable({
           {time ? `${time} días` : '-'}
         </div>
         <div className="col-material">
-          {v.criticalMaterial || '-'}
+          <span>{v.criticalMaterial || '-'}</span>
         </div>
         {assignOnly && (
           <>
@@ -640,64 +704,20 @@ export default function ProjectProductsTable({
   );
 
   const renderDescripcionBlock = (v, listSummaryOnly) => {
-    const isDescExpanded = expandedDesc === v.id;
     const canEdit = allowEditableComponents && onProductUpdate;
+    const mods = getVariantMods(v);
+    const typeValInline = 'type' in mods && mods.type != null ? mods.type : v.type;
     return (
       <div className="col-descripcion">
-        {canEdit && !listSummaryOnly ? (
-          <>
-            <DescripcionEstructurada {...buildDescripcionProps(v, true)} />
-            <button
-              type="button"
-              className="descripcion-edit-toggle"
-              onClick={() => setExpandedDesc(isDescExpanded ? null : v.id)}
-            >
-              {isDescExpanded ? '▼' : '▶'} Editar características y comentarios
-            </button>
-            {isDescExpanded && (
-              <div className="descripcion-edit">
-                {(v.components || []).map((c) => {
-                  const label = c.name || c.id;
-                  return (
-                    <div key={c.id} className="descripcion-edit-row">
-                      <label htmlFor={`comp-${v.id}-${c.id}`}>{label}:</label>
-                      <input
-                        id={`comp-${v.id}-${c.id}`}
-                        type="text"
-                        value={getEffectiveComponents(v)[c.id] ?? ''}
-                        placeholder={c.catalogOriginalValue ?? c.originalValue ?? label}
-                        onChange={(e) => {
-                          const updated = { ...getEffectiveComponents(v), [c.id]: e.target.value };
-                          const originalByKey = Object.fromEntries(
-                            (v.components || []).map((x) => [x?.name || x.id, x?.catalogOriginalValue ?? x?.originalValue ?? x?.value ?? ''])
-                          );
-                          const updatedByKey = Object.fromEntries(
-                            Object.entries(updated).map(([id, val]) => {
-                              const comp = (v.components || []).find((x) => String(x.id) === String(id));
-                              return [comp?.name || id, val ?? ''];
-                            })
-                          );
-                          const calcType = calculateTipologia(originalByKey, updatedByKey);
-                          const newType = v.type === 'p3' ? 'p3' : (calcType !== '' ? calcType : null);
-                          notifyProductUpdate(v.id, { components: updated, type: newType });
-                        }}
-                      />
-                    </div>
-                  );
-                })}
-                <div className="descripcion-edit-row">
-                  <label htmlFor={`comments-${v.id}`}>Comentarios:</label>
-                  <textarea
-                    id={`comments-${v.id}`}
-                    value={getEffectiveComments(v)}
-                    onChange={(e) => notifyProductUpdate(v.id, { comments: e.target.value })}
-                    placeholder="Comentarios..."
-                    rows={2}
-                  />
-                </div>
-              </div>
-            )}
-          </>
+        {cotizadas && canEdit && !listSummaryOnly ? (
+          <DescripcionInlineEditable
+            variant={v}
+            typeVal={typeValInline}
+            getEffectiveComponents={getEffectiveComponents}
+            getEffectiveComments={getEffectiveComments}
+            onComponentChange={handleComponentInputChange}
+            onCommentsChange={(variantId, text) => notifyProductUpdate(variantId, { comments: text })}
+          />
         ) : canEdit && listSummaryOnly ? (
           <DescripcionEstructurada {...buildDescripcionProps(v, true)} listSummaryOnly />
         ) : (
@@ -775,48 +795,52 @@ export default function ProjectProductsTable({
           );
         })}
       </div>
-      {isMobile && mobileDetailVariant && (
-        <div
-          className="project-product-mobile-modal-backdrop"
-          role="presentation"
-          onClick={() => setMobileDetailId(null)}
-        >
+      {isMobile &&
+        mobileDetailVariant &&
+        typeof document !== 'undefined' &&
+        createPortal(
           <div
-            className="project-product-mobile-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="project-product-mobile-modal-title"
-            onClick={(e) => e.stopPropagation()}
+            className="project-product-mobile-modal-backdrop"
+            role="presentation"
+            onClick={() => setMobileDetailId(null)}
           >
-            <div className="project-product-mobile-modal-header">
-              <h2 id="project-product-mobile-modal-title" className="project-product-mobile-modal-title">
-                Detalle del producto
-              </h2>
-              <button
-                type="button"
-                className="project-product-mobile-modal-close"
-                onClick={() => setMobileDetailId(null)}
-                aria-label="Cerrar"
-              >
-                ×
-              </button>
-            </div>
-            <div className="project-product-mobile-modal-scroll">
-              <div className="ppm-modal-hero">
-                {renderImagenBlock(
-                  mobileDetailVariant,
-                  mobileDetailVariant.baseImage ? imageUrls[mobileDetailVariant.baseImage] : null
-                )}
-                {renderCodigoBlock(mobileDetailVariant, allowEditableComponents && !!onProductUpdate)}
+            <div
+              className="project-product-mobile-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="project-product-mobile-modal-title"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="project-product-mobile-modal-header">
+                <h2 id="project-product-mobile-modal-title" className="project-product-mobile-modal-title">
+                  Detalle del producto
+                </h2>
+                <button
+                  type="button"
+                  className="project-product-mobile-modal-close"
+                  onClick={() => setMobileDetailId(null)}
+                  aria-label="Cerrar"
+                >
+                  ×
+                </button>
               </div>
-              {renderDescripcionBlock(mobileDetailVariant, false)}
-              <div className="ppm-modal-stack">
-                {renderRowTail(mobileDetailVariant)}
+              <div className="project-product-mobile-modal-scroll">
+                <div className="ppm-modal-hero">
+                  {renderImagenBlock(
+                    mobileDetailVariant,
+                    mobileDetailVariant.baseImage ? imageUrls[mobileDetailVariant.baseImage] : null
+                  )}
+                  {renderCodigoBlock(mobileDetailVariant, allowEditableComponents && !!onProductUpdate)}
+                </div>
+                {renderDescripcionBlock(mobileDetailVariant, false)}
+                <div className="ppm-modal-stack">
+                  {renderRowTail(mobileDetailVariant)}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
       {assignOnly && (
         <AssignConfirmModal
           visible={!!pendingAssign}

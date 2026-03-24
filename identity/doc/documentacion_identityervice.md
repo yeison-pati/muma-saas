@@ -32,12 +32,14 @@ Tabla principal de identidad.
 | phone | VARCHAR(50) | Teléfono |
 | password | TEXT | Password encriptado (BCrypt) |
 | role | VARCHAR(50) | Rol principal (ADMIN, SALES, QUOTER, DESIGNER) |
-| region | VARCHAR(100) | Región / sede |
 | job_title | VARCHAR(150) | Cargo |
+| is_leader | BOOLEAN | Si es líder y puede asignar (cotizador/diseñador/desarrollo) |
 | created_at | TIMESTAMP | Fecha creación |
 | updated_at | TIMESTAMP | Fecha actualización |
 | created_by | VARCHAR(150) | Usuario creador |
 | updated_by | VARCHAR(150) | Usuario editor |
+
+> **Migraciones:** los cambios de esquema se versionan con Flyway en `src/main/resources/db/migration/` (p. ej. `V2__drop_users_region.sql` eliminó la columna `region`, ya no usada por la API).
 
 Índices:
 - `idx_users_email`
@@ -244,6 +246,14 @@ Se inserta un ADMIN por defecto:
 - Persistencia de claves RSA
 - Auditoría (created_by / updated_by automático)
 - Soporte multi-rol
+
+---
+
+## 10. Migraciones Flyway
+
+- **Migraciones versionadas:** `identity/src/main/resources/db/migration/V{version}__descripcion.sql`. Se aplican al **arrancar** el servicio (antes de `ddl-auto: validate`). No hay scripts de shell en el deploy: solo la imagen Docker con el JAR.
+
+En **GitHub Actions** (CI), el job `flyway-migration-check` solo añade notas al summary cuando en el push **cambian** archivos `**/db/migration/V*.sql`; el build y el deploy en Linux no ejecutan scripts auxiliares.
 
 ---
 

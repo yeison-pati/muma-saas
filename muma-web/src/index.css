@@ -85,6 +85,10 @@
   --bp-md: 768px;
   --bp-lg: 992px;
   --bp-xl: 1200px;
+
+  /* Layout dashboard (alinea con Navbar fija) */
+  --navbar-height: 56px;
+  --master-detail-height: calc(100vh - var(--navbar-height));
 }
 
 * {

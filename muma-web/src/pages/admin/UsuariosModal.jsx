@@ -1,4 +1,4 @@
-import { COLOMBIA_REGIONS } from '../../components/ColombiaRegionesMap';
+
 
 export default function UsuariosModal({ mode, form, setForm, onClose, onSubmit }) {
   return (
@@ -72,19 +72,6 @@ export default function UsuariosModal({ mode, form, setForm, onClose, onSubmit }
                 <option value="DEVELOPMENT">Desarrollo</option>
                 <option value="ADMIN">Admin</option>
               </select>
-              <label htmlFor="usuarios-region">Región</label>
-              <select
-                id="usuarios-region"
-                value={form.region}
-                onChange={(e) => setForm((p) => ({ ...p, region: e.target.value }))}
-              >
-                <option value="">Seleccionar región</option>
-                {COLOMBIA_REGIONS.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
               <label htmlFor="usuarios-jobTitle">Cargo</label>
               <input
                 id="usuarios-jobTitle"
@@ -104,19 +91,6 @@ export default function UsuariosModal({ mode, form, setForm, onClose, onSubmit }
           )}
           {mode === 'edit' && (
             <>
-              <label htmlFor="usuarios-region-edit">Región</label>
-              <select
-                id="usuarios-region-edit"
-                value={form.region}
-                onChange={(e) => setForm((p) => ({ ...p, region: e.target.value }))}
-              >
-                <option value="">Seleccionar región</option>
-                {COLOMBIA_REGIONS.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
               <label htmlFor="usuarios-jobTitle-edit">Cargo</label>
               <input
                 id="usuarios-jobTitle-edit"

@@ -96,63 +96,87 @@ export default function AsignacionProyectos() {
     [developers, developerCounts]
   );
 
-  return (
-    <div className="asignacion-page">
-      <h1>Asignación de productos</h1>
+  const selectedProject = projects.find((p) => p.id === expandedId);
 
-      <div className="asignacion-search">
-        <input
-          type="text"
-          placeholder="Buscar por consecutivo"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-        />
+  return (
+    <div className={`asignacion-page master-detail${expandedId != null ? ' master-detail--detail-open' : ''}`}>
+      <div className="asignacion-sidebar">
+        <div className="asignacion-sidebar-header">
+          <h1>Asignación</h1>
+          <div className="asignacion-search">
+            <input
+              type="text"
+              placeholder="Buscar por consecutivo..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="asignacion-sidebar-content">
+          {loading ? (
+            <p className="asignacion-loading">Cargando...</p>
+          ) : filtered.length === 0 ? (
+            <p className="asignacion-empty">No hay proyectos</p>
+          ) : (
+            <div className="asignacion-sidebar-list">
+              {filtered.map((p) => {
+                const isSelected = expandedId === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`asignacion-sidebar-item ${isSelected ? 'active' : ''}`}
+                    onClick={() => setExpandedId(p.id)}
+                  >
+                    <span className="asignacion-consecutivo">{p.consecutive || 'S/C'}</span>
+                    <span className="asignacion-sidebar-client">
+                      {(p.client || 'Sin cliente')} — {(p.name || 'Sin nombre')}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
-      {loading ? (
-        <p className="asignacion-loading">Cargando proyectos...</p>
-      ) : filtered.length === 0 ? (
-        <p className="asignacion-empty">
-          {searchText.trim() ? 'No se encontraron proyectos' : 'No hay proyectos para asignar'}
-        </p>
-      ) : (
-        <ul className="asignacion-list">
-          {filtered.map((p) => {
-            const variants = p.variants || [];
-            const isExpanded = expandedId === p.id;
-            return (
-              <li key={p.id} className="asignacion-item">
-                <button
-                  type="button"
-                  className="asignacion-item-btn"
-                  onClick={() => setExpandedId(isExpanded ? null : p.id)}
-                >
-                  <span className="asignacion-consecutivo">{p.consecutive || p.name}</span>
-                  <span> — {p.client || 'Sin cliente'} - {p.name || p.consecutive || 'Sin nombre'}</span>
-                  <span className="asignacion-badge">{variants.length} producto{variants.length !== 1 ? 's' : ''}</span>
-                </button>
-                {isExpanded && (
-                  <div className="asignacion-detail">
-                    <p>Cliente: {p.client} | Región: {p.region}</p>
-                    <ProjectProductsTable
-                      variants={variants}
-                      projectId={p.id}
-                      assignOnly
-                      assignRoleFilter={assignRoleFilter}
-                      projectRegion={p.region}
-                      assigneesQuoter={quotersWithCount}
-                      assigneesDesigner={designersWithCount}
-                      assigneesDevelopment={developersWithCount}
-                      onAssignVariant={handleAssignVariant}
-                      onRefresh={load}
-                    />
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <div className="asignacion-main">
+        {selectedProject ? (
+          <div className="asignacion-detail-view">
+            <div className="asignacion-detail-header">
+              <button
+                type="button"
+                className="asignacion-back-btn"
+                onClick={() => setExpandedId(null)}
+              >
+                ← Volver
+              </button>
+              <div className="asignacion-header-info">
+                <h2>{selectedProject.consecutive} — {selectedProject.name}</h2>
+                <p><strong>Cliente:</strong> {selectedProject.client}</p>
+              </div>
+            </div>
+
+            <ProjectProductsTable
+              variants={selectedProject.variants || []}
+              projectId={selectedProject.id}
+              assignOnly
+              assignRoleFilter={assignRoleFilter}
+              assigneesQuoter={quotersWithCount}
+              assigneesDesigner={designersWithCount}
+              assigneesDevelopment={developersWithCount}
+              onAssignVariant={handleAssignVariant}
+              onRefresh={load}
+            />
+          </div>
+        ) : (
+          <div className="asignacion-no-selection">
+            <span className="selection-icon">📋</span>
+            <p>Selecciona un proyecto de la lista para gestionar asignaciones</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

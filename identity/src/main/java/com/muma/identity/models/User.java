@@ -29,7 +29,7 @@ public class User {
     private String phone;
     private String password;
     private String role;
-    private String region;
+
 
     @Column(name = "job_title")
     private String jobTitle;

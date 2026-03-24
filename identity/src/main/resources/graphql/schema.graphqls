@@ -39,7 +39,7 @@ type UserResponse {
   email: String!
   phone: String
   role: String!
-  region: String
+
   jobTitle: String
   isLeader: Boolean
   createdAt: String
@@ -108,7 +108,7 @@ input RegisterInput {
   phone: String
   password: String!
   role: String!
-  region: String
+
   jobTitle: String
   isLeader: Boolean
   creator: String
@@ -121,7 +121,6 @@ input UserUpdateInput {
   phone: String
   password: String
   role: String
-  region: String
   jobTitle: String
   isLeader: Boolean
 }

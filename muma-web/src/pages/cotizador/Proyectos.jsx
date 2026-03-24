@@ -32,16 +32,21 @@ function cotizadorReducer(state, action) {
   }
 }
 
+function filterCotizadorList(projects, activeTab, searchText) {
+  const base =
+    activeTab === 'proceso'
+      ? projects.filter((p) => !p.quoted || p.reopen)
+      : projects.filter((p) => p.quoted && !p.reopen);
+  const q = searchText.trim().toLowerCase();
+  return base.filter((p) => (p.consecutive || p.name || '').toLowerCase().includes(q));
+}
+
 function CotizadorList({
   filtered,
   searchText,
   activeTab,
-  expandedId,
-  setExpandedId,
-  setEditingVariant,
-  editingVariant,
-  refreshProjects,
-  onToggleP3P5,
+  selectedId,
+  setSelectedId,
 }) {
   if (filtered.length === 0) {
     return (
@@ -55,65 +60,28 @@ function CotizadorList({
     );
   }
   return (
-    <ul className="cotizador-list">
+    <div className="cotizador-sidebar-list">
       {filtered.map((p) => {
-        const variants = p.variants || [];
-        const isExpanded = expandedId === p.id;
-        const isCotizados = activeTab === 'cotizados';
-
+        const isSelected = selectedId === p.id;
         return (
-          <li key={p.id} className="cotizador-item">
-            <button
-              type="button"
-              className="cotizador-item-btn"
-              onClick={() => setExpandedId(isExpanded ? null : p.id)}
-            >
-              <span className="cotizador-consecutivo">{p.consecutive || p.name}</span>
-              <span> - {p.client || 'Sin cliente'} - {p.name || p.consecutive || 'Sin nombre'}</span>
-              {p.quoted && !p.reopen && <span className="cotizador-tag"> ✓ Cotizado</span>}
+          <button
+            key={p.id}
+            type="button"
+            className={`cotizador-sidebar-item ${isSelected ? 'active' : ''}`}
+            onClick={() => setSelectedId(p.id)}
+          >
+            <span className="cotizador-consecutivo">{p.consecutive || 'S/C'}</span>
+            <span className="cotizador-sidebar-client">
+              {(p.client || 'Sin cliente')} — {(p.name || 'Sin nombre')}
+            </span>
+            <div className="cotizador-sidebar-badges">
+              {p.quoted && !p.reopen && <span className="cotizador-tag">✓ Cotizado</span>}
               {p.effective && <span className="cotizador-effective-tag"> (Efectivo)</span>}
-            </button>
-            {isExpanded && (
-              <div className="cotizador-detail">
-                <div className="cotizador-meta">
-                  <p>Cliente: {p.client} | Región: {p.region}</p>
-                  <p>Total: ${(p.totalCost ?? 0).toLocaleString()}</p>
-                </div>
-                <div className="cotizador-badges">
-                  <span className="badge badge-products">{variants.length} producto{variants.length !== 1 ? 's' : ''}</span>
-                  <span className="badge badge-version">v{p.version ?? 1}</span>
-                  <span className="badge badge-estado">Estado: {p.state ?? 0}%</span>
-                </div>
-                {activeTab === 'proceso' && (
-                  <ProjectProductsTable
-                    variants={variants}
-                    projectId={p.id}
-                    proceso
-                    reopen={p.reopen}
-                    onQuoteClick={(v) =>
-                      setEditingVariant(
-                        editingVariant?.id === v.id ? null : { ...v, projectId: p.id }
-                      )
-                    }
-                    onToggleP3P5={onToggleP3P5}
-                    onRefresh={refreshProjects}
-                  />
-                )}
-                {isCotizados && (
-                  <ProjectProductsTable
-                    variants={variants}
-                    projectId={p.id}
-                    cotizadas
-                    onRefresh={refreshProjects}
-                    onToggleP3P5={onToggleP3P5}
-                  />
-                )}
-              </div>
-            )}
-          </li>
+            </div>
+          </button>
         );
       })}
-    </ul>
+    </div>
   );
 }
 
@@ -136,14 +104,14 @@ export default function CotizadorProyectos() {
   const enProceso = projects.filter((p) => !p.quoted || p.reopen);
   const cotizados = projects.filter((p) => p.quoted && !p.reopen);
 
-  const filtered =
-    activeTab === 'proceso'
-      ? enProceso.filter((p) =>
-          (p.consecutive || p.name || '').toLowerCase().includes(searchText.trim().toLowerCase())
-        )
-      : cotizados.filter((p) =>
-          (p.consecutive || p.name || '').toLowerCase().includes(searchText.trim().toLowerCase())
-        );
+  const filtered = filterCotizadorList(projects, activeTab, searchText);
+
+  useEffect(() => {
+    if (expandedId == null) return;
+    if (!filterCotizadorList(projects, activeTab, searchText).some((p) => p.id === expandedId)) {
+      dispatch({ type: 'SET_EXPANDED_ID', payload: null });
+    }
+  }, [expandedId, activeTab, searchText, projects]);
 
   const refreshProjects = () => {
     if (user?.id) {
@@ -177,52 +145,102 @@ export default function CotizadorProyectos() {
     }
   };
 
+  const selectedProject = projects.find((p) => p.id === expandedId);
+  const isCotizadosTab = activeTab === 'cotizados';
+
   return (
-    <div className="cotizador-page">
+    <div className={`cotizador-page master-detail${expandedId != null ? ' master-detail--detail-open' : ''}`}>
+      <div className="cotizador-sidebar">
+        <div className="cotizador-sidebar-header">
+          <div className="cotizador-search">
+            <input
+              type="text"
+              placeholder="Buscar proyecto..."
+              value={searchText}
+              onChange={(e) => dispatch({ type: 'SET_SEARCH_TEXT', payload: e.target.value })}
+            />
+          </div>
 
-      <div className="cotizador-search">
-        <input
-          type="text"
-          placeholder="Buscar por consecutivo (ej: 2025...)"
-          value={searchText}
-          onChange={(e) => dispatch({ type: 'SET_SEARCH_TEXT', payload: e.target.value })}
-        />
-      </div>
-
-      <div className="cotizador-tabs">
-        <button
-          type="button"
-          className={activeTab === 'proceso' ? 'active' : ''}
-          onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: 'proceso' })}
-        >
-          En Proceso ({enProceso.length})
-        </button>
-        <button
-          type="button"
-          className={activeTab === 'cotizados' ? 'active' : ''}
-          onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: 'cotizados' })}
-        >
-          Cotizados ({cotizados.length})
-        </button>
-      </div>
-
-      {loading ? (
-        <p className="cotizador-loading">Cargando...</p>
-      ) : (
-        <div className="cotizador-content">
-          <CotizadorList
-            filtered={filtered}
-            searchText={searchText}
-            activeTab={activeTab}
-            expandedId={expandedId}
-            setExpandedId={(id) => dispatch({ type: 'SET_EXPANDED_ID', payload: id })}
-            setEditingVariant={(v) => dispatch({ type: 'SET_EDITING_VARIANT', payload: v })}
-            editingVariant={editingVariant}
-            refreshProjects={refreshProjects}
-            onToggleP3P5={handleToggleP3P5}
-          />
+          <div className="cotizador-tabs">
+            <button
+              type="button"
+              className={activeTab === 'proceso' ? 'active' : ''}
+              onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: 'proceso' })}
+            >
+              Proceso ({enProceso.length})
+            </button>
+            <button
+              type="button"
+              className={activeTab === 'cotizados' ? 'active' : ''}
+              onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: 'cotizados' })}
+            >
+              Cotizados ({cotizados.length})
+            </button>
+          </div>
         </div>
-      )}
+
+        <div className="cotizador-sidebar-content">
+          {loading ? (
+            <p className="cotizador-loading">Cargando...</p>
+          ) : (
+            <CotizadorList
+              filtered={filtered}
+              searchText={searchText}
+              activeTab={activeTab}
+              selectedId={expandedId}
+              setSelectedId={(id) => dispatch({ type: 'SET_EXPANDED_ID', payload: id })}
+            />
+          )}
+        </div>
+      </div>
+
+      <div className="cotizador-main">
+        {selectedProject ? (
+          <div className="cotizador-detail-view">
+            <div className="cotizador-detail-header">
+              <button
+                type="button"
+                className="cotizador-back-btn"
+                onClick={() => dispatch({ type: 'SET_EXPANDED_ID', payload: null })}
+              >
+                ← Volver
+              </button>
+              <div className="cotizador-header-info">
+                <h2>{selectedProject.consecutive} — {selectedProject.name}</h2>
+                <div className="cotizador-meta">
+                  <p><strong>Cliente:</strong> {selectedProject.client}</p>
+                  <p><strong>Total:</strong> ${(selectedProject.totalCost ?? 0).toLocaleString()}</p>
+                </div>
+                <div className="cotizador-badges">
+                  <span className="badge badge-version">v{selectedProject.version ?? 1}</span>
+                  <span className="badge badge-estado">Estado: {selectedProject.state ?? 0}%</span>
+                </div>
+              </div>
+            </div>
+
+            <ProjectProductsTable
+              variants={selectedProject.variants || []}
+              projectId={selectedProject.id}
+              proceso={!isCotizadosTab}
+              cotizadas={isCotizadosTab}
+              reopen={selectedProject.reopen}
+              onQuoteClick={(v) =>
+                dispatch({
+                  type: 'SET_EDITING_VARIANT',
+                  payload: editingVariant?.id === v.id ? null : { ...v, projectId: selectedProject.id }
+                })
+              }
+              onToggleP3P5={handleToggleP3P5}
+              onRefresh={refreshProjects}
+            />
+          </div>
+        ) : (
+          <div className="cotizador-no-selection">
+            <span className="selection-icon">💰</span>
+            <p>Selecciona un proyecto de la lista para gestionar la cotización</p>
+          </div>
+        )}
+      </div>
 
       {editingVariant && (
         <div

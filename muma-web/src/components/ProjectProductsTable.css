@@ -2,9 +2,29 @@
 .project-products-table-wrap {
   background: var(--color-bg-white);
   overflow-x: auto;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid var(--color-border-light);
+  width: 100%;
   max-width: 100%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* Custom modern scrollbar */
+.project-products-table-wrap::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.project-products-table-wrap::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 0 0 8px 8px;
+}
+.project-products-table-wrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  border: 2px solid #f1f5f9;
+}
+.project-products-table-wrap::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 /* Móvil: solo Código + Imagen + Descripción; detalle en modal */
@@ -106,8 +126,9 @@
 }
 
 /*
- * Modal detalle móvil (solo se monta en vista móvil desde React).
- * z-index 10050 — por debajo de cotización/asignación secundaria (10080+) y confirmación (10100).
+ * Modal detalle móvil: se renderiza con createPortal en document.body para no quedar
+ * recortado ni por debajo del navbar por overflow-y: auto en <main> del dashboard.
+ * z-index 10050 — por encima de navbar (100) y sidebar (1000); por debajo de cotización (10080+) y confirmación (10100).
  */
 .project-product-mobile-modal-backdrop {
   position: fixed;
@@ -119,8 +140,11 @@
   align-items: stretch;
   justify-content: stretch;
   padding: 0;
+  padding-top: env(safe-area-inset-top, 0px);
+  box-sizing: border-box;
   animation: ppm-backdrop-in 0.2s ease;
   min-height: 100dvh;
+  min-height: 100svh;
 }
 
 @keyframes ppm-backdrop-in {
@@ -161,7 +185,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 14px calc(16px + env(safe-area-inset-right, 0px)) 14px calc(16px + env(safe-area-inset-left, 0px));
   border-bottom: 1px solid var(--color-border-light);
   background: var(--color-primary);
   color: white;
@@ -377,59 +401,55 @@
   box-sizing: border-box;
 }
 
-.project-products-header {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  background: var(--color-primary);
-  color: white;
-  font-weight: 600;
-  font-size: 0.85rem;
-}
-
-.project-products-body {
-  background: var(--color-bg-white);
-}
-
 .project-products-row {
   display: flex;
   align-items: stretch;
-  min-height: 140px;
+  min-height: 100px;
   border-bottom: 1px solid var(--color-border-light);
-  padding: 12px 16px;
-  font-size: 0.9rem;
+  padding: 8px 12px;
+  font-size: 0.8rem;
   background: var(--color-bg-white);
 }
 
-.project-products-row:hover {
-  background: var(--color-bg-soft-hover);
+.project-products-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--color-primary);
+  color: white;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  min-width: 100%;
+  box-sizing: border-box;
 }
 
-.project-products-empty {
-  padding: 32px;
-  text-align: center;
-  color: var(--color-text-muted);
-  font-style: italic;
-  background: var(--color-bg-white);
-}
-
-/* Columnas - proporciones como mumaviejo */
-.col-codigo { flex: 1; min-width: 90px; display: flex; flex-direction: column; justify-content: center; }
-.col-imagen { flex: 1; min-width: 90px; display: flex; align-items: center; justify-content: center; padding: 0 8px; }
-.col-descripcion { flex: 2.5; min-width: 200px; display: flex; flex-direction: column; justify-content: flex-start; padding: 8px 12px; }
-.col-cantidad { flex: 0.8; min-width: 70px; display: flex; align-items: center; justify-content: center; }
-.col-valor { flex: 1; min-width: 90px; display: flex; align-items: center; justify-content: center; }
-.col-valor-total { flex: 1; min-width: 100px; display: flex; align-items: center; justify-content: center; }
-.col-tiempo { flex: 0.8; min-width: 70px; display: flex; align-items: center; justify-content: center; }
-.col-material { flex: 1.2; min-width: 100px; display: flex; align-items: flex-start; justify-content: center; padding: 8px; font-size: 11px; color: var(--color-text-secondary); word-break: break-word; text-align: center; }
+.col-codigo { flex: 0 0 75px; min-width: 75px; display: flex; flex-direction: column; justify-content: center; }
+.col-imagen { flex: 0 0 65px; min-width: 65px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+.col-descripcion { flex: 1 1 180px; min-width: 150px; display: flex; flex-direction: column; justify-content: flex-start; padding: 4px 10px; }
+.col-cantidad { flex: 0 0 45px; min-width: 45px; display: flex; align-items: center; justify-content: center; }
+.col-valor { flex: 0 0 95px; min-width: 95px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; text-align: center; }
+.col-valor-total { flex: 0 0 105px; min-width: 105px; display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--color-primary); font-size: 0.78rem; text-align: center; }
+.col-tiempo { flex: 0 0 60px; min-width: 60px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; text-align: center; }
+.col-material { flex: 0 0 95px; min-width: 95px; display: flex; align-items: center; justify-content: center; padding: 4px; font-size: 9px; color: var(--color-text-secondary); word-break: break-word; text-align: center; line-height: 1.1; }
 .col-acciones {
-  flex: 1;
-  min-width: 90px;
+  flex: 0 0 100px;
+  min-width: 100px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
+}
+
+.col-asignar {
+  flex: 0 0 110px;
+  min-width: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
 }
 
 .col-asignar {
@@ -481,24 +501,24 @@
 
 /* Imagen */
 .product-thumb {
-  width: 64px;
-  height: 64px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
-  border-radius: 6px;
+  border-radius: 4px;
   border: 1px solid var(--color-border-light);
   background: var(--color-bg-soft);
 }
 
 .product-thumb-placeholder {
-  width: 64px;
-  height: 64px;
-  border-radius: 6px;
+  width: 52px;
+  height: 52px;
+  border-radius: 4px;
   border: 1px solid var(--color-border);
   background: var(--color-bg-hover);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 9px;
   color: var(--color-text-muted);
   font-weight: 500;
 }
@@ -630,9 +650,9 @@
   border: none;
   cursor: pointer;
   text-align: left;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--color-text-secondary);
-  line-height: 1.4;
+  line-height: 1.3;
   padding: 0;
 }
 
@@ -678,6 +698,99 @@
 .descripcion-edit-row textarea {
   resize: vertical;
   min-height: 40px;
+}
+
+/* Solicitudes cotizadas: una sola columna, valores ya en inputs (sin desplegable duplicado) */
+.descripcion-inline-editable {
+  font-size: 12px;
+  line-height: 1.35;
+  min-width: 0;
+}
+
+.descripcion-inline-meta {
+  margin-bottom: 8px;
+}
+
+.descripcion-inline-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-text-heading);
+  margin: 0 0 2px;
+}
+
+.descripcion-inline-sub {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.descripcion-inline-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.descripcion-inline-details span {
+  white-space: nowrap;
+}
+
+.descripcion-inline-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0 6px;
+  margin: 0;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.descripcion-inline-field label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.descripcion-inline-field input,
+.descripcion-inline-field textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  background: var(--color-bg-white);
+  color: var(--color-text-input);
+}
+
+.descripcion-inline-field input:focus,
+.descripcion-inline-field textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-alpha-10);
+}
+
+.descripcion-inline-field--full {
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.descripcion-inline-field textarea {
+  resize: vertical;
+  min-height: 52px;
+}
+
+@media (max-width: 768px) {
+  .project-product-mobile-modal-scroll .descripcion-inline-fields {
+    padding-bottom: 4px;
+  }
 }
 
 /* Edición cantidad */

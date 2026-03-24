@@ -10,7 +10,7 @@ public record UserUpdate(
     String phone,
     String password,
     String role,
-    String region,
+
     String jobTitle,
     Boolean isLeader
 ) {

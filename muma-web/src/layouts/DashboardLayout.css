@@ -8,9 +8,11 @@
 
 .dashboard-layout > main {
   flex: 1;
-  padding-top: 56px;
-  overflow: auto;
+  padding-top: var(--navbar-height, 56px);
+  overflow-x: hidden;
+  overflow-y: auto;
   min-width: 0;
+  max-width: 100%;
 }
 
 @media (max-width: 767px) {

@@ -7,7 +7,6 @@ export const MUTATION_SIGN_IN = `
         email
         phone
         role
-        region
         jobTitle
         isLeader
       }
@@ -32,7 +31,6 @@ const QUOTER_FIELDS = `
     email
     phone
     role
-    region
     jobTitle
     isLeader
     createdBy
@@ -61,7 +59,6 @@ export const QUERY_SALES = `
           email
           phone
           role
-          region
           jobTitle
           isLeader
           createdBy
@@ -84,7 +81,6 @@ export const QUERY_DESIGNERS = `
           email
           phone
           role
-          region
           jobTitle
           isLeader
           createdBy
@@ -107,7 +103,6 @@ export const QUERY_DEVELOPERS = `
           email
           phone
           role
-          region
           jobTitle
           isLeader
           createdBy

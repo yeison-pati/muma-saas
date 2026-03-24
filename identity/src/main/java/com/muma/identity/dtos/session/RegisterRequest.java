@@ -7,7 +7,7 @@ public record RegisterRequest(
     String phone,
     String password,
     String role,
-    String region,
+
     String jobTitle,
     Boolean isLeader,
     String creator

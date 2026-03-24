@@ -6,11 +6,60 @@ on:
       - master # Cambiado a master según tu repositorio
 
 jobs:
-  build-and-push:
+  # Solo hace trabajo extra si en el push cambian migraciones Flyway (V{n}__*.sql).
+  # Si no hay cambios en esos archivos, deja constancia en el summary y termina OK.
+  flyway-migration-check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect cambios en db/migration (Flyway)
+        id: mig
+        run: |
+          set -e
+          git fetch origin master 2>/dev/null || true
+          if git rev-parse origin/master >/dev/null 2>&1; then
+            BASE=$(git merge-base HEAD origin/master)
+          else
+            BASE="HEAD~1"
+          fi
+          AFTER="${{ github.sha }}"
+          FILES=$(git diff --name-only "$BASE" "$AFTER" 2>/dev/null | grep -E 'db/migration/V[0-9]+__[^/]+\.sql$' || true)
+          OTHER=$(git diff --name-only "$BASE" "$AFTER" 2>/dev/null | grep 'db/migration' | grep -v -E 'db/migration/V[0-9]+__[^/]+\.sql$' || true)
+          if [ -n "$OTHER" ]; then
+            echo "::warning::Archivos bajo db/migration sin patrón Flyway V{version}__nombre.sql:"
+            echo "$OTHER"
+          fi
+          if [ -n "$FILES" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            {
+              echo "### Migraciones Flyway detectadas en este push"
+              echo ""
+              echo "Se validará el build; al desplegar, el contenedor aplicará estas migraciones al arrancar."
+              echo ""
+              echo '```'
+              echo "$FILES"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "$FILES"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            {
+              echo "### Migraciones Flyway"
+              echo ""
+              echo "No hubo cambios en archivos db/migration/V*__*.sql respecto a la base de comparación. No hay pasos extra de migración en CI."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  build-and-push:
+    needs: flyway-migration-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       # 1. Instalar la CLI de Infisical
       - name: Install Infisical CLI

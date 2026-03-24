@@ -57,7 +57,7 @@ public class AdminService {
         if (userUpdate.password() != null && !userUpdate.password().isBlank())
             user.setPassword(passwordEncoder.encode(userUpdate.password()));
         if (userUpdate.role() != null) user.setRole(userUpdate.role());
-        if (userUpdate.region() != null) user.setRegion(userUpdate.region());
+
         if (userUpdate.jobTitle() != null) user.setJobTitle(userUpdate.jobTitle());
         if (userUpdate.isLeader() != null) user.setIsLeader(userUpdate.isLeader());
         user.setUpdatedAt(LocalDateTime.now());
@@ -75,7 +75,6 @@ public class AdminService {
                         .phone(request.phone())
                         .password(passwordEncoder.encode(request.password()))
                         .role(request.role())
-                        .region(request.region())
                         .jobTitle(request.jobTitle())
                         .isLeader(Boolean.TRUE.equals(request.isLeader()))
                         .createdBy(request.creator())
@@ -149,7 +148,7 @@ public class AdminService {
         if (userUpdate.password() != null && !userUpdate.password().isBlank())
             user.setPassword(passwordEncoder.encode(userUpdate.password()));
         if (userUpdate.role() != null) user.setRole(userUpdate.role());
-        if (userUpdate.region() != null) user.setRegion(userUpdate.region());
+
         if (userUpdate.jobTitle() != null) user.setJobTitle(userUpdate.jobTitle());
         if (userUpdate.isLeader() != null) user.setIsLeader(userUpdate.isLeader());
         userRepository.save(user);

@@ -4,7 +4,6 @@ import { useCatalogService } from '../../hooks/useCatalogService';
 import { generateProjectPdf } from '../../api/documentService';
 import PDFFormModal from '../../components/PDFFormModal';
 import ProjectProductsTable from '../../components/ProjectProductsTable';
-import { COLOMBIA_REGIONS } from '../../components/ColombiaRegionesMap';
 import './Solicitudes.css';
 
 const initialState = {
@@ -12,7 +11,6 @@ const initialState = {
   loading: true,
   activeTab: 'proceso',
   searchText: '',
-  filterRegion: '',
   expandedId: null,
   pdfModal: { visible: false, project: null, products: [] },
   modificaciones: {},
@@ -28,8 +26,6 @@ function solicitudesReducer(state, action) {
       return { ...state, activeTab: action.payload };
     case 'SET_SEARCH_TEXT':
       return { ...state, searchText: action.payload };
-    case 'SET_FILTER_REGION':
-      return { ...state, filterRegion: action.payload };
     case 'SET_EXPANDED_ID':
       return { ...state, expandedId: action.payload };
     case 'SET_PDF_MODAL':
@@ -45,28 +41,28 @@ function solicitudesReducer(state, action) {
   }
 }
 
+/** Lista visible según pestaña y búsqueda (misma regla que el sidebar). */
+function filterSolicitudesList(projects, activeTab, searchText) {
+  const base =
+    activeTab === 'proceso'
+      ? projects.filter((p) => !p.quoted || p.reopen)
+      : projects.filter((p) => p.quoted && !p.reopen);
+  const q = searchText.trim().toLowerCase();
+  if (!q) return base;
+  return base.filter((p) => (p.consecutive || p.name || '').toLowerCase().includes(q));
+}
+
 function SolicitudesList({
   list,
   searchText,
-  filterRegion,
   activeTab,
-  expandedId,
-  setExpandedId,
-  modificaciones,
-  handleReopen,
-  handleMakeEffective,
-  handleQuitarEffective,
-  handleMakeVariantEffective,
-  handleDeleteProject,
-  openPdfModal,
-  handleUpdateQuantity,
-  handleProductUpdate,
-  refreshProjects,
+  selectedId,
+  setSelectedId,
 }) {
   if (list.length === 0) {
     return (
       <p className="solicitudes-empty">
-        {searchText.trim() || filterRegion
+        {searchText.trim()
           ? 'No se encontraron solicitudes'
           : activeTab === 'proceso'
             ? 'No tienes solicitudes en proceso'
@@ -75,116 +71,25 @@ function SolicitudesList({
     );
   }
   return (
-    <ul className="solicitudes-list">
+    <div className="solicitudes-sidebar-list">
       {list.map((p) => {
-        const variants = p.variants || [];
-        const costoTotal = p.totalCost ?? variants.reduce((s, v) => s + (v.price ?? 0) * (v.quantity ?? 1), 0);
-        const isExpanded = expandedId === p.id;
-        const isCotizadas = activeTab === 'cotizadas';
-
+        const isSelected = selectedId === p.id;
         return (
-          <li key={p.id} className="solicitudes-item">
-            <div className="solicitudes-item-header">
-              <button
-                type="button"
-                className="solicitudes-item-btn"
-                onClick={() => setExpandedId(isExpanded ? null : p.id)}
-              >
-                <span className="solicitudes-consecutivo">{p.consecutive || p.name}</span>
-                <span> - {p.client || 'Sin cliente'} - {p.name || p.consecutive || 'Sin nombre'}</span>
-                {isCotizadas && p.effective && <span className="solicitudes-effective-tag"> (Efectivo)</span>}
-              </button>
-              {isCotizadas && (
-                <div className="solicitudes-item-actions">
-                  {p.effective ? (
-                    <>
-                      <button
-                        type="button"
-                        className="solicitudes-reopen-btn"
-                        onClick={() => handleReopen(p.id)}
-                        disabled={!modificaciones[p.id]}
-                        title={modificaciones[p.id] ? 'Crea nuevo proyecto con variantes editadas + efectivas. El original pierde efectivo.' : 'Edita un producto para reabrir como nuevo proyecto'}
-                      >
-                        {modificaciones[p.id] ? 'Reabrir (nuevo proyecto)' : 'Edita para reabrir'}
-                      </button>
-                      <button
-                        type="button"
-                        className="solicitudes-quitar-effective-btn"
-                        onClick={() => handleQuitarEffective(p.id)}
-                        title="Quitar efectivo del proyecto"
-                      >
-                        Quitar efectivo
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        className="solicitudes-reopen-btn"
-                        onClick={() => handleReopen(p.id)}
-                        disabled={!modificaciones[p.id]}
-                        title={modificaciones[p.id] ? 'Reabrir con modificaciones' : 'Edita un producto para reabrir'}
-                      >
-                        {modificaciones[p.id] ? 'Reabrir / nueva versión' : 'Edita para reabrir'}
-                      </button>
-                      <button
-                        type="button"
-                        className="solicitudes-effective-btn"
-                        onClick={() => handleMakeEffective(p.id)}
-                        title="Hacer efectivo (irreversible)"
-                      >
-                        Hacer efectivo
-                      </button>
-                    </>
-                  )}
-                  <button
-                    type="button"
-                    className="solicitudes-pdf-btn"
-                    onClick={() => openPdfModal(p)}
-                  >
-                    Generar PDF
-                  </button>
-                  <button
-                    type="button"
-                    className="solicitudes-delete-btn"
-                    onClick={() => handleDeleteProject(p.id)}
-                    title="Eliminar proyecto (borra todo en cascada)"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              )}
-            </div>
-            {isExpanded && (
-              <div className="solicitudes-detail">
-                <div className="solicitudes-meta">
-                  <p>Cliente: {p.client}</p>
-                  <p>Región: {p.region}</p>
-                  <p>Total: ${costoTotal?.toLocaleString?.() ?? costoTotal}</p>
-                </div>
-                <div className="solicitudes-badges">
-                  <span className="badge badge-products">{variants.length} producto{variants.length !== 1 ? 's' : ''}</span>
-                  <span className="badge badge-version">v{p.version ?? 1}</span>
-                  <span className="badge badge-estado">Estado: {p.state ?? 0}%</span>
-                </div>
-                <ProjectProductsTable
-                  variants={variants}
-                  projectId={p.id}
-                  modificaciones={modificaciones[p.id]}
-                  cotizadas={isCotizadas}
-                  allowEditableComponents={isCotizadas}
-                  projectEffective={p.effective}
-                  onUpdateQuantity={handleUpdateQuantity}
-                  onProductUpdate={handleProductUpdate}
-                  onRefresh={refreshProjects}
-                  onMakeVariantEffective={p.effective ? handleMakeVariantEffective : undefined}
-                />
-              </div>
-            )}
-          </li>
+          <button
+            key={p.id}
+            type="button"
+            className={`solicitudes-sidebar-item ${isSelected ? 'active' : ''}`}
+            onClick={() => setSelectedId(p.id)}
+          >
+            <span className="solicitudes-consecutivo">{p.consecutive || 'S/C'}</span>
+            <span className="solicitudes-sidebar-client">
+              {(p.client || 'Sin cliente')} — {(p.name || 'Sin nombre')}
+              {activeTab === 'cotizadas' && p.effective && <span className="solicitudes-effective-tag"> (Efectivo)</span>}
+            </span>
+          </button>
         );
       })}
-    </ul>
+    </div>
   );
 }
 
@@ -192,7 +97,7 @@ export default function ComercialSolicitudes() {
   const { user } = useUser();
   const catalog = useCatalogService();
   const [state, dispatch] = useReducer(solicitudesReducer, initialState);
-  const { projects, loading, activeTab, searchText, filterRegion, expandedId, pdfModal, modificaciones } = state;
+  const { projects, loading, activeTab, searchText, expandedId, pdfModal, modificaciones } = state;
 
   useEffect(() => {
     if (user?.id) {
@@ -207,20 +112,14 @@ export default function ComercialSolicitudes() {
   const enProceso = projects.filter((p) => !p.quoted || p.reopen);
   const cotizadas = projects.filter((p) => p.quoted && !p.reopen);
 
-  const filtered =
-    activeTab === 'proceso'
-      ? enProceso.filter((p) => {
-          if (searchText.trim() && !(p.consecutive || p.name || '').toLowerCase().includes(searchText.trim().toLowerCase()))
-            return false;
-          if (filterRegion && p.region !== filterRegion) return false;
-          return true;
-        })
-      : cotizadas.filter((p) => {
-          if (searchText.trim() && !(p.consecutive || p.name || '').toLowerCase().includes(searchText.trim().toLowerCase()))
-            return false;
-          if (filterRegion && p.region !== filterRegion) return false;
-          return true;
-        });
+  const filtered = filterSolicitudesList(projects, activeTab, searchText);
+
+  useEffect(() => {
+    if (expandedId == null) return;
+    if (!filterSolicitudesList(projects, activeTab, searchText).some((p) => p.id === expandedId)) {
+      dispatch({ type: 'SET_EXPANDED_ID', payload: null });
+    }
+  }, [expandedId, activeTab, searchText, projects]);
 
   const refreshProjects = () => {
     if (user?.id) {
@@ -393,76 +292,165 @@ export default function ComercialSolicitudes() {
     dispatch({ type: 'SET_PDF_MODAL', payload: { visible: true, project, products } });
   };
 
+  const selectedProject = projects.find((p) => p.id === expandedId);
+  const isCotizadasTab = activeTab === 'cotizadas';
+
   return (
-    <div className="solicitudes-page">
+    <div className={`solicitudes-page master-detail${expandedId != null ? ' master-detail--detail-open' : ''}`}>
+      <div className="solicitudes-sidebar">
+        <div className="solicitudes-sidebar-header">
+          <div className="solicitudes-filters">
+            <input
+              type="text"
+              placeholder="Buscar proyecto..."
+              value={searchText}
+              onChange={(e) => dispatch({ type: 'SET_SEARCH_TEXT', payload: e.target.value })}
+            />
+            {searchText && (
+              <button
+                type="button"
+                className="solicitudes-clear-btn"
+                onClick={() => dispatch({ type: 'SET_SEARCH_TEXT', payload: '' })}
+              >
+                ×
+              </button>
+            )}
+          </div>
 
-      <div className="solicitudes-filters">
-        <input
-          type="text"
-          placeholder="Buscar por consecutivo (ej: 2025...)"
-          value={searchText}
-          onChange={(e) => dispatch({ type: 'SET_SEARCH_TEXT', payload: e.target.value })}
-        />
-        <select
-          value={filterRegion}
-          onChange={(e) => dispatch({ type: 'SET_FILTER_REGION', payload: e.target.value })}
-          className="solicitudes-region-select"
-        >
-          <option value="">Todas las regiones</option>
-          {COLOMBIA_REGIONS.map((r) => (
-            <option key={r.id} value={r.id}>{r.label}</option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className="solicitudes-clear-btn"
-          onClick={() => { dispatch({ type: 'SET_SEARCH_TEXT', payload: '' }); dispatch({ type: 'SET_FILTER_REGION', payload: '' }); }}
-        >
-          Limpiar
-        </button>
-      </div>
+          <div className="solicitudes-tabs">
+            <button
+              type="button"
+              className={activeTab === 'proceso' ? 'active' : ''}
+              onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: 'proceso' })}
+            >
+              Proceso ({enProceso.length})
+            </button>
+            <button
+              type="button"
+              className={activeTab === 'cotizadas' ? 'active' : ''}
+              onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: 'cotizadas' })}
+            >
+              Cotizadas ({cotizadas.length})
+            </button>
+          </div>
+        </div>
 
-      <div className="solicitudes-tabs">
-        <button
-          type="button"
-          className={activeTab === 'proceso' ? 'active' : ''}
-          onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: 'proceso' })}
-        >
-          En Proceso ({enProceso.length})
-        </button>
-        <button
-          type="button"
-          className={activeTab === 'cotizadas' ? 'active' : ''}
-          onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: 'cotizadas' })}
-        >
-          Cotizadas ({cotizadas.length})
-        </button>
-      </div>
-
-      {loading ? (
-        <p className="solicitudes-loading">Cargando...</p>
-      ) : (
-        <div className="solicitudes-content">
+        {loading ? (
+          <p className="solicitudes-loading">Cargando...</p>
+        ) : (
           <SolicitudesList
             list={filtered}
             searchText={searchText}
-            filterRegion={filterRegion}
             activeTab={activeTab}
-            expandedId={expandedId}
-            setExpandedId={(id) => dispatch({ type: 'SET_EXPANDED_ID', payload: id })}
-            modificaciones={modificaciones}
-            handleReopen={handleReopen}
-            handleMakeEffective={handleMakeEffective}
-            handleQuitarEffective={handleQuitarEffective}
-            handleMakeVariantEffective={handleMakeVariantEffective}
-            handleDeleteProject={handleDeleteProject}
-            openPdfModal={openPdfModal}
-            handleUpdateQuantity={handleUpdateQuantity}
-            handleProductUpdate={handleProductUpdate}
-            refreshProjects={refreshProjects}
+            selectedId={expandedId}
+            setSelectedId={(id) => dispatch({ type: 'SET_EXPANDED_ID', payload: id })}
           />
-        </div>
-      )}
+        )}
+      </div>
+
+      <div className="solicitudes-main">
+        {selectedProject ? (
+          <div className="solicitudes-detail-view">
+            <div className="solicitudes-detail-header">
+              <div className="solicitudes-header-info">
+                <button
+                  type="button"
+                  className="solicitudes-back-btn"
+                  onClick={() => dispatch({ type: 'SET_EXPANDED_ID', payload: null })}
+                >
+                  ← Volver
+                </button>
+                <h2>{selectedProject.consecutive} — {selectedProject.name}</h2>
+                <div className="solicitudes-meta">
+                  <p><strong>Cliente:</strong> {selectedProject.client}</p>
+                  <p><strong>Total:</strong> ${selectedProject.totalCost?.toLocaleString?.() ?? (selectedProject.variants || []).reduce((s, v) => s + (v.price ?? 0) * (v.quantity ?? 1), 0).toLocaleString()}</p>
+                </div>
+                <div className="solicitudes-badges">
+                  <span className="badge badge-version">v{selectedProject.version ?? 1}</span>
+                  <span className="badge badge-estado">Estado: {selectedProject.state ?? 0}%</span>
+                </div>
+              </div>
+
+              <div className="solicitudes-header-actions">
+                {isCotizadasTab && (
+                  <div className="solicitudes-item-actions">
+                    {selectedProject.effective ? (
+                      <>
+                        <button
+                          type="button"
+                          className="solicitudes-reopen-btn"
+                          onClick={() => handleReopen(selectedProject.id)}
+                          disabled={!modificaciones[selectedProject.id]}
+                          title="Edita un producto para reabrir como nuevo proyecto"
+                        >
+                          {modificaciones[selectedProject.id] ? 'Reabrir (nuevo proyecto)' : 'Edita para reabrir'}
+                        </button>
+                        <button
+                          type="button"
+                          className="solicitudes-quitar-effective-btn"
+                          onClick={() => handleQuitarEffective(selectedProject.id)}
+                        >
+                          Quitar efectivo
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="solicitudes-reopen-btn"
+                          onClick={() => handleReopen(selectedProject.id)}
+                          disabled={!modificaciones[selectedProject.id]}
+                        >
+                          {modificaciones[selectedProject.id] ? 'Reabrir / nueva versión' : 'Edita para reabrir'}
+                        </button>
+                        <button
+                          type="button"
+                          className="solicitudes-effective-btn"
+                          onClick={() => handleMakeEffective(selectedProject.id)}
+                        >
+                          Hacer efectivo
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      className="solicitudes-pdf-btn"
+                      onClick={() => openPdfModal(selectedProject)}
+                    >
+                      Generar PDF
+                    </button>
+                    <button
+                      type="button"
+                      className="solicitudes-delete-btn"
+                      onClick={() => handleDeleteProject(selectedProject.id)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <ProjectProductsTable
+              variants={selectedProject.variants || []}
+              projectId={selectedProject.id}
+              modificaciones={modificaciones[selectedProject.id]}
+              cotizadas={isCotizadasTab}
+              allowEditableComponents={isCotizadasTab}
+              projectEffective={selectedProject.effective}
+              onUpdateQuantity={handleUpdateQuantity}
+              onProductUpdate={handleProductUpdate}
+              onRefresh={refreshProjects}
+              onMakeVariantEffective={selectedProject.effective ? handleMakeVariantEffective : undefined}
+            />
+          </div>
+        ) : (
+          <div className="solicitudes-no-selection">
+            <span className="selection-icon">📂</span>
+            <p>Selecciona un proyecto de la lista para ver sus detalles</p>
+          </div>
+        )}
+      </div>
 
       <PDFFormModal
         visible={pdfModal.visible}

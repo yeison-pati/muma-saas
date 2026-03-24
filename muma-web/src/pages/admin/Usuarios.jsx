@@ -23,8 +23,6 @@ export default function AdminUsuarios() {
     email: '',
     phone: '',
     password: '',
-    role: 'SALES',
-    region: '',
     jobTitle: '',
     isLeader: false,
   });
@@ -86,7 +84,6 @@ export default function AdminUsuarios() {
       phone: '',
       password: '',
       role,
-      region: '',
       jobTitle: '',
       isLeader: false,
     });
@@ -100,7 +97,6 @@ export default function AdminUsuarios() {
       phone: u.phone || '',
       password: '',
       role: u.role || (tab === 'quoters' ? 'QUOTER' : tab === 'sales' ? 'SALES' : tab === 'designers' ? 'DESIGNER' : 'DEVELOPMENT'),
-      region: u.region || '',
       jobTitle: u.jobTitle || '',
       isLeader: u.isLeader ?? false,
     });
@@ -116,7 +112,6 @@ export default function AdminUsuarios() {
         phone: form.phone || null,
         password: form.password,
         role: form.role,
-        region: form.region || null,
         jobTitle: form.jobTitle || null,
         isLeader: form.isLeader ?? false,
         creator: user?.id || null,
@@ -136,7 +131,6 @@ export default function AdminUsuarios() {
         email: form.email,
         phone: form.phone || null,
         role: form.role || null,
-        region: form.region || null,
         jobTitle: form.jobTitle || null,
         isLeader: form.isLeader,
         ...(form.password && { password: form.password }),

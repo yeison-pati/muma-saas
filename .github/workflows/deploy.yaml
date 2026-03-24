@@ -15,6 +15,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Nota Flyway (migraciones en el JAR)
+        run: |
+          echo "Las migraciones en **/db/migration/V*.sql van dentro de cada imagen Docker."
+          echo "Al hacer 'docker compose up' / init.sh, cada servicio aplica Flyway al arrancar (no hace falta un paso SQL separado en Actions)."
+          echo "Si este deploy incluye una imagen nueva con V2+, la BD se actualiza en el primer start del contenedor."
+
       - name: Install Infisical CLI
         run: |
           curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo -E bash

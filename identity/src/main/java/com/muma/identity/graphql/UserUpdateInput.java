@@ -7,7 +7,7 @@ public record UserUpdateInput(
         String phone,
         String password,
         String role,
-        String region,
+
         String jobTitle,
         Boolean isLeader) {
 }

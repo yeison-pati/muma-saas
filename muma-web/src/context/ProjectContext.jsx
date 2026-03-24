@@ -8,23 +8,11 @@ import { uploadFile } from '../api/documentService';
 
 const ProjectContext = createContext(null);
 
-function normalizeRegion(s) {
-  if (!s) return '';
-  return String(s)
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '');
-}
 
-function pickQuoterForRegion(quoters, region) {
-  if (!region || !quoters?.length) return null;
-  const norm = normalizeRegion(region);
-  const byRegion = quoters.filter(
-    (q) => q?.user?.region && normalizeRegion(q.user.region) === norm
-  );
-  if (byRegion.length === 0) return null;
-  const sorted = [...byRegion].sort((a, b) => (a.projects ?? 0) - (b.projects ?? 0));
+// Elige el cotizador con menos proyectos activos
+function pickLeastLoadedQuoter(quoters) {
+  if (!quoters?.length) return null;
+  const sorted = [...quoters].sort((a, b) => (a.projects ?? 0) - (b.projects ?? 0));
   return sorted[0];
 }
 
@@ -132,25 +120,22 @@ export const ProjectProvider = ({ children }) => {
       })
     );
 
-    if (!regional) {
-      throw new Error('Debe seleccionar una región para crear el proyecto.');
+    if (variants.length === 0 && p3s.length === 0) {
+      throw new Error('No hay variantes ni productos P3 para crear el proyecto.');
     }
 
     console.log('[submitProject] getQuoters...');
     const quoters = await identity.getQuoters();
-    console.log('[submitProject] quoters=', quoters?.length, 'regional=', regional);
-    const quoter = pickQuoterForRegion(quoters, regional);
+    const quoter = pickLeastLoadedQuoter(quoters);
     console.log('[submitProject] quoter elegido=', quoter?.user?.id, quoter?.user?.name);
     if (!quoter?.user) {
-      throw new Error(
-        `No hay cotizador asignado para la región "${regional}". No se puede crear el proyecto. Asigne un cotizador a esta región desde el panel de administración.`
-      );
+      throw new Error('No hay cotizadores disponibles. Por favor contacte al administrador.');
     }
 
     const input = {
       name: name || 'Proyecto',
       client: cliente,
-      region: regional,
+      region: regional || '',
       salesId: user.id,
       salesName: user.name,
       salesEmail: user.email,

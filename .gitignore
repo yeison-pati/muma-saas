@@ -25,7 +25,7 @@ venv/
 *.swp
 *.swo
 .qoder/
-db/
+/db/
 minio/
 *.zip
 
@@ -60,8 +60,8 @@ caddy_data/
 caddy_config/
 otel-collector_data/
 metabase_data/
-doc/
 docs/
+dumps/
 
 
 app.js
