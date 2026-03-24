@@ -1,3 +1,0 @@
--- Primera migración tras Flyway baseline (v1 en servidores con esquema previo).
--- Sin DDL: el esquema ya coincide con la BD. Próximos cambios: V3__, V4__, ...
-SELECT 1;
