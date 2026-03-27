@@ -10,14 +10,15 @@
 ENV="${INFISICAL_ENV:-dev}"
 
 # Solo para CI: si no hay sesión pero sí Universal Auth, hacer login
-if [ -z "$INFISICAL_TOKEN" ] && [ -n "$INFISICAL_CLIENT_ID" ] && [ -n "$INFISICAL_CLIENT_SECRET" ]; then
+# (nótese ${VAR:-} para ser compatible con `set -u`)
+if [ -z "${INFISICAL_TOKEN:-}" ] && [ -n "${INFISICAL_CLIENT_ID:-}" ] && [ -n "${INFISICAL_CLIENT_SECRET:-}" ]; then
   export INFISICAL_TOKEN=$(infisical login --method=universal-auth --client-id="$INFISICAL_CLIENT_ID" --client-secret="$INFISICAL_CLIENT_SECRET" --silent --plain 2>/dev/null)
 fi
 PATHS=("/" "/identitydb" "/catalogdb" "/productsdb" "/infra" "/threadsdb" "/rabbitmq" "/minio" "/ports" "/admins")
 
 echo "[infisical] Exportando secretos (env=$ENV)..."
 
-if [ -z "$INFISICAL_PROJECT_ID" ]; then
+if [ -z "${INFISICAL_PROJECT_ID:-}" ]; then
   echo "[infisical] WARN: INFISICAL_PROJECT_ID no definido (machine identity lo requiere)" >&2
 fi
 
@@ -26,8 +27,8 @@ set -a
 
 for path in "${PATHS[@]}"; do
   _tmp=$(mktemp)
-  if [ -n "$INFISICAL_PROJECT_ID" ]; then
-    _cmd=(infisical export --projectId="$INFISICAL_PROJECT_ID" --env="$ENV" --path="$path" --format=dotenv --silent)
+  if [ -n "${INFISICAL_PROJECT_ID:-}" ]; then
+    _cmd=(infisical export --projectId="${INFISICAL_PROJECT_ID}" --env="$ENV" --path="$path" --format=dotenv --silent)
   else
     _cmd=(infisical export --env="$ENV" --path="$path" --format=dotenv --silent)
   fi
